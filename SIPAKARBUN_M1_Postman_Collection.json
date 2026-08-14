@@ -1,0 +1,1047 @@
+{
+  "info": {
+    "name": "SIPAKARBUN - Mahasiswa 1 (Knowledge Management)",
+    "description": "Koleksi endpoint CRUD internal (/api/admin/*) dan kontrak publik untuk Mahasiswa 2 (/api/penyakit, /api/gejala).\n\n## Cara pakai\n1. Jalankan `php artisan serve` di project Laravel.\n2. Buat user + token lewat tinker (lihat API_DOCUMENTATION_Mahasiswa_1.md).\n3. Isi variabel `base_url` dan `token` di tab Variables.\n4. Jalankan request secara berurutan: Buat -> Detail -> Update -> Hapus.\n   Test script otomatis menangkap ID dari response Buat dan menyimpannya ke variabel.\n\nLihat API_DOCUMENTATION_Mahasiswa_1.md dan KONTRAK_API_M1_ke_M2.md untuk detail lengkap.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "1|i3PUvMsUW1hhzN7z7YY7ggx35PobRHmMXf83TpS67af99d01" },
+    { "key": "penyakit_id", "value": "1" },
+    { "key": "gejala_id", "value": "1" },
+    { "key": "solusi_id", "value": "1" },
+    { "key": "aturan_cf_id", "value": "1" },
+    { "key": "komoditas_id", "value": "1" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Admin - Penyakit",
+      "description": "CRUD data penyakit tanaman. Hanya role admin dan pakar yang boleh mengakses.",
+      "item": [
+        {
+          "name": "List Penyakit",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/penyakit?aktif_saja=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "penyakit"],
+              "query": [
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya penyakit is_active=true" },
+                { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" },
+                { "key": "q", "value": "", "disabled": true, "description": "Pencarian berdasarkan kode/nama" }
+              ]
+            },
+            "description": "Menampilkan daftar penyakit dengan pagination. Query param aktif_saja untuk filter status, q untuk pencarian."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Pagination fields ada', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('current_page');",
+                  "    pm.expect(jsonData).to.have.property('per_page');",
+                  "    pm.expect(jsonData).to.have.property('total');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - daftar penyakit",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"PY-001\",\n      \"nama\": \"Karat Daun Kopi\",\n      \"deskripsi\": \"Penyakit jamur (Hemileia vastatrix) ...\",\n      \"is_active\": true,\n      \"created_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"updated_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"penyakit_komoditas\": [\n        { \"id\": 1, \"penyakit_id\": 1, \"komoditas_id\": 1 }\n      ]\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 6\n}"
+            }
+          ]
+        },
+        {
+          "name": "Buat Penyakit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"komoditas_id\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/penyakit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "penyakit"]
+            },
+            "description": "Membuat penyakit baru. komoditas_id opsional — divalidasi lewat KomoditasReferensiClient (mock: id 1-5 valid). ID penyakit baru otomatis disimpan ke variabel penyakit_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response punya id', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "});",
+                  "pm.test('Response punya nama', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('nama');",
+                  "});",
+                  "",
+                  "// Auto-capture ID untuk request berikutnya",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('penyakit_id', jsonData.id);",
+                  "    console.log('penyakit_id disimpan: ' + jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - penyakit dibuat",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
+            },
+            {
+              "name": "Error - komoditas invalid (422)",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "body": "{\n  \"message\": \"Komoditas dengan id 999 tidak ditemukan atau tidak aktif di referensi Disbun.\",\n  \"errors\": {\n    \"komoditas_id\": [\n      \"Komoditas dengan id 999 tidak ditemukan atau tidak aktif di referensi Disbun.\"\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Penyakit",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/penyakit/{{penyakit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "penyakit", "{{penyakit_id}}"]
+            },
+            "description": "Menampilkan detail satu penyakit beserta relasi solusi, aturan CF + gejala, dan komoditas. Variabel penyakit_id otomatis terisi dari request Buat Penyakit."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya id dan nama', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('nama');",
+                  "});",
+                  "pm.test('Response punya relasi', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('solusi');",
+                  "    pm.expect(jsonData).to.have.property('aturan_cf');",
+                  "    pm.expect(jsonData).to.have.property('penyakit_komoditas');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - detail penyakit",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"solusi\": [],\n  \"aturan_cf\": [],\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Penyakit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/penyakit/{{penyakit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "penyakit", "{{penyakit_id}}"]
+            },
+            "description": "Memperbarui data penyakit. Update parsial: hanya field yang dikirim yang diubah. Jika komoditas_id tidak dikirim, relasi komoditas tidak dihapus."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Nama berubah', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.nama).to.include('revisi');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - penyakit diupdate",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:05:00.000000Z\",\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hapus Penyakit",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/penyakit/{{penyakit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "penyakit", "{{penyakit_id}}"]
+            },
+            "description": "Menghapus penyakit secara permanen (hard delete). Cascade: solusi, aturan CF, dan relasi komoditas terkait juga dihapus."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - penyakit dihapus",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin - Gejala",
+      "description": "CRUD data gejala penyakit. Hanya role admin dan pakar yang boleh mengakses.",
+      "item": [
+        {
+          "name": "List Gejala",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/gejala?aktif_saja=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "gejala"],
+              "query": [
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya gejala is_active=true" },
+                { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" },
+                { "key": "q", "value": "", "disabled": true, "description": "Pencarian berdasarkan kode/nama" }
+              ]
+            },
+            "description": "Menampilkan daftar gejala dengan pagination."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - daftar gejala",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"GJ-001\",\n      \"nama\": \"Bercak jingga di bawah permukaan daun\",\n      \"deskripsi\": null,\n      \"is_active\": true,\n      \"created_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"updated_at\": \"2026-08-12T10:00:00.000000Z\"\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 8\n}"
+            }
+          ]
+        },
+        {
+          "name": "Buat Gejala",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/gejala",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "gejala"]
+            },
+            "description": "Membuat gejala baru. ID gejala baru otomatis disimpan ke variabel gejala_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response punya id dan nama', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('nama');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('gejala_id', jsonData.id);",
+                  "    console.log('gejala_id disimpan: ' + jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - gejala dibuat",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Gejala",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/gejala/{{gejala_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "gejala", "{{gejala_id}}"]
+            },
+            "description": "Menampilkan detail satu gejala beserta relasi aturan CF + penyakit terkait."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya id dan nama', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('nama');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - detail gejala",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"is_active\": true,\n  \"aturan_cf\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Gejala",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama\": \"Gejala Uji Coba Postman (revisi)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/gejala/{{gejala_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "gejala", "{{gejala_id}}"]
+            },
+            "description": "Memperbarui data gejala. Update parsial."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Nama berubah', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.nama).to.include('revisi');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - gejala diupdate",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:05:00.000000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hapus Gejala",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/gejala/{{gejala_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "gejala", "{{gejala_id}}"]
+            },
+            "description": "Menghapus gejala secara permanen. Cascade: aturan CF yang memakai gejala ini juga dihapus."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - gejala dihapus",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin - Solusi",
+      "description": "CRUD data solusi/rekomendasi penanganan penyakit. Hanya role admin dan pakar yang boleh mengakses.",
+      "item": [
+        {
+          "name": "List Solusi",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/solusi?penyakit_id={{penyakit_id}}&aktif_saja=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "solusi"],
+              "query": [
+                { "key": "penyakit_id", "value": "{{penyakit_id}}", "description": "Filter solusi berdasarkan penyakit" },
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya solusi is_active=true" },
+                { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" }
+              ]
+            },
+            "description": "Menampilkan daftar solusi dengan pagination. Bisa difilter berdasarkan penyakit_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - daftar solusi",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"penyakit_id\": 1,\n      \"judul\": \"Pangkas & musnahkan daun terinfeksi\",\n      \"deskripsi\": \"Pangkas daun yang menunjukkan gejala...\",\n      \"is_active\": true,\n      \"penyakit\": {\n        \"id\": 1,\n        \"kode\": \"PY-001\",\n        \"nama\": \"Karat Daun Kopi\"\n      }\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 7\n}"
+            }
+          ]
+        },
+        {
+          "name": "Buat Solusi",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penyakit_id\": {{penyakit_id}},\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/solusi",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "solusi"]
+            },
+            "description": "Membuat solusi baru untuk penyakit tertentu. penyakit_id harus ada di tabel penyakit. ID solusi baru otomatis disimpan ke variabel solusi_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response punya id dan judul', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('judul');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('solusi_id', jsonData.id);",
+                  "    console.log('solusi_id disimpan: ' + jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - solusi dibuat",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Solusi",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/solusi/{{solusi_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "solusi", "{{solusi_id}}"]
+            },
+            "description": "Menampilkan detail satu solusi beserta penyakit terkait."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya id, judul, penyakit', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('judul');",
+                  "    pm.expect(jsonData).to.have.property('penyakit');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - detail solusi",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"is_active\": true,\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Solusi",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"judul\": \"Solusi Uji Coba Postman (revisi)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/solusi/{{solusi_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "solusi", "{{solusi_id}}"]
+            },
+            "description": "Memperbarui data solusi. Update parsial."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Judul berubah', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.judul).to.include('revisi');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - solusi diupdate",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"is_active\": true,\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hapus Solusi",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/solusi/{{solusi_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "solusi", "{{solusi_id}}"]
+            },
+            "description": "Menghapus solusi secara permanen."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - solusi dihapus",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin - Aturan CF",
+      "description": "CRUD aturan Certainty Factor (relasi penyakit-gejala + nilai keyakinan pakar). Role admin dan pakar boleh C/R/U. Hanya admin yang boleh DELETE (PRD §24).",
+      "item": [
+        {
+          "name": "List Aturan CF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/aturan-cf?penyakit_id={{penyakit_id}}&aktif_saja=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "aturan-cf"],
+              "query": [
+                { "key": "penyakit_id", "value": "{{penyakit_id}}", "description": "Filter rule berdasarkan penyakit" },
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya rule is_active=true" },
+                { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" }
+              ]
+            },
+            "description": "Menampilkan daftar aturan CF dengan pagination. Bisa difilter berdasarkan penyakit_id dan gejala_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - daftar aturan CF",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"penyakit_id\": 1,\n      \"gejala_id\": 1,\n      \"cf_pakar\": \"0.900\",\n      \"is_active\": true,\n      \"version\": 1,\n      \"created_by\": null,\n      \"updated_by\": null,\n      \"penyakit\": { \"id\": 1, \"kode\": \"PY-001\", \"nama\": \"Karat Daun Kopi\" },\n      \"gejala\": { \"id\": 1, \"kode\": \"GJ-001\", \"nama\": \"Bercak jingga di bawah permukaan daun\" }\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 13\n}"
+            }
+          ]
+        },
+        {
+          "name": "Buat Aturan CF",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penyakit_id\": {{penyakit_id}},\n  \"gejala_id\": {{gejala_id}},\n  \"cf_pakar\": 0.85\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/aturan-cf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "aturan-cf"]
+            },
+            "description": "Membuat rule CF baru. cf_pakar harus di rentang -1 s.d 1. Tidak boleh ada 2 rule aktif untuk pasangan penyakit+gejala yang sama. ID rule baru otomatis disimpan ke variabel aturan_cf_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response punya id dan cf_pakar', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('cf_pakar');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('aturan_cf_id', jsonData.id);",
+                  "    console.log('aturan_cf_id disimpan: ' + jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - rule CF dibuat",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"is_active\": true,\n  \"version\": 1,\n  \"created_by\": null,\n  \"updated_by\": null,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
+            },
+            {
+              "name": "Error - duplikat rule aktif (422)",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "body": "{\n  \"message\": \"Sudah ada rule CF aktif untuk pasangan penyakit & gejala ini. Nonaktifkan rule lama dulu sebelum menambah yang baru.\",\n  \"errors\": {\n    \"gejala_id\": [\n      \"Sudah ada rule CF aktif untuk pasangan penyakit & gejala ini. Nonaktifkan rule lama dulu sebelum menambah yang baru.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Error - CF di luar rentang (422)",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "body": "{\n  \"message\": \"Nilai CF pakar harus di antara -1 dan 1.\",\n  \"errors\": {\n    \"cf_pakar\": [\n      \"Nilai CF pakar harus di antara -1 dan 1.\"\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Aturan CF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/aturan-cf/{{aturan_cf_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "aturan-cf", "{{aturan_cf_id}}"]
+            },
+            "description": "Menampilkan detail satu rule CF beserta penyakit dan gejala terkait."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya id, cf_pakar, penyakit, gejala', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('cf_pakar');",
+                  "    pm.expect(jsonData).to.have.property('penyakit');",
+                  "    pm.expect(jsonData).to.have.property('gejala');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - detail aturan CF",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"is_active\": true,\n  \"version\": 1,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Aturan CF (nonaktifkan)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/aturan-cf/{{aturan_cf_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "aturan-cf", "{{aturan_cf_id}}"]
+            },
+            "description": "Memperbarui rule CF. Contoh ini menonaktifkan rule (is_active=false) supaya rule baru bisa dibuat untuk pasangan penyakit+gejala yang sama."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('is_active menjadi false', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.is_active).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - rule CF dinonaktifkan",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"is_active\": false,\n  \"version\": 1,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hapus Aturan CF (admin only)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/aturan-cf/{{aturan_cf_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "aturan-cf", "{{aturan_cf_id}}"]
+            },
+            "description": "Menghapus rule CF secara permanen. PERHATIAN: endpoint ini hanya bisa diakses oleh role admin, BUKAN pakar (PRD §24 — Aturan CF kolom Knowledge Manager = C/R/U tanpa D)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content (admin) atau 403 (pakar)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([204, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - rule CF dihapus (admin)",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            },
+            {
+              "name": "Error - pakar tidak boleh hapus (403)",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"message\": \"This action is unauthorized.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kontrak Publik (Mahasiswa 2)",
+      "description": "Endpoint publik yang dikonsumsi sistem Mahasiswa 2 (server-to-server). Hanya butuh auth:sanctum, tanpa role admin/pakar. Hanya menampilkan data is_active=true.",
+      "item": [
+        {
+          "name": "GET /api/penyakit (kontrak M2)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/penyakit?komoditas_id={{komoditas_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "penyakit"],
+              "query": [
+                { "key": "komoditas_id", "value": "{{komoditas_id}}", "description": "Filter penyakit berdasarkan komoditas (opsional). ID merujuk ke ref_komoditas.id milik Shared Integration." }
+              ]
+            },
+            "description": "Endpoint kontrak untuk Mahasiswa 2. Mengembalikan daftar penyakit AKTIF lengkap dengan aturan CF aktif + solusi aktif dalam satu response. Cukup satu panggilan untuk menjalankan mesin diagnosis."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Setiap penyakit punya aturan_cf dan solusi', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        var first = jsonData.data[0];",
+                  "        pm.expect(first).to.have.property('aturan_cf');",
+                  "        pm.expect(first).to.have.property('solusi');",
+                  "        pm.expect(first).to.have.property('komoditas_id');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - kontrak penyakit untuk M2",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"PY-001\",\n      \"nama\": \"Karat Daun Kopi\",\n      \"deskripsi\": \"Penyakit jamur (Hemileia vastatrix) ...\",\n      \"komoditas_id\": [1, 2],\n      \"aturan_cf\": [\n        { \"gejala_id\": 1, \"gejala_nama\": \"Bercak jingga di bawah permukaan daun\", \"cf_pakar\": 0.9 },\n        { \"gejala_id\": 2, \"gejala_nama\": \"Daun menguning dan gugur\", \"cf_pakar\": 0.7 }\n      ],\n      \"solusi\": [\n        { \"judul\": \"Pangkas & musnahkan daun terinfeksi\", \"deskripsi\": \"...\" }\n      ],\n      \"updated_at\": \"2026-08-12T10:00:00+00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/gejala (kontrak M2)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/gejala?komoditas_id={{komoditas_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "gejala"],
+              "query": [
+                { "key": "komoditas_id", "value": "{{komoditas_id}}", "description": "Filter: hanya gejala yang dipakai di rule CF aktif milik penyakit terkait komoditas ini (opsional)" }
+              ]
+            },
+            "description": "Endpoint kontrak untuk Mahasiswa 2. Mengembalikan daftar gejala AKTIF. Jika komoditas_id diisi: hanya gejala yang pernah dipakai di rule CF aktif milik penyakit yang terkait komoditas itu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response punya data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Setiap gejala punya id, kode, nama', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        var first = jsonData.data[0];",
+                  "        pm.expect(first).to.have.property('id');",
+                  "        pm.expect(first).to.have.property('kode');",
+                  "        pm.expect(first).to.have.property('nama');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Sukses - kontrak gejala untuk M2",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"GJ-001\",\n      \"nama\": \"Bercak jingga di bawah permukaan daun\",\n      \"deskripsi\": null\n    },\n    {\n      \"id\": 2,\n      \"kode\": \"GJ-002\",\n      \"nama\": \"Daun menguning dan gugur\",\n      \"deskripsi\": null\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
