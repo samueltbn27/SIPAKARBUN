@@ -20,6 +20,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+
+        // Cegah browser caching HTML agar perubahan Blade langsung
+        // terlihat tanpa perlu hard-refresh.
+        $middleware->append(\App\Http\Middleware\NoCacheHtml::class);
+
+        // Guest middleware (RedirectIfAuthenticated) mengarahkan user
+        // yang SUDAH login ke dashboard, BUKAN ke "/" (yang akan loop
+        // balik ke /login).
+        $middleware->redirectUsersTo(fn () => route('knowledge.dashboard'));
+
+        // Auth middleware mengarahkan user yang BELUM login ke halaman login.
+        $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

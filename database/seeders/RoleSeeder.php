@@ -46,9 +46,10 @@ class RoleSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permissionName]);
         }
 
-        // Pakar (Knowledge Manager): C/R/U/D penuh ke knowledge base,
-        // sesuai RBAC Matrix §24.
-        Role::findByName('pakar')->givePermissionTo($permissions);
+        // Operator UPTD & POPT (Knowledge Manager): C/R/U/D penuh ke
+        // knowledge base, sesuai RBAC Matrix §24.
+        Role::findByName('operator_uptd')->givePermissionTo($permissions);
+        Role::findByName('popt')->givePermissionTo($permissions);
 
         // Admin: akses penuh ke SEMUA permission yang ada (bukan cuma
         // punya Mahasiswa 1), karena di RBAC Matrix kolom Admin selalu

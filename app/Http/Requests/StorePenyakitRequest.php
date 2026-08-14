@@ -15,7 +15,7 @@ class StorePenyakitRequest extends FormRequest
         // basis pengetahuan — sesuai RBAC Matrix PRD §24
         // ("Penyakit & gejala": C/R/U/D untuk Knowledge Manager, admin
         // untuk Admin).
-        return $this->user()?->hasRole(['admin', 'pakar']) ?? false;
+        return $this->user()?->hasRole(['admin', 'operator_uptd', 'popt']) ?? false;
     }
 
     public function rules(): array

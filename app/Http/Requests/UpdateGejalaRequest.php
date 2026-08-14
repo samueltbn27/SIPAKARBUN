@@ -10,7 +10,7 @@ class UpdateGejalaRequest extends FormRequest
     public function authorize(): bool
     {
         // TODO(tahap 6 - Auth & Role): cek role Pakar/Admin.
-        return $this->user() !== null && $this->user()->hasRole(['admin', 'pakar']);
+        return $this->user() !== null && $this->user()->hasRole(['admin', 'operator_uptd', 'popt']);
     }
 
     public function rules(): array

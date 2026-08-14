@@ -23,24 +23,23 @@ Route::middleware(['auth:sanctum'])
 
 /*
 |--------------------------------------------------------------------------
-| CRUD internal Admin/Pakar
+| CRUD internal Admin/Operator/POPT
 |--------------------------------------------------------------------------
-| Wajib login (auth:sanctum) + role admin atau pakar.
+| Wajib login (auth:sanctum) + role admin, operator_uptd, atau popt.
 */
-Route::middleware(['auth:sanctum', 'role:admin|pakar'])
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd|popt'])
     ->prefix('admin')
     ->group(function (): void {
         Route::apiResource('penyakit', PenyakitController::class);
         Route::apiResource('gejala', GejalaController::class);
         Route::apiResource('solusi', SolusiController::class);
-        // PRD §24: Knowledge Manager (pakar) hanya C/R/U untuk Aturan CF,
-        // bukan D. Karena itu destroy dikeluarkan dari group ini.
+        // Aturan CF: C/R/U untuk Operator/POPT, tanpa D.
+        // Destroy dikeluarkan dari group ini.
         Route::apiResource('aturan-cf', AturanCfController::class)
             ->except(['destroy']);
     });
 
-// DELETE aturan CF hanya untuk Admin (PRD §24 — Aturan CF kolom Admin
-// = "admin"/full-access, kolom Knowledge Manager = C/R/U tanpa D).
+// DELETE aturan CF hanya untuk Admin (full-access).
 Route::middleware(['auth:sanctum', 'role:admin'])
     ->prefix('admin')
     ->group(function (): void {
