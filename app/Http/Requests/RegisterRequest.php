@@ -23,7 +23,7 @@ class RegisterRequest extends FormRequest
                 'confirmed',
                 Password::min(8)->letters()->numbers(),
             ],
-            'role' => ['required', 'string', 'in:admin,pakar,operator_uptd,popt'],
+            'role' => ['required', 'string', 'in:admin,pakar'],
             'phone' => [
                 'required',
                 'string',

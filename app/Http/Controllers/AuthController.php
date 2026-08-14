@@ -63,8 +63,6 @@ class AuthController extends Controller
         $roles = [
             'admin' => 'Admin',
             'pakar' => 'Pakar (Knowledge Manager)',
-            'operator_uptd' => 'Operator UPTD',
-            'popt' => 'POPT',
         ];
 
         return view('auth.register', compact('roles'));
