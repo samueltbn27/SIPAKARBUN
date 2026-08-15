@@ -35,4 +35,21 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Knowledge Management API — Mahasiswa 1 (modul Knowledge)
+    |--------------------------------------------------------------------------
+    | Dikonsumsi modul Diagnosis (Mahasiswa 2). Pasangan endpoint:
+    |   GET {base_url}/api/penyakit?komoditas_id={id}
+    |   GET {base_url}/api/gejala?komoditas_id={id}
+    |
+    | Butuh header Authorization: Bearer {token} (token Sanctum). Token tidak
+    | di-hardcode — diambil dari .env, lihat .env.example.
+    */
+    'knowledge_api' => [
+        'base_url' => env('KNOWLEDGE_API_BASE_URL'),
+        'token' => env('KNOWLEDGE_API_TOKEN'),
+        'timeout' => env('KNOWLEDGE_API_TIMEOUT', 5),
+    ],
+
 ];

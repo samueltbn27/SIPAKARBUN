@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AturanCfController;
+use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\GejalaController;
 use App\Http\Controllers\KnowledgeApiController;
 use App\Http\Controllers\PenyakitController;
@@ -19,6 +20,23 @@ Route::middleware(['auth:sanctum'])
     ->group(function (): void {
         Route::get('/penyakit', [KnowledgeApiController::class, 'penyakit']);
         Route::get('/gejala', [KnowledgeApiController::class, 'gejala']);
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Diagnosis (Mahasiswa 2)
+|--------------------------------------------------------------------------
+| POST /api/diagnosis        — jalankan diagnosis baru (transaction).
+| GET  /api/diagnosis        — histori diagnosis milik user yang login.
+| GET  /api/diagnosis/{id}   — detail diagnosis milik user yang login.
+*/
+Route::middleware(['auth:sanctum'])
+    ->prefix('diagnosis')
+    ->group(function (): void {
+        Route::post('/', [DiagnosisController::class, 'store']);
+        Route::get('/', [DiagnosisController::class, 'index']);
+        Route::get('/{id}', [DiagnosisController::class, 'show'])
+            ->whereNumber('id');
     });
 
 /*
