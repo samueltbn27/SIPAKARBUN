@@ -14,9 +14,21 @@
     </div>
 
     <div class="soft-card rounded-xl border border-[#e6eee8] bg-white p-6 sm:p-7">
-        <div class="flex items-start gap-3 rounded-lg bg-[#eef6f1] border border-[#d6ebe0] p-4 text-sm text-[#2d6b4a] mb-5">
-            <svg class="w-5 h-5 flex-shrink-0 mt-0.5 text-[#176b45]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <span>Data komoditas berasal dari Shared Integration (PRD §23.4). Saat ini menggunakan data MOCK.</span>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+            <div class="flex items-center gap-3 rounded-lg bg-[#eef6f1] border border-[#d6ebe0] px-4 py-2.5 text-sm text-[#2d6b4a]">
+                <svg class="w-4 h-4 flex-shrink-0 text-[#176b45]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span>Menampilkan <strong>{{ $komoditas->count() }}</strong> dari <strong>{{ $totalKomoditas }}</strong> komoditas referensi</span>
+            </div>
+            <form method="GET" action="{{ route('knowledge.komoditas.index') }}" class="relative sm:w-72">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa59e]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari kode atau nama komoditas..."
+                       class="w-full rounded-lg border border-[#d6e0d9] pl-9 pr-8 py-2.5 text-sm outline-none transition focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15">
+                @if(request('q'))
+                    <a href="{{ route('knowledge.komoditas.index') }}" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9aa59e] hover:text-[#c53030]" title="Hapus pencarian">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </a>
+                @endif
+            </form>
         </div>
 
         @if($komoditas->isNotEmpty())

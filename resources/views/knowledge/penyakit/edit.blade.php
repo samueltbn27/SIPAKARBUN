@@ -74,7 +74,7 @@
             <h2 class="text-sm font-semibold text-gray-900">Komoditas Terkait</h2>
             <p class="mt-0.5 text-xs text-gray-500">Pilih komoditas yang dapat terkena penyakit ini.</p>
             @if (!empty($komoditas))
-                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="mt-4 max-h-72 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach ($komoditas as $k)
                         @php
                             $isSelected = in_array((string) $k['id'], array_map('strval', old('komoditas_id', $selectedKomoditas ?? [])));

@@ -26,6 +26,7 @@ class KnowledgeController extends Controller
     public function dashboard(): View
     {
         $stats = [
+            'komoditas' => $this->hitungKomoditas(),
             'penyakit' => Penyakit::count(),
             'penyakit_aktif' => Penyakit::aktifSaja()->count(),
             'gejala' => Gejala::count(),
@@ -102,13 +103,20 @@ class KnowledgeController extends Controller
         return view('knowledge.dashboard', compact('stats', 'recentChanges', 'knowledgeStatus'));
     }
 
-    public function komoditasIndex(KomoditasReferensiClient $client): View
+    public function komoditasIndex(Request $request, KomoditasReferensiClient $client): View
     {
         try {
-            $komoditas = collect($client->all());
+            $komoditas = collect($client->all())->map(fn ($item) => is_object($item) ? (array) $item : $item);
         } catch (\Throwable $exception) {
             report($exception);
             $komoditas = collect();
+        }
+
+        $totalKomoditas = $komoditas->count();
+
+        if ($request->filled('q')) {
+            $q = mb_strtolower(trim((string) $request->q));
+            $komoditas = $komoditas->filter(fn ($row) => str_contains(mb_strtolower(($row['kode'] ?? '') . ' ' . ($row['nama'] ?? '')), $q))->values();
         }
 
         $komoditasDipakai = PenyakitKomoditas::selectRaw('komoditas_id, COUNT(*) as jumlah')
@@ -116,7 +124,16 @@ class KnowledgeController extends Controller
             ->pluck('jumlah', 'komoditas_id')
             ->toArray();
 
-        return view('knowledge.komoditas.index', compact('komoditas', 'komoditasDipakai'));
+        return view('knowledge.komoditas.index', compact('komoditas', 'komoditasDipakai', 'totalKomoditas'));
+    }
+
+    private function hitungKomoditas(): int
+    {
+        try {
+            return count(app(KomoditasReferensiClient::class)->all());
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 
     public function penyakitIndex(Request $request): View

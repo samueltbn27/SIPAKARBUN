@@ -11,14 +11,14 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         @php $cards = [
-            ['label'=>'Komoditas','value'=>'24','meta'=>'Aktif','icon'=>'M12 3c-4 2-7 5-7 9a7 7 0 0 0 14 0c0-4-3-7-7-9Z','color'=>'#e8f4ed'],
-            ['label'=>'Penyakit','value'=>$stats['penyakit'],'meta'=>$stats['penyakit_aktif'].' Aktif','icon'=>'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z','color'=>'#f2edf8'],
-            ['label'=>'Gejala','value'=>$stats['gejala'],'meta'=>$stats['gejala_aktif'].' Aktif','icon'=>'M6 3h12v18H6zM9 7h6M9 11h6M9 15h4','color'=>'#eef5e7'],
-            ['label'=>'Aturan CF','value'=>$stats['aturan_cf'],'meta'=>$stats['aturan_cf_aktif'].' Aktif','icon'=>'M4 18V6m0 12h16M8 15V9m4 6V5m4 10v-3','color'=>'#fff4df'],
-            ['label'=>'Solusi','value'=>$stats['solusi'],'meta'=>$stats['solusi_aktif'].' Aktif','icon'=>'M9 18h6m-5 3h4M12 3a6 6 0 0 0-3 11c.6.4 1 1.1 1 2h4c0-.9.4-1.6 1-2a6 6 0 0 0-3-11Z','color'=>'#e7f3f4']
+            ['label'=>'Komoditas','value'=>$stats['komoditas'],'meta'=>'Aktif','icon'=>'M12 3c-4 2-7 5-7 9a7 7 0 0 0 14 0c0-4-3-7-7-9Z','color'=>'#e8f4ed','href'=>route('knowledge.komoditas.index')],
+            ['label'=>'Penyakit','value'=>$stats['penyakit'],'meta'=>$stats['penyakit_aktif'].' Aktif','icon'=>'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z','color'=>'#f2edf8','href'=>route('knowledge.penyakit.index')],
+            ['label'=>'Gejala','value'=>$stats['gejala'],'meta'=>$stats['gejala_aktif'].' Aktif','icon'=>'M6 3h12v18H6zM9 7h6M9 11h6M9 15h4','color'=>'#eef5e7','href'=>route('knowledge.gejala.index')],
+            ['label'=>'Aturan CF','value'=>$stats['aturan_cf'],'meta'=>$stats['aturan_cf_aktif'].' Aktif','icon'=>'M4 18V6m0 12h16M8 15V9m4 6V5m4 10v-3','color'=>'#fff4df','href'=>route('knowledge.aturan-cf.index')],
+            ['label'=>'Solusi','value'=>$stats['solusi'],'meta'=>$stats['solusi_aktif'].' Aktif','icon'=>'M9 18h6m-5 3h4M12 3a6 6 0 0 0-3 11c.6.4 1 1.1 1 2h4c0-.9.4-1.6 1-2a6 6 0 0 0-3-11Z','color'=>'#e7f3f4','href'=>route('knowledge.solusi.index')],
         ]; @endphp
         @foreach($cards as $card)
-        <a href="{{ $loop->index === 1 ? route('knowledge.penyakit.index') : ($loop->index === 2 ? route('knowledge.gejala.index') : ($loop->index === 3 ? route('knowledge.aturan-cf.index') : route('knowledge.solusi.index'))) }}" class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 hover:-translate-y-0.5 transition">
+        <a href="{{ $card['href'] }}" class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 hover:-translate-y-0.5 transition">
             <div class="flex items-start justify-between"><span class="flex items-center justify-center w-10 h-10 rounded-xl" style="background:{{ $card['color'] }}"><svg class="w-5 h-5 text-[#176b45]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="{{ $card['icon'] }}"/></svg></span><span class="text-[#a9b4ad]">•••</span></div>
             <div class="mt-5 text-sm font-medium text-[#748179]">{{ $card['label'] }}</div><div class="mt-1 flex items-end gap-2"><span class="text-2xl font-bold tracking-tight text-[#173b29]">{{ $card['value'] }}</span><span class="mb-1 text-[11px] font-semibold text-[#29905d]">{{ $card['meta'] }}</span></div>
         </a>

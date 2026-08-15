@@ -73,7 +73,7 @@
             <h2 class="text-sm font-semibold text-gray-900">Komoditas Terkait</h2>
             <p class="mt-0.5 text-xs text-gray-500">Pilih komoditas yang dapat terkena penyakit ini.</p>
             @if (!empty($komoditas))
-                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="mt-4 max-h-72 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach ($komoditas as $k)
                         <label class="inline-flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 select-none">
                             <input type="checkbox" name="komoditas_id[]" value="{{ $k['id'] }}"
