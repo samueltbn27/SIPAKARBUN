@@ -49,11 +49,7 @@
                         {{ \Illuminate\Support\Str::limit($g->deskripsi, 60) }}
                     </td>
                     <td class="px-4 py-3">
-                        @if ($g->is_active)
-                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Aktif</span>
-                        @else
-                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">Nonaktif</span>
-                        @endif
+                        <x-knowledge.status-badge :status="$g->status" />
                     </td>
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">

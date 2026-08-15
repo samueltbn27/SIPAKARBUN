@@ -21,7 +21,7 @@ class UpdateGejalaRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('gejala', 'kode')->ignore($gejalaId)],
             'nama' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
 
@@ -29,6 +29,7 @@ class UpdateGejalaRequest extends FormRequest
     {
         return [
             'kode.unique' => 'Kode gejala sudah dipakai, gunakan kode lain.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 }

@@ -18,7 +18,7 @@ class UpdateSolusiRequest extends FormRequest
             'penyakit_id' => ['sometimes', 'required', 'integer', 'exists:penyakit,id'],
             'judul' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
 
@@ -26,6 +26,7 @@ class UpdateSolusiRequest extends FormRequest
     {
         return [
             'penyakit_id.exists' => 'Penyakit yang dipilih tidak ditemukan.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 }

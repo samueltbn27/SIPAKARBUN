@@ -18,7 +18,7 @@ class StoreSolusiRequest extends FormRequest
             'penyakit_id' => ['required', 'integer', 'exists:penyakit,id'],
             'judul' => ['required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
 
@@ -28,6 +28,7 @@ class StoreSolusiRequest extends FormRequest
             'penyakit_id.required' => 'Solusi harus dikaitkan ke satu penyakit.',
             'penyakit_id.exists' => 'Penyakit yang dipilih tidak ditemukan.',
             'judul.required' => 'Judul solusi wajib diisi.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 }

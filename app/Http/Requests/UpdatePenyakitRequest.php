@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Contracts\KomoditasReferensiClient;
+use App\Models\RefKomoditas;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -12,9 +12,7 @@ class UpdatePenyakitRequest extends FormRequest
     public function authorize(): bool
     {
         // Hanya Admin & Pakar (Knowledge Manager) yang boleh mengelola
-        // basis pengetahuan — sesuai RBAC Matrix PRD §24
-        // ("Penyakit & gejala": C/R/U/D untuk Knowledge Manager, admin
-        // untuk Admin).
+        // basis pengetahuan — sesuai RBAC Matrix PRD §24.
         return $this->user()?->hasRole(['admin', 'operator_uptd', 'popt']) ?? false;
     }
 
@@ -28,7 +26,7 @@ class UpdatePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')->ignore($penyakitId)],
             'nama' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
             'komoditas_id' => ['sometimes', 'array'],
             'komoditas_id.*' => ['integer', 'min:1'],
         ];
@@ -38,12 +36,13 @@ class UpdatePenyakitRequest extends FormRequest
     {
         return [
             'kode.unique' => 'Kode penyakit sudah dipakai, gunakan kode lain.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 
     /**
      * Sama seperti StorePenyakitRequest — cek keberadaan komoditas_id
-     * lewat KomoditasReferensiClient (tahap #8).
+     * terhadap ref_komoditas yang terverifikasi & tidak dikarantina.
      */
     public function withValidator(Validator $validator): void
     {
@@ -54,15 +53,16 @@ class UpdatePenyakitRequest extends FormRequest
                 return;
             }
 
-            $client = app(KomoditasReferensiClient::class);
+            $validIds = RefKomoditas::tersedia()
+                ->whereIn('id', $komoditasIds)
+                ->pluck('id')
+                ->all();
 
             foreach ($komoditasIds as $id) {
-                $komoditas = $client->find((int) $id);
-
-                if ($komoditas === null) {
+                if (!in_array((int) $id, $validIds, true)) {
                     $validator->errors()->add(
                         'komoditas_id',
-                        "Komoditas dengan id {$id} tidak ditemukan atau tidak aktif di referensi Disbun."
+                        "Komoditas dengan id {$id} tidak ditemukan, belum terverifikasi, atau dikarantina."
                     );
                 }
             }

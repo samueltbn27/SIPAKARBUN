@@ -19,7 +19,7 @@ class StoreGejalaRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('gejala', 'kode')],
             'nama' => ['required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
 
@@ -28,6 +28,7 @@ class StoreGejalaRequest extends FormRequest
         return [
             'kode.unique' => 'Kode gejala sudah dipakai, gunakan kode lain.',
             'nama.required' => 'Nama gejala wajib diisi.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 }

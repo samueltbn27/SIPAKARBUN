@@ -26,17 +26,19 @@ class Penyakit extends Model
 {
     use HasFactory;
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_AKTIF = 'aktif';
+    public const STATUS_NONAKTIF = 'nonaktif';
+
     protected $table = 'penyakit';
+
+    protected $attributes = ['status' => self::STATUS_DRAFT];
 
     protected $fillable = [
         'kode',
         'nama',
         'deskripsi',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
+        'status',
     ];
 
     public function solusi(): HasMany
@@ -55,12 +57,25 @@ class Penyakit extends Model
     }
 
     /**
-     * Scope: hanya penyakit berstatus aktif/published.
+     * Scope: hanya penyakit berstatus aktif/terpublikasi.
      * Dipakai saat menyediakan data untuk API yang dikonsumsi Mahasiswa 2
-     * (M1-FR-009 — knowledge yang belum aktif tidak boleh terekspos).
+     * (M1-FR-009 — knowledge draft/nonaktif tidak boleh terekspos).
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', self::STATUS_AKTIF);
+    }
+
+    /**
+     * Scope: knowledge yang masih berupa draft (M1-FR-008).
+     */
+    public function scopeDraftSaja(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    public function scopeNonaktifSaja(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_NONAKTIF);
     }
 }

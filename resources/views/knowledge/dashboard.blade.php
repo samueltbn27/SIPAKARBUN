@@ -62,8 +62,10 @@
                     $actionLabels = ['created' => 'menambah', 'updated' => 'mengubah', 'deleted' => 'menghapus', 'activated' => 'mengaktifkan', 'deactivated' => 'menonaktifkan'];
                 @endphp
                 @forelse($recentChanges as $log)
-                    @php($cfg = $actionIcons[$log->action] ?? $actionIcons['updated'])
-                    @php($initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($log->user_name ?? 'SY'), 2)))))
+                    <?php
+                        $cfg = $actionIcons[$log->action] ?? $actionIcons['updated'];
+                        $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($log->user_name ?? 'SY'), 2))));
+                    ?>
                     <div class="flex gap-3">
                         <span class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style="background:{{ $cfg['bg'] }};color:{{ $cfg['text'] }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $cfg['icon'] }}"/></svg>

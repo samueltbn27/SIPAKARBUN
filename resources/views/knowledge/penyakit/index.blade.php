@@ -54,11 +54,7 @@
                                 <span class="line-clamp-2">{{ \Illuminate\Support\Str::limit($p->deskripsi, 100) }}</span>
                             </td>
                             <td class="px-4 py-3 text-sm whitespace-nowrap">
-                                @if ($p->is_active)
-                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Aktif</span>
-                                @else
-                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Nonaktif</span>
-                                @endif
+                                <x-knowledge.status-badge :status="$p->status" />
                             </td>
                             <td class="px-4 py-3 text-sm whitespace-nowrap">
                                 @if ($p->penyakitKomoditas && $p->penyakitKomoditas->count() > 0)

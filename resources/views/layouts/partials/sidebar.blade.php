@@ -72,7 +72,7 @@
             <div class="px-3 pb-2 pt-{{ $loop->first ? '0' : '5' }} text-[10px] font-bold text-[#a0aba4] uppercase tracking-[.14em]">{{ $section['title'] }}</div>
             <div class="space-y-0.5 pb-2">
                 @foreach($section['items'] as $item)
-                    @php($active = $isActive($item['match']))
+                    <?php $active = $isActive($item['match']); ?>
                     <a href="{{ $item['route'] === '#' ? '#' : route($item['route']) }}"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                               {{ $active ? 'bg-[#e8f4ed] text-[#176b45] font-semibold' : 'text-[#66746c] hover:bg-[#f3f8f4] hover:text-[#176b45]' }}

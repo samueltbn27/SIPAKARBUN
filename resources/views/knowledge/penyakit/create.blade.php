@@ -57,37 +57,30 @@
                 @endif
             </div>
 
-            <div>
-                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-200">
-                    Aktif
-                </label>
-                @if ($errors->has('is_active'))
-                    <p class="mt-1 text-xs text-red-600">{{ $errors->first('is_active') }}</p>
-                @endif
+            <div class="sm:col-span-1">
+                <x-knowledge.status-select name="status" default="draft" />
             </div>
         </div>
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
             <h2 class="text-sm font-semibold text-gray-900">Komoditas Terkait</h2>
-            <p class="mt-0.5 text-xs text-gray-500">Pilih komoditas yang dapat terkena penyakit ini.</p>
-            @if (!empty($komoditas))
+            <p class="mt-0.5 text-xs text-gray-500">Pilih komoditas yang dapat terkena penyakit ini. Hanya komoditas terverifikasi yang ditampilkan.</p>
+            @if ($komoditas->isNotEmpty())
                 <div class="mt-4 max-h-72 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach ($komoditas as $k)
                         <label class="inline-flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 select-none">
-                            <input type="checkbox" name="komoditas_id[]" value="{{ $k['id'] }}"
-                                {{ in_array((string) $k['id'], array_map('strval', old('komoditas_id', []))) ? 'checked' : '' }}
+                            <input type="checkbox" name="komoditas_id[]" value="{{ $k->id }}"
+                                {{ in_array((string) $k->id, array_map('strval', old('komoditas_id', []))) ? 'checked' : '' }}
                                 class="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-200">
                             <span>
-                                <span class="font-mono text-xs text-gray-500">{{ $k['kode'] }}</span>
-                                <span class="block font-medium">{{ $k['nama'] }}</span>
+                                <span class="font-mono text-xs text-gray-500">{{ $k->kode }}</span>
+                                <span class="block font-medium">{{ $k->nama }}</span>
                             </span>
                         </label>
                     @endforeach
                 </div>
             @else
-                <p class="mt-4 text-sm text-gray-500">Belum ada komoditas yang terdaftar.</p>
+                <p class="mt-4 text-sm text-gray-500">Belum ada komoditas terverifikasi yang terdaftar.</p>
             @endif
             @if ($errors->has('komoditas_id'))
                 <p class="mt-2 text-xs text-red-600">{{ $errors->first('komoditas_id') }}</p>

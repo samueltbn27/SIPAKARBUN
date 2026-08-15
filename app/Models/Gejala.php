@@ -16,17 +16,19 @@ class Gejala extends Model
 {
     use HasFactory;
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_AKTIF = 'aktif';
+    public const STATUS_NONAKTIF = 'nonaktif';
+
     protected $table = 'gejala';
+
+    protected $attributes = ['status' => self::STATUS_DRAFT];
 
     protected $fillable = [
         'kode',
         'nama',
         'deskripsi',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
+        'status',
     ];
 
     public function aturanCf(): HasMany
@@ -35,10 +37,20 @@ class Gejala extends Model
     }
 
     /**
-     * Scope: hanya gejala berstatus aktif/published.
+     * Scope: hanya gejala berstatus aktif/terpublikasi.
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', self::STATUS_AKTIF);
+    }
+
+    public function scopeDraftSaja(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    public function scopeNonaktifSaja(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_NONAKTIF);
     }
 }

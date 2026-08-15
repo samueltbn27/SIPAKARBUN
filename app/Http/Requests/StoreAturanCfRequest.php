@@ -26,7 +26,7 @@ class StoreAturanCfRequest extends FormRequest
             // migration aturan_cf. Sesuaikan kalau pakar/pembimbing
             // menetapkan rentang berbeda (mis. 0 s.d 1 saja).
             'cf_pakar' => ['required', 'numeric', 'between:-1,1'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
 
@@ -36,13 +36,14 @@ class StoreAturanCfRequest extends FormRequest
             'penyakit_id.exists' => 'Penyakit yang dipilih tidak ditemukan.',
             'gejala_id.exists' => 'Gejala yang dipilih tidak ditemukan.',
             'cf_pakar.between' => 'Nilai CF pakar harus di antara -1 dan 1.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 
     /**
      * Validasi tambahan: cegah dua rule AKTIF untuk pasangan
      * penyakit+gejala yang sama (boleh ada riwayat versi lama yang
-     * is_active = false, tapi hanya satu yang aktif di satu waktu).
+     * nonaktif, tapi hanya satu yang aktif di satu waktu).
      * Ini sengaja tidak dipasang sebagai unique constraint di database
      * (lihat catatan versioning di migration aturan_cf), jadi
      * dicek manual di sini.
@@ -50,16 +51,16 @@ class StoreAturanCfRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $isActive = $this->boolean('is_active', true);
+            $status = $this->input('status', 'aktif');
 
-            if (!$isActive) {
+            if ($status !== 'aktif') {
                 return;
             }
 
             $sudahAda = AturanCf::query()
                 ->where('penyakit_id', $this->input('penyakit_id'))
                 ->where('gejala_id', $this->input('gejala_id'))
-                ->where('is_active', true)
+                ->where('status', 'aktif')
                 ->exists();
 
             if ($sudahAda) {

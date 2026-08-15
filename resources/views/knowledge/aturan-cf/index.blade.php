@@ -69,11 +69,7 @@
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format($aturan->cf_pakar, 3) }}</td>
                                 <td class="px-4 py-3">
-                                    @if($aturan->is_active)
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">Aktif</span>
-                                    @else
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">Nonaktif</span>
-                                    @endif
+                                    <x-knowledge.status-badge :status="$aturan->status" />
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-500">{{ $aturan->version }}</td>
                                 <td class="px-4 py-3 text-right text-sm font-medium space-x-2">

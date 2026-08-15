@@ -32,7 +32,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "penyakit"],
               "query": [
-                { "key": "aktif_saja", "value": "1", "description": "Filter hanya penyakit is_active=true" },
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya penyakit berstatus aktif (status=aktif)" },
                 { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" },
                 { "key": "q", "value": "", "disabled": true, "description": "Pencarian berdasarkan kode/nama" }
               ]
@@ -67,7 +67,7 @@
               "name": "Sukses - daftar penyakit",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"PY-001\",\n      \"nama\": \"Karat Daun Kopi\",\n      \"deskripsi\": \"Penyakit jamur (Hemileia vastatrix) ...\",\n      \"is_active\": true,\n      \"created_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"updated_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"penyakit_komoditas\": [\n        { \"id\": 1, \"penyakit_id\": 1, \"komoditas_id\": 1 }\n      ]\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 6\n}"
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"PY-001\",\n      \"nama\": \"Karat Daun Kopi\",\n      \"deskripsi\": \"Penyakit jamur (Hemileia vastatrix) ...\",\n      \"status\": \"aktif\",\n      \"created_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"updated_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"penyakit_komoditas\": [\n        { \"id\": 1, \"penyakit_id\": 1, \"komoditas_id\": 1 }\n      ]\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 6\n}"
             }
           ]
         },
@@ -81,7 +81,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"komoditas_id\": [1, 2]\n}"
+              "raw": "{\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"status\": \"aktif\",\n  \"komoditas_id\": [1, 2]\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/admin/penyakit",
@@ -123,7 +123,7 @@
               "name": "Sukses - penyakit dibuat",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
+              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"status\": \"aktif\",\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
             },
             {
               "name": "Error - komoditas invalid (422)",
@@ -174,7 +174,7 @@
               "name": "Sukses - detail penyakit",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"solusi\": [],\n  \"aturan_cf\": [],\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
+              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"status\": \"aktif\",\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"solusi\": [],\n  \"aturan_cf\": [],\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
             }
           ]
         },
@@ -219,7 +219,7 @@
               "name": "Sukses - penyakit diupdate",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:05:00.000000Z\",\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
+              "body": "{\n  \"id\": 7,\n  \"kode\": \"PY-TEST\",\n  \"nama\": \"Penyakit Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi penyakit dari Postman\",\n  \"status\": \"aktif\",\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:05:00.000000Z\",\n  \"penyakit_komoditas\": [\n    { \"id\": 10, \"penyakit_id\": 7, \"komoditas_id\": 1 },\n    { \"id\": 11, \"penyakit_id\": 7, \"komoditas_id\": 2 }\n  ]\n}"
             }
           ]
         },
@@ -273,7 +273,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "gejala"],
               "query": [
-                { "key": "aktif_saja", "value": "1", "description": "Filter hanya gejala is_active=true" },
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya gejala berstatus aktif (status=aktif)" },
                 { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" },
                 { "key": "q", "value": "", "disabled": true, "description": "Pencarian berdasarkan kode/nama" }
               ]
@@ -302,7 +302,7 @@
               "name": "Sukses - daftar gejala",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"GJ-001\",\n      \"nama\": \"Bercak jingga di bawah permukaan daun\",\n      \"deskripsi\": null,\n      \"is_active\": true,\n      \"created_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"updated_at\": \"2026-08-12T10:00:00.000000Z\"\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 8\n}"
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"kode\": \"GJ-001\",\n      \"nama\": \"Bercak jingga di bawah permukaan daun\",\n      \"deskripsi\": null,\n      \"status\": \"aktif\",\n      \"created_at\": \"2026-08-12T10:00:00.000000Z\",\n      \"updated_at\": \"2026-08-12T10:00:00.000000Z\"\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 8\n}"
             }
           ]
         },
@@ -354,7 +354,7 @@
               "name": "Sukses - gejala dibuat",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\"\n}"
+              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"status\": \"aktif\",\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\"\n}"
             }
           ]
         },
@@ -393,7 +393,7 @@
               "name": "Sukses - detail gejala",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"is_active\": true,\n  \"aturan_cf\": []\n}"
+              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"status\": \"aktif\",\n  \"aturan_cf\": []\n}"
             }
           ]
         },
@@ -438,7 +438,7 @@
               "name": "Sukses - gejala diupdate",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:05:00.000000Z\"\n}"
+              "body": "{\n  \"id\": 9,\n  \"kode\": \"GJ-TEST\",\n  \"nama\": \"Gejala Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi gejala dari Postman\",\n  \"status\": \"aktif\",\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:05:00.000000Z\"\n}"
             }
           ]
         },
@@ -493,7 +493,7 @@
               "path": ["api", "admin", "solusi"],
               "query": [
                 { "key": "penyakit_id", "value": "{{penyakit_id}}", "description": "Filter solusi berdasarkan penyakit" },
-                { "key": "aktif_saja", "value": "1", "description": "Filter hanya solusi is_active=true" },
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya solusi berstatus aktif (status=aktif)" },
                 { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" }
               ]
             },
@@ -521,7 +521,7 @@
               "name": "Sukses - daftar solusi",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"penyakit_id\": 1,\n      \"judul\": \"Pangkas & musnahkan daun terinfeksi\",\n      \"deskripsi\": \"Pangkas daun yang menunjukkan gejala...\",\n      \"is_active\": true,\n      \"penyakit\": {\n        \"id\": 1,\n        \"kode\": \"PY-001\",\n        \"nama\": \"Karat Daun Kopi\"\n      }\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 7\n}"
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"penyakit_id\": 1,\n      \"judul\": \"Pangkas & musnahkan daun terinfeksi\",\n      \"deskripsi\": \"Pangkas daun yang menunjukkan gejala...\",\n      \"status\": \"aktif\",\n      \"penyakit\": {\n        \"id\": 1,\n        \"kode\": \"PY-001\",\n        \"nama\": \"Karat Daun Kopi\"\n      }\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 7\n}"
             }
           ]
         },
@@ -573,7 +573,7 @@
               "name": "Sukses - solusi dibuat",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"is_active\": true,\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
+              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"status\": \"aktif\",\n  \"created_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"updated_at\": \"2026-08-14T09:00:00.000000Z\",\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
             }
           ]
         },
@@ -613,7 +613,7 @@
               "name": "Sukses - detail solusi",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"is_active\": true,\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
+              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"status\": \"aktif\",\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
             }
           ]
         },
@@ -658,7 +658,7 @@
               "name": "Sukses - solusi diupdate",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"is_active\": true,\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
+              "body": "{\n  \"id\": 8,\n  \"penyakit_id\": 7,\n  \"judul\": \"Solusi Uji Coba Postman (revisi)\",\n  \"deskripsi\": \"Deskripsi solusi dari Postman\",\n  \"status\": \"aktif\",\n  \"penyakit\": {\n    \"id\": 7,\n    \"kode\": \"PY-TEST\",\n    \"nama\": \"Penyakit Uji Coba Postman (revisi)\"\n  }\n}"
             }
           ]
         },
@@ -713,7 +713,7 @@
               "path": ["api", "admin", "aturan-cf"],
               "query": [
                 { "key": "penyakit_id", "value": "{{penyakit_id}}", "description": "Filter rule berdasarkan penyakit" },
-                { "key": "aktif_saja", "value": "1", "description": "Filter hanya rule is_active=true" },
+                { "key": "aktif_saja", "value": "1", "description": "Filter hanya rule berstatus aktif (status=aktif)" },
                 { "key": "per_page", "value": "15", "description": "Jumlah data per halaman (max 100)" }
               ]
             },
@@ -741,7 +741,7 @@
               "name": "Sukses - daftar aturan CF",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"penyakit_id\": 1,\n      \"gejala_id\": 1,\n      \"cf_pakar\": \"0.900\",\n      \"is_active\": true,\n      \"version\": 1,\n      \"created_by\": null,\n      \"updated_by\": null,\n      \"penyakit\": { \"id\": 1, \"kode\": \"PY-001\", \"nama\": \"Karat Daun Kopi\" },\n      \"gejala\": { \"id\": 1, \"kode\": \"GJ-001\", \"nama\": \"Bercak jingga di bawah permukaan daun\" }\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 13\n}"
+              "body": "{\n  \"current_page\": 1,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"penyakit_id\": 1,\n      \"gejala_id\": 1,\n      \"cf_pakar\": \"0.900\",\n      \"status\": \"aktif\",\n      \"version\": 1,\n      \"created_by\": null,\n      \"updated_by\": null,\n      \"penyakit\": { \"id\": 1, \"kode\": \"PY-001\", \"nama\": \"Karat Daun Kopi\" },\n      \"gejala\": { \"id\": 1, \"kode\": \"GJ-001\", \"nama\": \"Bercak jingga di bawah permukaan daun\" }\n    }\n  ],\n  \"per_page\": 15,\n  \"total\": 13\n}"
             }
           ]
         },
@@ -793,7 +793,7 @@
               "name": "Sukses - rule CF dibuat",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"is_active\": true,\n  \"version\": 1,\n  \"created_by\": null,\n  \"updated_by\": null,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
+              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"status\": \"aktif\",\n  \"version\": 1,\n  \"created_by\": null,\n  \"updated_by\": null,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
             },
             {
               "name": "Error - duplikat rule aktif (422)",
@@ -846,7 +846,7 @@
               "name": "Sukses - detail aturan CF",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"is_active\": true,\n  \"version\": 1,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
+              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"status\": \"aktif\",\n  \"version\": 1,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
             }
           ]
         },
@@ -860,14 +860,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"is_active\": false\n}"
+              "raw": "{\n  \"status\": \"nonaktif\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/admin/aturan-cf/{{aturan_cf_id}}",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "aturan-cf", "{{aturan_cf_id}}"]
             },
-            "description": "Memperbarui rule CF. Contoh ini menonaktifkan rule (is_active=false) supaya rule baru bisa dibuat untuk pasangan penyakit+gejala yang sama."
+            "description": "Memperbarui rule CF. Contoh ini mengubah rule menjadi nonaktif (status=nonaktif) supaya rule baru bisa dibuat untuk pasangan penyakit+gejala yang sama."
           },
           "event": [
             {
@@ -878,9 +878,9 @@
                   "pm.test('Status 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('is_active menjadi false', function () {",
+                  "pm.test('status menjadi nonaktif', function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.is_active).to.be.false;",
+                  "    pm.expect(jsonData.status).to.eq('nonaktif');",
                   "});"
                 ]
               }
@@ -891,7 +891,7 @@
               "name": "Sukses - rule CF dinonaktifkan",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"is_active\": false,\n  \"version\": 1,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
+              "body": "{\n  \"id\": 14,\n  \"penyakit_id\": 7,\n  \"gejala_id\": 9,\n  \"cf_pakar\": \"0.850\",\n  \"status\": \"nonaktif\",\n  \"version\": 1,\n  \"penyakit\": { \"id\": 7, \"kode\": \"PY-TEST\", \"nama\": \"Penyakit Uji Coba Postman (revisi)\" },\n  \"gejala\": { \"id\": 9, \"kode\": \"GJ-TEST\", \"nama\": \"Gejala Uji Coba Postman (revisi)\" }\n}"
             }
           ]
         },
@@ -939,7 +939,7 @@
     },
     {
       "name": "Kontrak Publik (Mahasiswa 2)",
-      "description": "Endpoint publik yang dikonsumsi sistem Mahasiswa 2 (server-to-server). Hanya butuh auth:sanctum, tanpa role admin/pakar. Hanya menampilkan data is_active=true.",
+      "description": "Endpoint publik yang dikonsumsi sistem Mahasiswa 2 (server-to-server). Hanya butuh auth:sanctum, tanpa role admin/pakar. Hanya menampilkan data berstatus aktif (status=aktif).",
       "item": [
         {
           "name": "GET /api/penyakit (kontrak M2)",

@@ -37,7 +37,7 @@
                 </thead>
                 <tbody class="divide-y divide-[#f0f4f1] bg-white">
                     @foreach($riwayat as $log)
-                    @php($style = $actionStyles[$log->action] ?? $actionStyles['updated'])
+                    <?php $style = $actionStyles[$log->action] ?? $actionStyles['updated']; ?>
                     <tr class="hover:bg-[#f7faf8] transition-colors">
                         <td class="px-6 py-4 text-sm text-[#526159] whitespace-nowrap">{{ $log->created_at?->format('d M Y H:i') }}</td>
                         <td class="px-6 py-4 text-sm font-medium text-[#173b29] whitespace-nowrap">{{ $log->user_name ?? 'Sistem' }}</td>

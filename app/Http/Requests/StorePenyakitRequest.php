@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Contracts\KomoditasReferensiClient;
+use App\Models\RefKomoditas;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -24,15 +24,14 @@ class StorePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')],
             'nama' => ['required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
 
             // Opsional: assign komoditas terkait sekalian saat bikin penyakit.
             // komoditas_id di sini merujuk ke ref_komoditas.id (shared).
-            // Format dasarnya (integer) dicek di sini; keberadaan
-            // ASLI-nya (apakah id itu benar ada & aktif di referensi
-            // Shared Integration) dicek di withValidator() di bawah,
-            // lewat KomoditasReferensiClient — bukan query tabel lokal,
-            // karena tabel itu bukan milik modul ini (tahap #8).
+            // Format dasarnya (integer) dicek di sini; keberadaan ASLI-nya
+            // dicek di withValidator() di bawah terhadap tabel ref_komoditas:
+            // hanya yang terverifikasi & tidak dikarantina yang lolos
+            // (M1-AC-006, INT-FR-007).
             'komoditas_id' => ['sometimes', 'array'],
             'komoditas_id.*' => ['integer', 'min:1'],
         ];
@@ -43,13 +42,14 @@ class StorePenyakitRequest extends FormRequest
         return [
             'kode.unique' => 'Kode penyakit sudah dipakai, gunakan kode lain.',
             'nama.required' => 'Nama penyakit wajib diisi.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 
     /**
      * Validasi tambahan: pastikan tiap komoditas_id yang dikirim benar
-     * ada & aktif menurut Shared Integration — bukan asal angka.
-     * Ini memenuhi DoD "data komoditas invalid tidak masuk" (tahap #1).
+     * ada & terverifikasi di ref_komoditas — bukan asal angka.
+     * Ini memenuhi M1-AC-006 "data komoditas invalid tidak masuk".
      */
     public function withValidator(Validator $validator): void
     {
@@ -60,15 +60,16 @@ class StorePenyakitRequest extends FormRequest
                 return;
             }
 
-            $client = app(KomoditasReferensiClient::class);
+            $validIds = RefKomoditas::tersedia()
+                ->whereIn('id', $komoditasIds)
+                ->pluck('id')
+                ->all();
 
             foreach ($komoditasIds as $id) {
-                $komoditas = $client->find((int) $id);
-
-                if ($komoditas === null) {
+                if (!in_array((int) $id, $validIds, true)) {
                     $validator->errors()->add(
                         'komoditas_id',
-                        "Komoditas dengan id {$id} tidak ditemukan atau tidak aktif di referensi Disbun."
+                        "Komoditas dengan id {$id} tidak ditemukan, belum terverifikasi, atau dikarantina."
                     );
                 }
             }

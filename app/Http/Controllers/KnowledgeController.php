@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Contracts\KomoditasReferensiClient;
 use App\Http\Requests\StoreAturanCfRequest;
 use App\Http\Requests\StoreGejalaRequest;
 use App\Http\Requests\StorePenyakitRequest;
@@ -16,6 +15,7 @@ use App\Models\AturanCf;
 use App\Models\Gejala;
 use App\Models\Penyakit;
 use App\Models\PenyakitKomoditas;
+use App\Models\RefKomoditas;
 use App\Models\Solusi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,23 +37,19 @@ class KnowledgeController extends Controller
             'solusi_aktif' => Solusi::aktifSaja()->count(),
         ];
 
-        // Knowledge Status
+        // Knowledge Status — workflow draft yang sebenarnya (M1-FR-008):
+        // draft / aktif / nonaktif dihitung langsung dari kolom status.
         $totalKnowledge = Penyakit::count() + Gejala::count() + AturanCf::count() + Solusi::count();
         $aktifCount = Penyakit::aktifSaja()->count() + Gejala::aktifSaja()->count() + AturanCf::aktifSaja()->count() + Solusi::aktifSaja()->count();
-        $nonaktifCount = $totalKnowledge - $aktifCount;
-        $draftThreshold = now()->subDays(7);
-        $draftCount = Penyakit::aktifSaja()->where('created_at', '>=', $draftThreshold)->count()
-            + Gejala::aktifSaja()->where('created_at', '>=', $draftThreshold)->count()
-            + AturanCf::aktifSaja()->where('created_at', '>=', $draftThreshold)->count()
-            + Solusi::aktifSaja()->where('created_at', '>=', $draftThreshold)->count();
-        $aktifFinal = $aktifCount - $draftCount;
+        $draftCount = Penyakit::draftSaja()->count() + Gejala::draftSaja()->count() + AturanCf::draftSaja()->count() + Solusi::draftSaja()->count();
+        $nonaktifCount = $totalKnowledge - $aktifCount - $draftCount;
 
         $knowledgeStatus = [
             'total' => $totalKnowledge,
-            'aktif' => $aktifFinal,
+            'aktif' => $aktifCount,
             'draft' => $draftCount,
             'nonaktif' => $nonaktifCount,
-            'aktif_pct' => $totalKnowledge > 0 ? round(($aktifFinal / $totalKnowledge) * 100) : 0,
+            'aktif_pct' => $totalKnowledge > 0 ? round(($aktifCount / $totalKnowledge) * 100) : 0,
             'draft_pct' => $totalKnowledge > 0 ? round(($draftCount / $totalKnowledge) * 100) : 0,
             'nonaktif_pct' => $totalKnowledge > 0 ? round(($nonaktifCount / $totalKnowledge) * 100) : 0,
         ];
@@ -103,21 +99,20 @@ class KnowledgeController extends Controller
         return view('knowledge.dashboard', compact('stats', 'recentChanges', 'knowledgeStatus'));
     }
 
-    public function komoditasIndex(Request $request, KomoditasReferensiClient $client): View
+    public function komoditasIndex(Request $request): View
     {
-        try {
-            $komoditas = collect($client->all())->map(fn ($item) => is_object($item) ? (array) $item : $item);
-        } catch (\Throwable $exception) {
-            report($exception);
-            $komoditas = collect();
-        }
+        $komoditas = RefKomoditas::query()
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $q->where(fn ($q2) => $q2
+                    ->where('kode', 'like', "%{$request->q}%")
+                    ->orWhere('nama', 'like', "%{$request->q}%"));
+            })
+            ->when($request->status === 'tersedia', fn ($q) => $q->tersedia())
+            ->when($request->status === 'quarantined', fn ($q) => $q->quarantined())
+            ->orderBy('nama')
+            ->get();
 
-        $totalKomoditas = $komoditas->count();
-
-        if ($request->filled('q')) {
-            $q = mb_strtolower(trim((string) $request->q));
-            $komoditas = $komoditas->filter(fn ($row) => str_contains(mb_strtolower(($row['kode'] ?? '') . ' ' . ($row['nama'] ?? '')), $q))->values();
-        }
+        $totalKomoditas = RefKomoditas::count();
 
         $komoditasDipakai = PenyakitKomoditas::selectRaw('komoditas_id, COUNT(*) as jumlah')
             ->groupBy('komoditas_id')
@@ -130,7 +125,7 @@ class KnowledgeController extends Controller
     private function hitungKomoditas(): int
     {
         try {
-            return count(app(KomoditasReferensiClient::class)->all());
+            return RefKomoditas::tersedia()->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -152,9 +147,9 @@ class KnowledgeController extends Controller
         return view('knowledge.penyakit.index', compact('penyakit'));
     }
 
-    public function penyakitCreate(KomoditasReferensiClient $client): View
+    public function penyakitCreate(): View
     {
-        $komoditas = $client->all();
+        $komoditas = RefKomoditas::tersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
         return view('knowledge.penyakit.create', compact('komoditas'));
     }
 
@@ -163,6 +158,10 @@ class KnowledgeController extends Controller
         $data = $request->validated();
         $komoditasIds = $data['komoditas_id'] ?? [];
         unset($data['komoditas_id']);
+
+        // Knowledge baru default DRAFT — harus dipublikasikan lewat
+        // halaman Publikasi sebelum dipakai diagnosis (M1-FR-008).
+        $data['status'] = $data['status'] ?? Penyakit::STATUS_DRAFT;
 
         $penyakit = Penyakit::create($data);
 
@@ -178,9 +177,9 @@ class KnowledgeController extends Controller
         return redirect()->route('knowledge.penyakit.index')->with('success', 'Penyakit berhasil dibuat.');
     }
 
-    public function penyakitEdit(Penyakit $penyakit, KomoditasReferensiClient $client): View
+    public function penyakitEdit(Penyakit $penyakit): View
     {
-        $komoditas = $client->all();
+        $komoditas = RefKomoditas::tersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $selectedKomoditas = $penyakit->penyakitKomoditas->pluck('komoditas_id')->toArray();
         return view('knowledge.penyakit.edit', compact('penyakit', 'komoditas', 'selectedKomoditas'));
     }
@@ -242,7 +241,10 @@ class KnowledgeController extends Controller
 
     public function gejalaStore(StoreGejalaRequest $request): RedirectResponse
     {
-        $gejala = Gejala::create($request->validated());
+        $data = $request->validated();
+        $data['status'] = $data['status'] ?? Gejala::STATUS_DRAFT;
+
+        $gejala = Gejala::create($data);
 
         ActivityLog::record('Gejala', 'created', $gejala->nama, $gejala->id, "Menambahkan Gejala \"{$gejala->nama}\"");
 
@@ -301,6 +303,7 @@ class KnowledgeController extends Controller
         $data = $request->validated();
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
+        $data['status'] = $data['status'] ?? AturanCf::STATUS_DRAFT;
 
         $aturan = AturanCf::create($data);
 
@@ -389,7 +392,10 @@ class KnowledgeController extends Controller
 
     public function solusiStore(StoreSolusiRequest $request): RedirectResponse
     {
-        $solusi = Solusi::create($request->validated());
+        $data = $request->validated();
+        $data['status'] = $data['status'] ?? Solusi::STATUS_DRAFT;
+
+        $solusi = Solusi::create($data);
 
         ActivityLog::record('Solusi', 'created', $solusi->judul, $solusi->id, "Menambahkan Solusi \"{$solusi->judul}\"");
 
@@ -424,12 +430,30 @@ class KnowledgeController extends Controller
 
     public function publikasiIndex(): View
     {
-        $penyakitNonaktif = Penyakit::where('is_active', false)->withCount('aturanCf')->latest()->get();
-        $gejalaNonaktif = Gejala::where('is_active', false)->latest()->get();
-        $aturanCfNonaktif = AturanCf::where('is_active', false)->with(['penyakit', 'gejala'])->latest()->get();
-        $solusiNonaktif = Solusi::where('is_active', false)->with('penyakit')->latest()->get();
+        // Item yang menunggu tindakan publikasi: draft & nonaktif.
+        // Draft -> Publish (aktif); Nonaktif -> Aktifkan kembali;
+        // Aktif -> Nonaktifkan / kembalikan ke Draft (dari daftar aktif).
+        $penyakitDraft = Penyakit::draftSaja()->withCount('aturanCf')->orderBy('nama')->get();
+        $gejalaDraft = Gejala::draftSaja()->orderBy('nama')->get();
+        $aturanCfDraft = AturanCf::draftSaja()->with(['penyakit', 'gejala'])->latest()->get();
+        $solusiDraft = Solusi::draftSaja()->with('penyakit')->orderBy('judul')->get();
 
-        return view('knowledge.publikasi.index', compact('penyakitNonaktif', 'gejalaNonaktif', 'aturanCfNonaktif', 'solusiNonaktif'));
+        $penyakitNonaktif = Penyakit::nonaktifSaja()->withCount('aturanCf')->orderBy('nama')->get();
+        $gejalaNonaktif = Gejala::nonaktifSaja()->orderBy('nama')->get();
+        $aturanCfNonaktif = AturanCf::nonaktifSaja()->with(['penyakit', 'gejala'])->latest()->get();
+        $solusiNonaktif = Solusi::nonaktifSaja()->with('penyakit')->orderBy('judul')->get();
+
+        $statistik = [
+            'draft' => $penyakitDraft->count() + $gejalaDraft->count() + $aturanCfDraft->count() + $solusiDraft->count(),
+            'aktif' => Penyakit::aktifSaja()->count() + Gejala::aktifSaja()->count() + AturanCf::aktifSaja()->count() + Solusi::aktifSaja()->count(),
+            'nonaktif' => $penyakitNonaktif->count() + $gejalaNonaktif->count() + $aturanCfNonaktif->count() + $solusiNonaktif->count(),
+        ];
+
+        return view('knowledge.publikasi.index', compact(
+            'penyakitDraft', 'gejalaDraft', 'aturanCfDraft', 'solusiDraft',
+            'penyakitNonaktif', 'gejalaNonaktif', 'aturanCfNonaktif', 'solusiNonaktif',
+            'statistik',
+        ));
     }
 
     public function publikasiToggle(Request $request): RedirectResponse
@@ -437,21 +461,32 @@ class KnowledgeController extends Controller
         $request->validate([
             'model' => ['required', 'in:Penyakit,Gejala,AturanCf,Solusi'],
             'id' => ['required', 'integer'],
-            'is_active' => ['required', 'boolean'],
+            'status' => ['required', 'in:draft,aktif,nonaktif'],
         ]);
 
         $modelClass = 'App\\Models\\' . $request->model;
         $record = $modelClass::findOrFail($request->id);
 
         $entityName = $record->nama ?? $record->judul ?? '—';
-        $record->update(['is_active' => $request->boolean('is_active')]);
+        $record->update(['status' => $request->status]);
 
-        $status = $request->boolean('is_active') ? 'diaktifkan' : 'dinonaktifkan';
-        $action = $request->boolean('is_active') ? 'activated' : 'deactivated';
+        $labelStatus = ['draft' => 'Draft', 'aktif' => 'Aktif', 'nonaktif' => 'Nonaktif'];
+        $action = match ($request->status) {
+            'aktif' => 'activated',
+            'nonaktif' => 'deactivated',
+            default => 'updated',
+        };
 
-        ActivityLog::record($request->model, $action, $entityName, $record->id, "Mengubah status {$request->model} \"{$entityName}\" menjadi " . ($request->boolean('is_active') ? 'Aktif' : 'Nonaktif'));
+        ActivityLog::record(
+            $request->model,
+            $action,
+            $entityName,
+            $record->id,
+            "Mengubah status {$request->model} \"{$entityName}\" menjadi {$labelStatus[$request->status]}"
+        );
 
-        return back()->with('success', "{$request->model} berhasil {$status}.");
+        $kata = $request->status === 'aktif' ? 'dipublikasikan' : "diubah menjadi {$labelStatus[$request->status]}";
+        return back()->with('success', "{$request->model} \"{$entityName}\" berhasil {$kata}.");
     }
 
     public function riwayatIndex(): View

@@ -54,12 +54,7 @@
                     @enderror
                 </div>
 
-                <div class="flex items-center">
-                    <input type="checkbox" id="is_active" name="is_active" value="1"
-                           class="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                           @checked(old('is_active', $aturanCf->is_active) == 1)>
-                    <label for="is_active" class="ml-2 text-sm font-medium text-gray-700">Aktif</label>
-                </div>
+                <x-knowledge.status-select name="status" :value="$aturanCf->status" />
 
                 <div class="flex items-center gap-3 pt-2">
                     <button type="submit"

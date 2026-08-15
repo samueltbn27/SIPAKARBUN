@@ -20,7 +20,7 @@ class UpdateAturanCfRequest extends FormRequest
             'penyakit_id' => ['sometimes', 'required', 'integer', 'exists:penyakit,id'],
             'gejala_id' => ['sometimes', 'required', 'integer', 'exists:gejala,id'],
             'cf_pakar' => ['sometimes', 'required', 'numeric', 'between:-1,1'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
 
@@ -30,6 +30,7 @@ class UpdateAturanCfRequest extends FormRequest
             'penyakit_id.exists' => 'Penyakit yang dipilih tidak ditemukan.',
             'gejala_id.exists' => 'Gejala yang dipilih tidak ditemukan.',
             'cf_pakar.between' => 'Nilai CF pakar harus di antara -1 dan 1.',
+            'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }
 
@@ -46,16 +47,16 @@ class UpdateAturanCfRequest extends FormRequest
 
             $penyakitId = $this->input('penyakit_id', is_object($current) ? $current->penyakit_id : null);
             $gejalaId = $this->input('gejala_id', is_object($current) ? $current->gejala_id : null);
-            $isActive = $this->boolean('is_active', is_object($current) ? (bool) $current->is_active : true);
+            $status = $this->input('status', is_object($current) ? $current->status : 'aktif');
 
-            if (!$isActive || !$penyakitId || !$gejalaId) {
+            if ($status !== 'aktif' || !$penyakitId || !$gejalaId) {
                 return;
             }
 
             $sudahAda = AturanCf::query()
                 ->where('penyakit_id', $penyakitId)
                 ->where('gejala_id', $gejalaId)
-                ->where('is_active', true)
+                ->where('status', 'aktif')
                 ->when($currentId, fn ($q) => $q->where('id', '!=', $currentId))
                 ->exists();
 

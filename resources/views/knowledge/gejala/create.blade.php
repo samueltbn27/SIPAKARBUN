@@ -40,11 +40,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', 1) ? 'checked' : '' }} class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
-                <label for="is_active" class="text-sm text-gray-700">Aktif</label>
-                @error('is_active')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
+                <x-knowledge.status-select name="status" default="draft" />
             </div>
 
             <div class="flex items-center gap-3 border-t border-gray-100 pt-5">

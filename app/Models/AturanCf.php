@@ -24,13 +24,19 @@ class AturanCf extends Model
 {
     use HasFactory;
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_AKTIF = 'aktif';
+    public const STATUS_NONAKTIF = 'nonaktif';
+
     protected $table = 'aturan_cf';
+
+    protected $attributes = ['status' => self::STATUS_DRAFT];
 
     protected $fillable = [
         'penyakit_id',
         'gejala_id',
         'cf_pakar',
-        'is_active',
+        'status',
         'version',
         'created_by',
         'updated_by',
@@ -38,7 +44,6 @@ class AturanCf extends Model
 
     protected $casts = [
         'cf_pakar' => 'decimal:3',
-        'is_active' => 'boolean',
         'version' => 'integer',
     ];
 
@@ -58,6 +63,16 @@ class AturanCf extends Model
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', self::STATUS_AKTIF);
+    }
+
+    public function scopeDraftSaja(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    public function scopeNonaktifSaja(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_NONAKTIF);
     }
 }
