@@ -3,7 +3,7 @@
     $isActive = fn($match) => $match !== '' && $currentRoute && str_starts_with($currentRoute, $match);
     $userName = auth()->user()?->name ?? 'Admin KM';
     $userRole = auth()->user()?->roles->first()?->name ?? 'user';
-    $roleLabels = ['admin' => 'Admin Sistem', 'operator_uptd' => 'Operator UPTD', 'popt' => 'POPT', 'pakar' => 'Knowledge Manager'];
+    $roleLabels = ['admin' => 'Admin Sistem', 'operator_uptd' => 'Operator UPTD', 'popt' => 'POPT', 'pakar' => 'Knowledge Manager', 'pimpinan' => 'Pimpinan'];
     $roleLabel = $roleLabels[$userRole] ?? ucfirst($userRole);
     $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($userName), 2))));
     $pendingUsers = $userRole === 'admin' ? \App\Models\User::where('is_active', false)->count() : 0;
@@ -15,6 +15,15 @@
             ],
         ],
     ];
+
+    if (auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan'])) {
+        $navSections[0]['items'][] = [
+            'route' => 'webgis.index',
+            'label' => 'WebGIS',
+            'icon' => 'M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Zm0-7a3 3 0 100-6 3 3 0 000 6Z',
+            'match' => 'webgis',
+        ];
+    }
 
     // Master Data hanya untuk non-admin (pakar, operator, popt)
     if ($userRole !== 'admin') {

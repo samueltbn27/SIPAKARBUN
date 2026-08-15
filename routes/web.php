@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KnowledgeController;
+use App\Http\Controllers\WebGISController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
@@ -12,6 +13,10 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::middleware(['auth', 'role:admin|operator_uptd|popt|pimpinan'])->group(function (): void {
+    Route::get('/webgis', [WebGISController::class, 'index'])->name('webgis.index');
+});
 
 Route::middleware(['auth', 'role:admin|pakar|operator_uptd|popt'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
     Route::get('/', [KnowledgeController::class, 'dashboard'])->name('dashboard');
