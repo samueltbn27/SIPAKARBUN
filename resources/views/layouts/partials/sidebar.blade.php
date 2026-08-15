@@ -25,6 +25,15 @@
         ];
     }
 
+    if (auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'pimpinan'])) {
+        $navSections[0]['items'][] = [
+            'route' => 'monitoring.dashboard',
+            'label' => 'Dashboard Monitoring',
+            'icon' => 'M3 13.5 8.25 8.25l3.75 3.75L21 3m0 0v6m0-6h-6M4 20h16',
+            'match' => 'monitoring.dashboard',
+        ];
+    }
+
     // Master Data hanya untuk non-admin (pakar, operator, popt)
     if ($userRole !== 'admin') {
         $navSections[] = [

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KnowledgeController;
+use App\Http\Controllers\MonitoringDashboardController;
 use App\Http\Controllers\WebGISController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 Route::middleware(['auth', 'role:admin|operator_uptd|popt|pimpinan'])->group(function (): void {
     Route::get('/webgis', [WebGISController::class, 'index'])->name('webgis.index');
+});
+
+Route::middleware(['auth', 'role:admin|operator_uptd|pimpinan'])->group(function (): void {
+    Route::get('/dashboard-monitoring', [MonitoringDashboardController::class, 'index'])->name('monitoring.dashboard');
 });
 
 Route::middleware(['auth', 'role:admin|pakar|operator_uptd|popt'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
