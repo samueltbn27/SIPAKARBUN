@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * nama gejala pada saat diagnosis berlangsung agar riwayat tetap utuh walau
  * data knowledge berubah.
  *
+ * `cf_user` = tingkat keyakinan user atas gejala (0.0–1.0, default 1.0),
+ * dipakai menghitung CF_gejala = CF_user × CF_pakar (kontrak M2 §6).
+ *
  * Baris bersifat append-only: hanya ada created_at, tidak ada updated_at.
  */
 class DiagnosisSymptom extends Model
@@ -31,10 +34,12 @@ class DiagnosisSymptom extends Model
         'diagnosis_id',
         'symptom_id',
         'symptom_name_snapshot',
+        'cf_user',
     ];
 
     protected $casts = [
         'symptom_id' => 'integer',
+        'cf_user' => 'float',
     ];
 
     public function diagnosis(): BelongsTo

@@ -17,7 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * data knowledge berubah.
  *
  * `cf_value` = hasil kombinasi CF mesin diagnosis; `ranking` = peringkat
- * (1 = keyakinan tertinggi). Baris append-only: hanya created_at.
+ * (1 = keyakinan tertinggi). `trace_snapshot` = breakdown per-rule yang
+ * menjadi input perhitungan (gejala_id, nama, cf_user, cf_pakar,
+ * cf_gejala) agar nilai CF dapat ditelusuri (kontrak M2 §6).
+ *
+ * Baris append-only: hanya created_at.
  */
 class DiagnosisResult extends Model
 {
@@ -32,6 +36,7 @@ class DiagnosisResult extends Model
         'disease_id',
         'disease_name_snapshot',
         'solution_snapshot',
+        'trace_snapshot',
         'cf_value',
         'ranking',
     ];
@@ -41,6 +46,7 @@ class DiagnosisResult extends Model
         'cf_value' => 'decimal:3',
         'ranking' => 'integer',
         'solution_snapshot' => 'array',
+        'trace_snapshot' => 'array',
     ];
 
     public function diagnosis(): BelongsTo

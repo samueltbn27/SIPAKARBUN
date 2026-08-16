@@ -19,8 +19,8 @@ use Tests\Traits\CreatesUsersWithRoles;
  */
 class KnowledgeApiContractTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_butuh_login_tapi_tidak_perlu_role_admin_pakar(): void
     {

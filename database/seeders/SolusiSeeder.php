@@ -27,7 +27,7 @@ class SolusiSeeder extends Seeder
         foreach ($data as [$kodePenyakit, $judul, $deskripsi]) {
             $penyakit = Penyakit::where('kode', $kodePenyakit)->first();
 
-            if (!$penyakit) {
+            if (! $penyakit) {
                 continue;
             }
 

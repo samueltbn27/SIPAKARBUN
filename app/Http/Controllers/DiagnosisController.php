@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\KnowledgeApiException;
 use App\Http\Requests\StoreDiagnosisRequest;
 use App\Http\Resources\DiagnosisResource;
 use App\Models\Diagnosis;
 use App\Services\DiagnosisService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Endpoint Diagnosis Mahasiswa 2 (tahap #7).
@@ -28,6 +31,10 @@ use Illuminate\Support\Facades\DB;
  *
  * Transaction menjamin atomicity: kalau penyimpanan gagal di tengah
  * jalan, tidak ada sebagian data diagnosis yang tertinggal di DB.
+ *
+ * Tahap #12 (keamanan): semua kegagalan layer eksternal, database, dan
+ * runtime dibungkus try/catch. Error tidak pernah bocor ke client;
+ * user selalu mendapat response JSON yang wajar.
  */
 class DiagnosisController extends Controller
 {
@@ -37,13 +44,34 @@ class DiagnosisController extends Controller
     {
         $user = $request->user();
 
-        $results = DB::transaction(
-            fn () => $this->diagnosisService->diagnose(
-                commodityId: (int) $request->validated('commodity_id'),
-                symptomIds: $request->validated('symptom_ids'),
-                userId: $user?->id,
-            )
-        );
+        try {
+            $results = DB::transaction(
+                fn () => $this->diagnosisService->diagnose(
+                    commodityId: (int) $request->validated('commodity_id'),
+                    symptomIds: $request->validated('symptom_ids'),
+                    userId: $user?->id,
+                    cfUser: $request->validated('symptom_confidence', []),
+                )
+            );
+        } catch (KnowledgeApiException $e) {
+            Log::error('Knowledge API gagal saat menjalankan diagnosis.', [
+                'user_id' => $user?->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Basis pengetahuan / referensi komoditas sedang tidak tersedia. Silakan coba lagi.',
+            ], 502);
+        } catch (Throwable $e) {
+            Log::error('Kegagalan tidak terduga saat diagnosis.', [
+                'user_id' => $user?->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menjalankan diagnosis. Silakan coba lagi.',
+            ], 500);
+        }
 
         $first = $results->first();
         $diagnosisId = $first['diagnosis_id'] ?? null;
@@ -59,6 +87,11 @@ class DiagnosisController extends Controller
         }
 
         $model = Diagnosis::with(['symptoms', 'results'])->findOrFail($diagnosisId);
+
+        Log::info('Diagnosis selesai dijalankan.', [
+            'user_id' => $user?->id,
+            'diagnosis_id' => $diagnosisId,
+        ]);
 
         return (new DiagnosisResource($model))->response($request)->setStatusCode(201);
     }

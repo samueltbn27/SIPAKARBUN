@@ -8,6 +8,7 @@
 /storage/framework/sessions/*
 /storage/framework/views/*
 /database/*.sqlite
+/public/storage
 /.idea
 /.vscode
 *.log

@@ -12,7 +12,7 @@ class PenyakitFactory extends Factory
     public function definition(): array
     {
         return [
-            'kode' => 'PY-' . $this->faker->unique()->numberBetween(100, 999),
+            'kode' => 'PY-'.$this->faker->unique()->numberBetween(100, 999),
             'nama' => ucfirst($this->faker->words(3, true)),
             'deskripsi' => $this->faker->sentence(),
             'is_active' => true,

@@ -12,7 +12,7 @@ class GejalaFactory extends Factory
     public function definition(): array
     {
         return [
-            'kode' => 'GJ-' . $this->faker->unique()->numberBetween(100, 999),
+            'kode' => 'GJ-'.$this->faker->unique()->numberBetween(100, 999),
             'nama' => ucfirst($this->faker->words(4, true)),
             'deskripsi' => $this->faker->sentence(),
             'is_active' => true,

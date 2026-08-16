@@ -12,8 +12,8 @@ use Tests\Traits\CreatesUsersWithRoles;
 
 class AturanCfCrudTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_bisa_membuat_rule_cf_baru(): void
     {

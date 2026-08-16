@@ -48,7 +48,7 @@ class UpdateAturanCfRequest extends FormRequest
             $gejalaId = $this->input('gejala_id', is_object($current) ? $current->gejala_id : null);
             $isActive = $this->boolean('is_active', is_object($current) ? (bool) $current->is_active : true);
 
-            if (!$isActive || !$penyakitId || !$gejalaId) {
+            if (! $isActive || ! $penyakitId || ! $gejalaId) {
                 return;
             }
 

@@ -10,8 +10,8 @@ use Tests\Traits\CreatesUsersWithRoles;
 
 class GejalaCrudTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_tamu_tanpa_login_ditolak(): void
     {

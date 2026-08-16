@@ -11,8 +11,8 @@ use Tests\Traits\CreatesUsersWithRoles;
 
 class SolusiCrudTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_bisa_membuat_solusi_untuk_penyakit_yang_ada(): void
     {

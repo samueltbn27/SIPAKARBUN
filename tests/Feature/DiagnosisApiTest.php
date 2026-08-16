@@ -258,6 +258,52 @@ class DiagnosisApiTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors(['symptom_ids']);
     }
 
+    public function test_post_diagnosis_dengan_symptom_confidence_menghasilkan_trace(): void
+    {
+        $this->fakeKnowledge();
+        Sanctum::actingAs($this->createUser());
+
+        $response = $this->postJson('/api/diagnosis', [
+            'commodity_id' => 1,
+            'symptom_ids' => [1, 2, 3],
+            'symptom_confidence' => [1 => 0.5, 2 => 0.5, 3 => 0.5],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.selected_symptoms.0.symptom_id', 1)
+            ->assertJsonPath('data.selected_symptoms.0.cf_user', 0.5)
+            ->assertJsonPath('data.results.0.cf_value', 0.643)
+            ->assertJsonPath('data.results.0.trace.0.gejala_id', 1)
+            ->assertJsonPath('data.results.0.trace.0.cf_user', 0.5)
+            ->assertJsonPath('data.results.0.trace.0.cf_pakar', 0.9)
+            ->assertJsonPath('data.results.0.trace.0.cf_gejala', 0.45);
+    }
+
+    public function test_validasi_menolak_symptom_confidence_di_luar_rentang(): void
+    {
+        $this->fakeKnowledge();
+        Sanctum::actingAs($this->createUser());
+
+        $this->postJson('/api/diagnosis', [
+            'commodity_id' => 1,
+            'symptom_ids' => [1],
+            'symptom_confidence' => [1 => 1.5],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['symptom_confidence.1']);
+    }
+
+    public function test_validasi_menolak_symptom_confidence_untuk_gejala_tidak_dipilih(): void
+    {
+        $this->fakeKnowledge();
+        Sanctum::actingAs($this->createUser());
+
+        // Gejala 2 tidak masuk symptom_ids, tapi confidence diberikan.
+        $this->postJson('/api/diagnosis', [
+            'commodity_id' => 1,
+            'symptom_ids' => [1],
+            'symptom_confidence' => [2 => 1.0],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['symptom_confidence']);
+    }
+
     public function test_post_diagnosis_tanpa_penyakit_cocok_mengembalikan_empty_results(): void
     {
         Http::fake([

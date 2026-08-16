@@ -24,6 +24,8 @@ class DiagnosisResultFactory extends Factory
             'diagnosis_id' => Diagnosis::factory(),
             'disease_id' => $this->faker->unique()->numberBetween(1, 1000),
             'disease_name_snapshot' => $this->faker->words(3, true),
+            'solution_snapshot' => null,
+            'trace_snapshot' => null,
             'cf_value' => $this->faker->randomFloat(3, 0.1, 1),
             'ranking' => 1,
         ];

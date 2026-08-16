@@ -19,7 +19,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Nama gejala/penyakit memakai SNAPSHOT yang tersimpan di transaksi,
  * supaya riwayat tetap utuh walau data knowledge berubah.
  *
- * `cf_value`, `percentage`, `ranking`, `solution` tersedia per hasil.
+ * `cf_value`, `percentage`, `ranking`, `solution`, `trace` tersedia per
+ * hasil. `cf_user` tersedia per gejala terpilih, dan `trace` menyimpan
+ * breakdown per-rule (cf_user × cf_pakar = cf_gejala) agar nilai CF dapat
+ * ditelusuri.
  */
 class DiagnosisResource extends JsonResource
 {
@@ -37,6 +40,7 @@ class DiagnosisResource extends JsonResource
             'selected_symptoms' => $this->symptoms->map(fn ($symptom) => [
                 'symptom_id' => $symptom->symptom_id,
                 'symptom_name' => $symptom->symptom_name_snapshot,
+                'cf_user' => (float) $symptom->cf_user,
             ])->values(),
             'status' => $this->status,
             'created_at' => $this->created_at?->toIso8601String(),
@@ -47,6 +51,7 @@ class DiagnosisResource extends JsonResource
                 'percentage' => round(max(0.0, (float) $result->cf_value * 100), 2),
                 'ranking' => $result->ranking,
                 'solution' => $result->solution_snapshot ?? [],
+                'trace' => $result->trace_snapshot ?? [],
             ])->values(),
         ];
     }

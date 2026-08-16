@@ -52,7 +52,7 @@ class StoreAturanCfRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             $isActive = $this->boolean('is_active', true);
 
-            if (!$isActive) {
+            if (! $isActive) {
                 return;
             }
 

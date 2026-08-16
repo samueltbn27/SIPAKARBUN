@@ -170,4 +170,74 @@ class DiagnosisServiceTest extends TestCase
 
         Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'komoditas_id=7'));
     }
+
+    public function test_cf_user_mengubah_hasil_dan_tersimpan_sebagai_snapshot(): void
+    {
+        $this->fakeKnowledge();
+        $user = User::factory()->create();
+
+        // cf_user 0.5 untuk SEMUA gejala.
+        // Penyakit 1: cf_gejala = [0.5*0.9=0.45, 0.5*0.7=0.35]
+        //   -> 0.45 + 0.35*0.55 = 0.6425 -> final 0.643.
+        // Penyakit 2: cf_gejala = 0.5*0.8 = 0.4 -> final 0.4.
+        $result = app(DiagnosisService::class)->diagnose(1, [1, 2, 3], $user->id, [1 => 0.5, 2 => 0.5, 3 => 0.5]);
+
+        $first = $result->first();
+        $this->assertSame(0.643, $first['final_cf']);
+        $this->assertSame(64.3, $first['percentage']);
+        $this->assertSame('Karat Daun Kopi', $first['disease_name']);
+
+        // Trace per-rule tersedia (traceable).
+        $this->assertSame(0.5, $first['trace'][0]['cf_user']);
+        $this->assertSame(0.9, $first['trace'][0]['cf_pakar']);
+        $this->assertSame(0.45, $first['trace'][0]['cf_gejala']);
+        $this->assertSame(0.5, $first['trace'][1]['cf_user']);
+        $this->assertSame(0.35, $first['trace'][1]['cf_gejala']);
+
+        // cf_user tersimpan di diagnosis_symptoms.
+        $this->assertDatabaseHas('diagnosis_symptoms', [
+            'diagnosis_id' => $result->first()['diagnosis_id'],
+            'symptom_id' => 1,
+            'cf_user' => 0.5,
+        ]);
+
+        // trace_snapshot tersimpan di diagnosis_results (ranking 1).
+        $stored = DiagnosisResult::where('ranking', 1)->first();
+        $this->assertSame(0.5, $stored->trace_snapshot[0]['cf_user']);
+        $this->assertSame(0.45, $stored->trace_snapshot[0]['cf_gejala']);
+    }
+
+    public function test_cf_user_sebagian_default_satu_untuk_gejala_tanpa_kunci(): void
+    {
+        $this->fakeKnowledge();
+        $user = User::factory()->create();
+
+        // Hanya gejala 1 diberi cf_user 0.5; gejala 2 default 1.0.
+        // Penyakit 1: cf_gejala = [0.5*0.9=0.45, 1.0*0.7=0.7]
+        //   -> 0.45 + 0.7*0.55 = 0.835 -> final 0.835.
+        $result = app(DiagnosisService::class)->diagnose(1, [1, 2], $user->id, [1 => 0.5]);
+
+        $this->assertSame(0.835, $result->first()['final_cf']);
+
+        $this->assertDatabaseHas('diagnosis_symptoms', [
+            'symptom_id' => 1,
+            'cf_user' => 0.5,
+        ]);
+        $this->assertDatabaseHas('diagnosis_symptoms', [
+            'symptom_id' => 2,
+            'cf_user' => 1.0,
+        ]);
+    }
+
+    public function test_cf_user_di_luar_rentang_dikunci_ke_batas(): void
+    {
+        $this->fakeKnowledge();
+        $user = User::factory()->create();
+
+        // Nilai > 1 dikunci 1.0, negatif dikunci 0.0 di layer service.
+        $result = app(DiagnosisService::class)->diagnose(1, [1], $user->id, [1 => 5.0]);
+
+        $this->assertSame(0.9, $result->first()['final_cf']);
+        $this->assertDatabaseHas('diagnosis_symptoms', ['symptom_id' => 1, 'cf_user' => 1.0]);
+    }
 }

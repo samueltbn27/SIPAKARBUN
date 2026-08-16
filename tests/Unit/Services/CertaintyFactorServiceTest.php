@@ -150,4 +150,28 @@ class CertaintyFactorServiceTest extends TestCase
         $this->assertSame(0.75, $result->final_cf);
         $this->assertSame(75.0, $result->percentage);
     }
+
+    public function test_cf_gejala_adalah_perkalian_cf_user_dan_cf_pakar(): void
+    {
+        // CF_gejala = CF_user × CF_pakar (kontrak M2 §6).
+        $this->assertSame(0.5, $this->service->cfGejala(1.0, 0.5));
+        $this->assertSame(0.45, $this->service->cfGejala(0.5, 0.9));
+        $this->assertSame(0.35, $this->service->cfGejala(0.5, 0.7));
+        $this->assertSame(0.0, $this->service->cfGejala(0.0, 0.9));
+    }
+
+    public function test_kombinasi_setelah_cf_user_menerapkan_shortliffe(): void
+    {
+        // cf_user 0.5 atas gejala 1 (cf_pakar 0.9) & gejala 2 (cf_pakar 0.7):
+        // CF_gejala = [0.45, 0.35]; 0.45 + 0.35*0.55 = 0.6425 -> 0.643.
+        $cfGejala = [
+            $this->service->cfGejala(0.5, 0.9),
+            $this->service->cfGejala(0.5, 0.7),
+        ];
+
+        $result = $this->service->calculate($cfGejala);
+
+        $this->assertSame(0.643, $result->final_cf);
+        $this->assertSame(64.3, $result->percentage);
+    }
 }

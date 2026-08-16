@@ -24,6 +24,7 @@ class DiagnosisSymptomFactory extends Factory
             'diagnosis_id' => Diagnosis::factory(),
             'symptom_id' => $this->faker->unique()->numberBetween(1, 1000),
             'symptom_name_snapshot' => $this->faker->words(3, true),
+            'cf_user' => 1.0,
         ];
     }
 }
