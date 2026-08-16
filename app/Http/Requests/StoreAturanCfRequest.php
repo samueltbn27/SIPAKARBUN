@@ -10,11 +10,11 @@ class StoreAturanCfRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya Admin & Pakar (Knowledge Manager) yang boleh mengelola
+        // Hanya Admin & POPT (Knowledge Manager) yang boleh mengelola
         // basis pengetahuan — sesuai RBAC Matrix PRD §24
         // ("Penyakit & gejala": C/R/U/D untuk Knowledge Manager, admin
         // untuk Admin).
-        return $this->user()?->hasRole(['admin', 'operator_uptd', 'popt']) ?? false;
+        return $this->user()?->hasRole(['admin', 'popt']) ?? false;
     }
 
     public function rules(): array

@@ -12,12 +12,11 @@
         'activated' => ['bg' => '#e8f4ed', 'text' => '#176b45', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
         'deactivated' => ['bg' => '#f0f4f1', 'text' => '#8b9790', 'icon' => 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'],
     ];
-    $roleLabels = ['admin'=>'Admin','pakar'=>'Pakar','operator_uptd'=>'Operator UPTD','popt'=>'POPT'];
+    $roleLabels = ['admin'=>'Admin','popt'=>'POPT','operator_uptd'=>'Operator (OP)'];
     $roleData = [
         'admin' => ['label' => 'Admin', 'color' => '#7c3aed'],
-        'pakar' => ['label' => 'Pakar', 'color' => '#176b45'],
-        'operator_uptd' => ['label' => 'Operator UPTD', 'color' => '#3d6b78'],
-        'popt' => ['label' => 'POPT', 'color' => '#b8860b'],
+        'popt' => ['label' => 'POPT', 'color' => '#176b45'],
+        'operator_uptd' => ['label' => 'Operator (OP)', 'color' => '#3d6b78'],
     ];
 ?>
 <div class="max-w-[1500px] mx-auto space-y-7">

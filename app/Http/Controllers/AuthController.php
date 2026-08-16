@@ -39,11 +39,12 @@ class AuthController extends Controller
             return back()->with('error', 'Akun Anda menunggu persetujuan Admin. Silakan hubungi Admin untuk mengaktifkan akun Anda.')->withInput();
         }
 
-        // Cek role yang diizinkan
-        if (!$user->hasRole(['admin', 'pakar', 'operator_uptd', 'popt'])) {
+        // Cek role yang diizinkan: admin, POPT (pengelola knowledge),
+        // dan OP (operator — validasi pengajuan).
+        if (!$user->hasRole(['admin', 'popt', 'operator_uptd'])) {
             auth()->logout();
             $request->session()->invalidate();
-            return back()->with('error', 'Anda tidak memiliki akses ke modul Knowledge Management.');
+            return back()->with('error', 'Anda tidak memiliki akses ke sistem SIPAKARBUN.');
         }
 
         return redirect()->route('knowledge.dashboard');
@@ -62,7 +63,8 @@ class AuthController extends Controller
     {
         $roles = [
             'admin' => 'Admin',
-            'pakar' => 'Pakar (Knowledge Manager)',
+            'popt' => 'POPT (Pengamat Organisme Pengganggu Tumbuhan)',
+            'operator_uptd' => 'OP (Operator)',
         ];
 
         return view('auth.register', compact('roles'));

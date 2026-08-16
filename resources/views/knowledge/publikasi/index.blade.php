@@ -4,6 +4,7 @@
 @section('subtitle', 'Kelola workflow draft → aktif → nonaktif')
 
 @section('content')
+<?php $canManage = auth()->user()?->hasRole(['admin', 'popt']); ?>
 <?php
     // Petakan tiap entity ke baris seragam: id, nama, sub.
     $mapPenyakit = fn ($i) => ['id' => $i->id, 'nama' => $i->nama, 'sub' => $i->kode ? "Kode {$i->kode}" : null];
@@ -83,6 +84,7 @@
                                 <div class="text-sm font-semibold text-[#173b29] truncate">{{ $row['nama'] }}</div>
                                 @if ($row['sub'])<div class="text-xs text-[#9aa59e]">{{ $row['sub'] }}</div>@endif
                             </div>
+                            @if ($canManage)
                             <form method="POST" action="{{ route('knowledge.publikasi.toggle') }}" class="flex-shrink-0">
                                 @csrf
                                 <input type="hidden" name="model" value="{{ $def['model'] }}">
@@ -93,6 +95,9 @@
                                     Publish
                                 </button>
                             </form>
+                            @else
+                            <span class="flex-shrink-0 text-xs text-[#b0bab3]">Read-only</span>
+                            @endif
                         </div>
                         @endforeach
                     </div>
@@ -117,6 +122,7 @@
                                 <div class="text-sm font-semibold text-[#173b29] truncate">{{ $row['nama'] }}</div>
                                 @if ($row['sub'])<div class="text-xs text-[#9aa59e]">{{ $row['sub'] }}</div>@endif
                             </div>
+                            @if ($canManage)
                             <form method="POST" action="{{ route('knowledge.publikasi.toggle') }}" class="flex-shrink-0">
                                 @csrf
                                 <input type="hidden" name="model" value="{{ $def['model'] }}">
@@ -127,6 +133,9 @@
                                     Aktifkan Kembali
                                 </button>
                             </form>
+                            @else
+                            <span class="flex-shrink-0 text-xs text-[#b0bab3]">Read-only</span>
+                            @endif
                         </div>
                         @endforeach
                     </div>

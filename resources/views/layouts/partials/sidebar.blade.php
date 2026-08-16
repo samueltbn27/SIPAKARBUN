@@ -3,21 +3,75 @@
     $isActive = fn($match) => $match !== '' && $currentRoute && str_starts_with($currentRoute, $match);
     $userName = auth()->user()?->name ?? 'Admin KM';
     $userRole = auth()->user()?->roles->first()?->name ?? 'user';
-    $roleLabels = ['admin' => 'Admin Sistem', 'operator_uptd' => 'Operator UPTD', 'popt' => 'POPT', 'pakar' => 'Knowledge Manager'];
+    $roleLabels = ['admin' => 'Admin Sistem', 'operator_uptd' => 'Operator (OP)', 'popt' => 'POPT'];
     $roleLabel = $roleLabels[$userRole] ?? ucfirst($userRole);
     $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($userName), 2))));
     $pendingUsers = $userRole === 'admin' ? \App\Models\User::where('is_active', false)->count() : 0;
-    $navSections = [
-        [
+
+    $navSections = [];
+
+    if ($userRole === 'operator_uptd') {
+        // ==== SIDEBAR OP (Operator) ====
+        // Template visual sama dengan POPT; menu mengikuti tugas OP:
+        // validasi pengajuan kasus & monitoring. Akses ke data
+        // knowledge bersifat read-only (Referensi Knowledge).
+        $navSections[] = [
             'title' => 'Dashboard',
             'items' => [
                 ['route' => 'knowledge.dashboard', 'label' => 'Dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', 'match' => 'knowledge.dashboard'],
             ],
-        ],
-    ];
-
-    // Master Data hanya untuk non-admin (pakar, operator, popt)
-    if ($userRole !== 'admin') {
+        ];
+        $navSections[] = [
+            'title' => 'Pengajuan Kasus',
+            'items' => [
+                ['route' => 'knowledge.op.pengajuan-masuk', 'label' => 'Pengajuan Masuk', 'icon' => 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4', 'match' => 'knowledge.op.pengajuan-masuk'],
+                ['route' => 'knowledge.op.validasi', 'label' => 'Validasi Pengajuan', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'match' => 'knowledge.op.validasi'],
+                ['route' => 'knowledge.op.riwayat-pengajuan', 'label' => 'Riwayat Pengajuan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.op.riwayat-pengajuan'],
+            ],
+        ];
+        $navSections[] = [
+            'title' => 'Monitoring',
+            'items' => [
+                ['route' => 'knowledge.op.status-kasus', 'label' => 'Status Kasus', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'match' => 'knowledge.op.status-kasus'],
+            ],
+        ];
+        $navSections[] = [
+            'title' => 'Referensi Knowledge',
+            'items' => [
+                ['route' => 'knowledge.penyakit.index', 'label' => 'Penyakit (Read-only)', 'icon' => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', 'match' => 'knowledge.penyakit'],
+                ['route' => 'knowledge.gejala.index', 'label' => 'Gejala (Read-only)', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', 'match' => 'knowledge.gejala'],
+            ],
+        ];
+    } elseif ($userRole === 'admin') {
+        // ==== SIDEBAR ADMIN ====
+        $navSections[] = [
+            'title' => 'Dashboard',
+            'items' => [
+                ['route' => 'knowledge.dashboard', 'label' => 'Dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', 'match' => 'knowledge.dashboard'],
+            ],
+        ];
+        $navSections[] = [
+            'title' => 'Knowledge',
+            'items' => [
+                ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
+                ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
+            ],
+        ];
+        $navSections[] = [
+            'title' => 'Pengaturan',
+            'items' => [
+                ['route' => 'knowledge.pengguna.index', 'label' => 'Pengguna', 'icon' => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z', 'match' => 'knowledge.pengguna', 'badge' => $pendingUsers],
+                ['route' => '#', 'label' => 'Pengaturan', 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', 'match' => ''],
+            ],
+        ];
+    } else {
+        // ==== SIDEBAR POPT — TIDAK DIUBAH (sudah sesuai) ====
+        $navSections[] = [
+            'title' => 'Dashboard',
+            'items' => [
+                ['route' => 'knowledge.dashboard', 'label' => 'Dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', 'match' => 'knowledge.dashboard'],
+            ],
+        ];
         $navSections[] = [
             'title' => 'Master Data',
             'items' => [
@@ -28,23 +82,11 @@
                 ['route' => 'knowledge.aturan-cf.index', 'label' => 'Aturan Penyakit-Gejala (CF)', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'match' => 'knowledge.aturan-cf'],
             ],
         ];
-    }
-
-    $navSections[] = [
-        'title' => 'Knowledge',
-        'items' => [
-            ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
-            ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
-        ],
-    ];
-
-    // Section Pengaturan hanya untuk admin
-    if ($userRole === 'admin') {
         $navSections[] = [
-            'title' => 'Pengaturan',
+            'title' => 'Knowledge',
             'items' => [
-                ['route' => 'knowledge.pengguna.index', 'label' => 'Pengguna', 'icon' => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z', 'match' => 'knowledge.pengguna', 'badge' => $pendingUsers],
-                ['route' => '#', 'label' => 'Pengaturan', 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', 'match' => ''],
+                ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
+                ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
             ],
         ];
     }
@@ -57,9 +99,7 @@
        :class="sidebarOpen ? 'translate-x-0' : ''">
     {{-- Header --}}
     <div class="flex items-center gap-3 h-20 px-5 border-b border-[#eef3ef] flex-shrink-0">
-        <span class="flex items-center justify-center w-9 h-9 rounded-xl bg-[#176b45] text-white flex-shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
-        </span>
+        <img src="{{ asset('icon.png') }}" alt="Logo SIPAKARBUN" class="w-10 h-10 rounded-xl object-cover flex-shrink-0">
         <div class="min-w-0">
             <div class="text-base font-extrabold tracking-tight text-[#173b29] leading-tight">SIPAKARBUN</div>
             <div class="text-[10px] font-medium tracking-wide text-[#8a9990] uppercase">Knowledge Management</div>

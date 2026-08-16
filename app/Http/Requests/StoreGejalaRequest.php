@@ -9,8 +9,8 @@ class StoreGejalaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // TODO(tahap 6 - Auth & Role): cek role Pakar/Admin.
-        return $this->user() !== null && $this->user()->hasRole(['admin', 'operator_uptd', 'popt']);
+        // Hanya Admin & POPT (Knowledge Manager) yang boleh mengelola
+        return $this->user() !== null && $this->user()->hasRole(['admin', 'popt']);
     }
 
     public function rules(): array

@@ -13,45 +13,69 @@ Route::middleware('guest')->group(function (): void {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::middleware(['auth', 'role:admin|pakar|operator_uptd|popt'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
+/*
+|--------------------------------------------------------------------------
+| Modul Knowledge — Mahasiswa 1
+|--------------------------------------------------------------------------
+| RBAC revisi terbaru:
+| - READ  (dashboard, daftar, lihat status): admin + POPT + OP
+|   (OP read-only — tanpa tombol/aksi CRUD, lihat controller & view)
+| - WRITE (create/store/edit/update/destroy/publish): admin + POPT
+| - OP    (pengajuan & monitoring): admin + OP
+*/
+Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
     Route::get('/', [KnowledgeController::class, 'dashboard'])->name('dashboard');
 
+    // ==== READ-ONLY (admin, POPT, OP) ====
     Route::get('/komoditas', [KnowledgeController::class, 'komoditasIndex'])->name('komoditas.index');
-
     Route::get('/penyakit', [KnowledgeController::class, 'penyakitIndex'])->name('penyakit.index');
-    Route::get('/penyakit/create', [KnowledgeController::class, 'penyakitCreate'])->name('penyakit.create');
-    Route::post('/penyakit', [KnowledgeController::class, 'penyakitStore'])->name('penyakit.store');
-    Route::get('/penyakit/{penyakit}/edit', [KnowledgeController::class, 'penyakitEdit'])->name('penyakit.edit');
-    Route::put('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitUpdate'])->name('penyakit.update');
-    Route::delete('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitDestroy'])->name('penyakit.destroy');
-
     Route::get('/gejala', [KnowledgeController::class, 'gejalaIndex'])->name('gejala.index');
-    Route::get('/gejala/create', [KnowledgeController::class, 'gejalaCreate'])->name('gejala.create');
-    Route::post('/gejala', [KnowledgeController::class, 'gejalaStore'])->name('gejala.store');
-    Route::get('/gejala/{gejala}/edit', [KnowledgeController::class, 'gejalaEdit'])->name('gejala.edit');
-    Route::put('/gejala/{gejala}', [KnowledgeController::class, 'gejalaUpdate'])->name('gejala.update');
-    Route::delete('/gejala/{gejala}', [KnowledgeController::class, 'gejalaDestroy'])->name('gejala.destroy');
-
     Route::get('/aturan-cf', [KnowledgeController::class, 'aturanCfIndex'])->name('aturan-cf.index');
-    Route::get('/aturan-cf/create', [KnowledgeController::class, 'aturanCfCreate'])->name('aturan-cf.create');
-    Route::post('/aturan-cf', [KnowledgeController::class, 'aturanCfStore'])->name('aturan-cf.store');
-    Route::get('/aturan-cf/{aturanCf}/edit', [KnowledgeController::class, 'aturanCfEdit'])->name('aturan-cf.edit');
-    Route::put('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfUpdate'])->name('aturan-cf.update');
-    Route::delete('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfDestroy'])->name('aturan-cf.destroy');
-
     Route::get('/solusi', [KnowledgeController::class, 'solusiIndex'])->name('solusi.index');
-    Route::get('/solusi/create', [KnowledgeController::class, 'solusiCreate'])->name('solusi.create');
-    Route::post('/solusi', [KnowledgeController::class, 'solusiStore'])->name('solusi.store');
-    Route::get('/solusi/{solusi}/edit', [KnowledgeController::class, 'solusiEdit'])->name('solusi.edit');
-    Route::put('/solusi/{solusi}', [KnowledgeController::class, 'solusiUpdate'])->name('solusi.update');
-    Route::delete('/solusi/{solusi}', [KnowledgeController::class, 'solusiDestroy'])->name('solusi.destroy');
-
     Route::get('/publikasi', [KnowledgeController::class, 'publikasiIndex'])->name('publikasi.index');
-    Route::post('/publikasi/toggle', [KnowledgeController::class, 'publikasiToggle'])->name('publikasi.toggle');
-
     Route::get('/riwayat', [KnowledgeController::class, 'riwayatIndex'])->name('riwayat.index');
 
-    // Manajemen Pengguna (admin only)
+    // ==== CRUD Knowledge — hanya Admin & POPT ====
+    Route::middleware(['role:admin|popt'])->group(function (): void {
+        Route::get('/penyakit/create', [KnowledgeController::class, 'penyakitCreate'])->name('penyakit.create');
+        Route::post('/penyakit', [KnowledgeController::class, 'penyakitStore'])->name('penyakit.store');
+        Route::get('/penyakit/{penyakit}/edit', [KnowledgeController::class, 'penyakitEdit'])->name('penyakit.edit');
+        Route::put('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitUpdate'])->name('penyakit.update');
+        Route::delete('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitDestroy'])->name('penyakit.destroy');
+
+        Route::get('/gejala/create', [KnowledgeController::class, 'gejalaCreate'])->name('gejala.create');
+        Route::post('/gejala', [KnowledgeController::class, 'gejalaStore'])->name('gejala.store');
+        Route::get('/gejala/{gejala}/edit', [KnowledgeController::class, 'gejalaEdit'])->name('gejala.edit');
+        Route::put('/gejala/{gejala}', [KnowledgeController::class, 'gejalaUpdate'])->name('gejala.update');
+        Route::delete('/gejala/{gejala}', [KnowledgeController::class, 'gejalaDestroy'])->name('gejala.destroy');
+
+        Route::get('/aturan-cf/create', [KnowledgeController::class, 'aturanCfCreate'])->name('aturan-cf.create');
+        Route::post('/aturan-cf', [KnowledgeController::class, 'aturanCfStore'])->name('aturan-cf.store');
+        Route::get('/aturan-cf/{aturanCf}/edit', [KnowledgeController::class, 'aturanCfEdit'])->name('aturan-cf.edit');
+        Route::put('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfUpdate'])->name('aturan-cf.update');
+        Route::delete('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfDestroy'])->name('aturan-cf.destroy');
+
+        Route::get('/solusi/create', [KnowledgeController::class, 'solusiCreate'])->name('solusi.create');
+        Route::post('/solusi', [KnowledgeController::class, 'solusiStore'])->name('solusi.store');
+        Route::get('/solusi/{solusi}/edit', [KnowledgeController::class, 'solusiEdit'])->name('solusi.edit');
+        Route::put('/solusi/{solusi}', [KnowledgeController::class, 'solusiUpdate'])->name('solusi.update');
+        Route::delete('/solusi/{solusi}', [KnowledgeController::class, 'solusiDestroy'])->name('solusi.destroy');
+
+        // Publish/nonaktifkan knowledge — aksi tulis, POPT & Admin.
+        Route::post('/publikasi/toggle', [KnowledgeController::class, 'publikasiToggle'])->name('publikasi.toggle');
+    });
+
+    // ==== Halaman OP: Pengajuan Kasus & Monitoring ====
+    // Placeholder sampai modul Diagnosis & Kasus (Mahasiswa 2)
+    // terintegrasi — struktur menu OP sudah siap dipakai.
+    Route::middleware(['role:admin|operator_uptd'])->prefix('op')->name('op.')->group(function (): void {
+        Route::get('/pengajuan-masuk', [KnowledgeController::class, 'opPengajuanMasuk'])->name('pengajuan-masuk');
+        Route::get('/validasi', [KnowledgeController::class, 'opValidasiPengajuan'])->name('validasi');
+        Route::get('/riwayat-pengajuan', [KnowledgeController::class, 'opRiwayatPengajuan'])->name('riwayat-pengajuan');
+        Route::get('/status-kasus', [KnowledgeController::class, 'opStatusKasus'])->name('status-kasus');
+    });
+
+    // ==== Manajemen Pengguna (admin only) ====
     Route::middleware(['role:admin'])->prefix('pengguna')->name('pengguna.')->group(function (): void {
         Route::get('/', [\App\Http\Controllers\UserController::class, 'index'])->name('index');
         Route::post('/{user}/approve', [\App\Http\Controllers\UserController::class, 'approve'])->name('approve');

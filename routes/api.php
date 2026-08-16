@@ -23,24 +23,24 @@ Route::middleware(['auth:sanctum'])
 
 /*
 |--------------------------------------------------------------------------
-| CRUD internal Admin/Operator/POPT
+| CRUD internal Admin/POPT
 |--------------------------------------------------------------------------
-| Wajib login (auth:sanctum) + role admin, operator_uptd, atau popt.
+| Wajib login (auth:sanctum) + role admin atau popt. OP (operator)
+| tidak memiliki akses CRUD — hanya read via endpoint kontrak M2.
 */
-Route::middleware(['auth:sanctum', 'role:admin|operator_uptd|popt'])
+Route::middleware(['auth:sanctum', 'role:admin|popt'])
     ->prefix('admin')
     ->group(function (): void {
         Route::apiResource('penyakit', PenyakitController::class);
         Route::apiResource('gejala', GejalaController::class);
         Route::apiResource('solusi', SolusiController::class);
-        // Aturan CF: C/R/U untuk Operator/POPT, tanpa D.
-        // Destroy dikeluarkan dari group ini.
+        // Aturan CF: C/R/U untuk Admin & POPT.
         Route::apiResource('aturan-cf', AturanCfController::class)
             ->except(['destroy']);
     });
 
-// DELETE aturan CF hanya untuk Admin (full-access).
-Route::middleware(['auth:sanctum', 'role:admin'])
+// DELETE aturan CF: Admin & POPT (POPT pemegang CRUD knowledge).
+Route::middleware(['auth:sanctum', 'role:admin|popt'])
     ->prefix('admin')
     ->group(function (): void {
         Route::delete('aturan-cf/{aturanCf}', [AturanCfController::class, 'destroy'])

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrasi — SIPAKARBUN</title>
+    <link rel="icon" type="image/png" href="{{ asset('icon.png') }}">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -13,9 +14,7 @@
     <div class="w-full max-w-lg">
         {{-- Logo --}}
         <div class="text-center mb-6">
-            <span class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#176b45] text-white mb-3 shadow-lg">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
-            </span>
+            <img src="{{ asset('icon.png') }}" alt="Logo SIPAKARBUN" class="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 shadow-lg">
             <h1 class="text-2xl font-extrabold tracking-tight text-[#173b29]">SIPAKARBUN</h1>
             <p class="text-sm text-[#8a9990] mt-1">Knowledge Management — Buat Akun Baru</p>
         </div>

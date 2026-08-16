@@ -3,15 +3,18 @@
 @section('title', 'Daftar Gejala')
 
 @section('content')
+<?php $canManage = auth()->user()?->hasRole(['admin', 'popt']); ?>
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Daftar Gejala</h1>
             <p class="mt-1 text-sm text-gray-600">Kelola data gejala untuk basis pengetahuan.</p>
         </div>
+        @if ($canManage)
         <a href="{{ route('knowledge.gejala.create') }}" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
             Tambah Gejala
         </a>
+        @endif
     </div>
 
     <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -52,6 +55,7 @@
                         <x-knowledge.status-badge :status="$g->status" />
                     </td>
                     <td class="px-4 py-3 text-right">
+                        @if ($canManage)
                         <div class="inline-flex items-center gap-2">
                             <a href="{{ route('knowledge.gejala.edit', $g) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
                                 Edit
@@ -64,6 +68,9 @@
                                 </button>
                             </form>
                         </div>
+                        @else
+                        <span class="text-xs text-gray-400">Read-only</span>
+                        @endif
                     </td>
                 </tr>
                 @empty

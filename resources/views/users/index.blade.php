@@ -57,7 +57,7 @@
                 <tbody class="divide-y divide-[#f0f4f1] bg-white">
                     @foreach($users as $user)
                     <?php $roleName = $user->roles->first()?->name ?? '-'; ?>
-                    <?php $roleLabels = ['admin' => 'Admin', 'pakar' => 'Pakar', 'operator_uptd' => 'Operator UPTD', 'popt' => 'POPT']; ?>
+                    <?php $roleLabels = ['admin' => 'Admin', 'popt' => 'POPT', 'operator_uptd' => 'Operator (OP)']; ?>
                     <?php $roleLabel = $roleLabels[$roleName] ?? ucfirst($roleName); ?>
                     <?php $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($user->name), 2)))); ?>
                     <tr class="hover:bg-[#f7faf8] transition-colors">
