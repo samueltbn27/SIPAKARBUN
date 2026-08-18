@@ -15,12 +15,17 @@ class PenyakitFactory extends Factory
             'kode' => 'PY-' . $this->faker->unique()->numberBetween(100, 999),
             'nama' => ucfirst($this->faker->words(3, true)),
             'deskripsi' => $this->faker->sentence(),
-            'is_active' => true,
+            'status' => Penyakit::STATUS_AKTIF,
         ];
+    }
+
+    public function draft(): static
+    {
+        return $this->state(fn () => ['status' => Penyakit::STATUS_DRAFT]);
     }
 
     public function nonaktif(): static
     {
-        return $this->state(fn () => ['is_active' => false]);
+        return $this->state(fn () => ['status' => Penyakit::STATUS_NONAKTIF]);
     }
 }

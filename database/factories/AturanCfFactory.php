@@ -17,15 +17,20 @@ class AturanCfFactory extends Factory
             'penyakit_id' => Penyakit::factory(),
             'gejala_id' => Gejala::factory(),
             'cf_pakar' => $this->faker->randomFloat(3, -1, 1),
-            'is_active' => true,
+            'status' => AturanCf::STATUS_AKTIF,
             'version' => 1,
             'created_by' => null,
             'updated_by' => null,
         ];
     }
 
+    public function draft(): static
+    {
+        return $this->state(fn () => ['status' => AturanCf::STATUS_DRAFT]);
+    }
+
     public function nonaktif(): static
     {
-        return $this->state(fn () => ['is_active' => false]);
+        return $this->state(fn () => ['status' => AturanCf::STATUS_NONAKTIF]);
     }
 }

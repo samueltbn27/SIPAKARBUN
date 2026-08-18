@@ -98,13 +98,13 @@
 <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#e4ece7] flex flex-col transform transition-transform duration-200 -translate-x-full lg:translate-x-0"
        :class="sidebarOpen ? 'translate-x-0' : ''">
     {{-- Header --}}
-    <div class="flex items-center gap-3 h-20 px-5 border-b border-[#eef3ef] flex-shrink-0">
+    <a href="{{ route('knowledge.dashboard') }}" class="flex items-center gap-3 h-20 px-5 border-b border-[#eef3ef] flex-shrink-0 hover:bg-[#f7faf8] transition-colors" title="Ke Dashboard">
         <img src="{{ asset('icon.png') }}" alt="Logo SIPAKARBUN" class="w-10 h-10 rounded-xl object-cover flex-shrink-0">
         <div class="min-w-0">
             <div class="text-base font-extrabold tracking-tight text-[#173b29] leading-tight">SIPAKARBUN</div>
             <div class="text-[10px] font-medium tracking-wide text-[#8a9990] uppercase">Knowledge Management</div>
         </div>
-    </div>
+    </a>
 
     {{-- Navigation --}}
     <nav class="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
