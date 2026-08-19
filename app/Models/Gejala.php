@@ -22,11 +22,11 @@ class Gejala extends Model
         'kode',
         'nama',
         'deskripsi',
-        'is_active',
+        'status',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'status' => 'string',
     ];
 
     public function aturanCf(): HasMany
@@ -39,6 +39,6 @@ class Gejala extends Model
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'aktif');
     }
 }

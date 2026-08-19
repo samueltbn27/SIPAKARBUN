@@ -11,11 +11,11 @@ class UpdatePenyakitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya Admin & Pakar (Knowledge Manager) yang boleh mengelola
+        // Hanya Admin & POPT (Knowledge Manager) yang boleh mengelola
         // basis pengetahuan — sesuai RBAC Matrix PRD §24
         // ("Penyakit & gejala": C/R/U/D untuk Knowledge Manager, admin
         // untuk Admin).
-        return $this->user()?->hasRole(['admin', 'pakar']) ?? false;
+        return $this->user()?->hasRole(['admin', 'popt']) ?? false;
     }
 
     public function rules(): array
@@ -28,7 +28,7 @@ class UpdatePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')->ignore($penyakitId)],
             'nama' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['draft', 'aktif', 'nonaktif'])],
             'komoditas_id' => ['sometimes', 'array'],
             'komoditas_id.*' => ['integer', 'min:1'],
         ];

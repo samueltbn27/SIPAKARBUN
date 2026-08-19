@@ -145,15 +145,15 @@ Route::middleware(['auth:sanctum', 'role:popt'])
 |--------------------------------------------------------------------------
 | CRUD internal Admin/Pakar
 |--------------------------------------------------------------------------
-| Wajib login (auth:sanctum) + role admin atau pakar.
+| Wajib login (auth:sanctum) + role admin atau popt.
 */
-Route::middleware(['auth:sanctum', 'role:admin|pakar'])
+Route::middleware(['auth:sanctum', 'role:admin|popt'])
     ->prefix('admin')
     ->group(function (): void {
         Route::apiResource('penyakit', PenyakitController::class);
         Route::apiResource('gejala', GejalaController::class);
         Route::apiResource('solusi', SolusiController::class);
-        // PRD §24: Knowledge Manager (pakar) hanya C/R/U untuk Aturan CF,
+        // PRD §24: Knowledge Manager (popt) hanya C/R/U untuk Aturan CF,
         // bukan D. Karena itu destroy dikeluarkan dari group ini.
         Route::apiResource('aturan-cf', AturanCfController::class)
             ->except(['destroy']);

@@ -318,5 +318,9 @@ class DiagnosisApiTest extends TestCase
             'commodity_id' => 1,
             'symptom_ids' => [1],
         ])->assertOk()->assertJsonCount(0, 'results');
+
+        // Tanpa penyakit cocok: tidak ada diagnosis yatim yang tersimpan.
+        $this->assertDatabaseCount('diagnoses', 0);
+        $this->assertDatabaseCount('diagnosis_results', 0);
     }
 }

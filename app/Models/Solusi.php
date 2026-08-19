@@ -21,11 +21,11 @@ class Solusi extends Model
         'penyakit_id',
         'judul',
         'deskripsi',
-        'is_active',
+        'status',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'status' => 'string',
     ];
 
     public function penyakit(): BelongsTo
@@ -38,6 +38,6 @@ class Solusi extends Model
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'aktif');
     }
 }

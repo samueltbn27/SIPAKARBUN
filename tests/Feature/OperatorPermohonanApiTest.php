@@ -33,7 +33,7 @@ class OperatorPermohonanApiTest extends TestCase
         app()->instance(KelompokTaniReferensiClient::class, new MockKelompokTaniReferensiClient);
         app()->instance(KomoditasReferensiClient::class, new MockKomoditasReferensiClient);
 
-        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pakar', 'pimpinan'] as $role) {
+        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pimpinan'] as $role) {
             Role::findOrCreate($role);
         }
     }

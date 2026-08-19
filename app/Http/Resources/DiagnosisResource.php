@@ -32,6 +32,7 @@ class DiagnosisResource extends JsonResource
 
         return [
             'diagnosis_id' => $this->id,
+            'kode' => $this->kode,
             'commodity' => $komoditas === null ? null : [
                 'id' => $komoditas['id'],
                 'kode' => $komoditas['kode'],

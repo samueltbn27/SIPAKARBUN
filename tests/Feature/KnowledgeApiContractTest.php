@@ -22,10 +22,10 @@ class KnowledgeApiContractTest extends TestCase
     use CreatesUsersWithRoles;
     use RefreshDatabase;
 
-    public function test_butuh_login_tapi_tidak_perlu_role_admin_pakar(): void
+    public function test_butuh_login_tapi_tidak_perlu_role_admin_popt(): void
     {
         // Sengaja pakai user TANPA role apa pun — endpoint kontrak M2
-        // hanya butuh auth:sanctum, bukan role admin/pakar (beda
+        // hanya butuh auth:sanctum, bukan role admin/popt (beda
         // dengan /api/admin/*).
         Sanctum::actingAs($this->createUserTanpaRole());
 
@@ -41,14 +41,17 @@ class KnowledgeApiContractTest extends TestCase
     {
         Sanctum::actingAs($this->createUserTanpaRole());
 
-        Penyakit::factory()->create(['nama' => 'Penyakit Aktif', 'is_active' => true]);
-        Penyakit::factory()->create(['nama' => 'Penyakit Nonaktif', 'is_active' => false]);
+        Penyakit::factory()->create(['nama' => 'Penyakit Aktif', 'status' => 'aktif']);
+        Penyakit::factory()->create(['nama' => 'Penyakit Nonaktif', 'status' => 'nonaktif']);
 
         $response = $this->getJson('/api/penyakit')->assertOk();
         $nama = collect($response->json('data'))->pluck('nama');
 
         $this->assertTrue($nama->contains('Penyakit Aktif'));
         $this->assertFalse($nama->contains('Penyakit Nonaktif'));
+        $this->assertTrue(collect($response->json('data'))->every(
+            fn ($item) => ($item['status'] ?? null) === 'aktif'
+        ));
     }
 
     public function test_response_menyertakan_aturan_cf_dan_solusi(): void
@@ -61,7 +64,7 @@ class KnowledgeApiContractTest extends TestCase
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
             'cf_pakar' => 0.75,
-            'is_active' => true,
+            'status' => 'aktif',
         ]);
         Solusi::factory()->create(['penyakit_id' => $penyakit->id]);
 
@@ -94,8 +97,8 @@ class KnowledgeApiContractTest extends TestCase
     {
         Sanctum::actingAs($this->createUserTanpaRole());
 
-        Gejala::factory()->create(['nama' => 'Gejala Aktif', 'is_active' => true]);
-        Gejala::factory()->create(['nama' => 'Gejala Nonaktif', 'is_active' => false]);
+        Gejala::factory()->create(['nama' => 'Gejala Aktif', 'status' => 'aktif']);
+        Gejala::factory()->create(['nama' => 'Gejala Nonaktif', 'status' => 'nonaktif']);
 
         $response = $this->getJson('/api/gejala')->assertOk();
         $nama = collect($response->json('data'))->pluck('nama');

@@ -4,14 +4,15 @@ namespace App\Http\Requests;
 
 use App\Models\AturanCf;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateAturanCfRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // TODO(tahap 6 - Auth & Role): cek role Pakar/Admin.
-        return $this->user() !== null && $this->user()->hasRole(['admin', 'pakar']);
+        // TODO(tahap 6 - Auth & Role): cek role POPT/Admin.
+        return $this->user() !== null && $this->user()->hasRole(['admin', 'popt']);
     }
 
     public function rules(): array
@@ -20,7 +21,7 @@ class UpdateAturanCfRequest extends FormRequest
             'penyakit_id' => ['sometimes', 'required', 'integer', 'exists:penyakit,id'],
             'gejala_id' => ['sometimes', 'required', 'integer', 'exists:gejala,id'],
             'cf_pakar' => ['sometimes', 'required', 'numeric', 'between:-1,1'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['draft', 'aktif', 'nonaktif'])],
         ];
     }
 
@@ -46,16 +47,16 @@ class UpdateAturanCfRequest extends FormRequest
 
             $penyakitId = $this->input('penyakit_id', is_object($current) ? $current->penyakit_id : null);
             $gejalaId = $this->input('gejala_id', is_object($current) ? $current->gejala_id : null);
-            $isActive = $this->boolean('is_active', is_object($current) ? (bool) $current->is_active : true);
+            $status = $this->input('status', is_object($current) ? $current->status : null);
 
-            if (! $isActive || ! $penyakitId || ! $gejalaId) {
+            if ($status !== 'aktif' || ! $penyakitId || ! $gejalaId) {
                 return;
             }
 
             $sudahAda = AturanCf::query()
                 ->where('penyakit_id', $penyakitId)
                 ->where('gejala_id', $gejalaId)
-                ->where('is_active', true)
+                ->where('status', 'aktif')
                 ->when($currentId, fn ($q) => $q->where('id', '!=', $currentId))
                 ->exists();
 

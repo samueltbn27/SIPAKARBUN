@@ -60,7 +60,7 @@ class AturanCfSeeder extends Seeder
                 ],
                 [
                     'cf_pakar' => $cf,
-                    'is_active' => true,
+                    'status' => 'aktif',
                     'created_by' => null,
                     'updated_by' => null,
                 ]

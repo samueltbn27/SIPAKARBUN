@@ -73,7 +73,7 @@ class PenyakitController extends Controller
     public function destroy(Penyakit $penyakit)
     {
         // Catatan bisnis: pertimbangkan nonaktifkan ($penyakit->update([
-        // 'is_active' => false]))  daripada hard delete, supaya riwayat
+        // 'status' => 'nonaktif']))  daripada hard delete, supaya riwayat
         // diagnosis lama (di modul Mahasiswa 2) tidak kehilangan
         // referensi. Hard delete di bawah ini akan CASCADE menghapus
         // solusi, aturan_cf, dan penyakit_komoditas terkait (lihat

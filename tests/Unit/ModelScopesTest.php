@@ -15,24 +15,24 @@ class ModelScopesTest extends TestCase
 
     public function test_scope_aktif_saja_pada_penyakit(): void
     {
-        Penyakit::factory()->create(['is_active' => true]);
-        Penyakit::factory()->create(['is_active' => false]);
+        Penyakit::factory()->create(['status' => 'aktif']);
+        Penyakit::factory()->create(['status' => 'nonaktif']);
 
         $this->assertCount(1, Penyakit::aktifSaja()->get());
     }
 
     public function test_scope_aktif_saja_pada_gejala(): void
     {
-        Gejala::factory()->create(['is_active' => true]);
-        Gejala::factory()->create(['is_active' => false]);
+        Gejala::factory()->create(['status' => 'aktif']);
+        Gejala::factory()->create(['status' => 'nonaktif']);
 
         $this->assertCount(1, Gejala::aktifSaja()->get());
     }
 
     public function test_scope_aktif_saja_pada_aturan_cf(): void
     {
-        AturanCf::factory()->create(['is_active' => true]);
-        AturanCf::factory()->create(['is_active' => false]);
+        AturanCf::factory()->create(['status' => 'aktif']);
+        AturanCf::factory()->create(['status' => 'nonaktif']);
 
         $this->assertCount(1, AturanCf::aktifSaja()->get());
     }

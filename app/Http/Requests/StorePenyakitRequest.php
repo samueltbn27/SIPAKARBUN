@@ -11,11 +11,11 @@ class StorePenyakitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya Admin & Pakar (Knowledge Manager) yang boleh mengelola
+        // Hanya Admin & POPT (Knowledge Manager) yang boleh mengelola
         // basis pengetahuan — sesuai RBAC Matrix PRD §24
         // ("Penyakit & gejala": C/R/U/D untuk Knowledge Manager, admin
         // untuk Admin).
-        return $this->user()?->hasRole(['admin', 'pakar']) ?? false;
+        return $this->user()?->hasRole(['admin', 'popt']) ?? false;
     }
 
     public function rules(): array
@@ -24,7 +24,7 @@ class StorePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')],
             'nama' => ['required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['draft', 'aktif', 'nonaktif'])],
 
             // Opsional: assign komoditas terkait sekalian saat bikin penyakit.
             // komoditas_id di sini merujuk ke ref_komoditas.id (shared).
@@ -36,6 +36,15 @@ class StorePenyakitRequest extends FormRequest
             'komoditas_id' => ['sometimes', 'array'],
             'komoditas_id.*' => ['integer', 'min:1'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Data baru otomatis berstatus draft (belum dipublish) kecuali
+        // pemanggil secara eksplisit mengirim status lain.
+        if (! $this->has('status')) {
+            $this->merge(['status' => 'draft']);
+        }
     }
 
     public function messages(): array

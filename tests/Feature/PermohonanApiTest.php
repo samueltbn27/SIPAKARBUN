@@ -38,7 +38,7 @@ class PermohonanApiTest extends TestCase
         app()->instance(KelompokTaniReferensiClient::class, new MockKelompokTaniReferensiClient);
         app()->instance(KomoditasReferensiClient::class, new MockKomoditasReferensiClient);
 
-        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pakar', 'pimpinan'] as $role) {
+        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pimpinan'] as $role) {
             Role::findOrCreate($role);
         }
 
@@ -219,10 +219,10 @@ class PermohonanApiTest extends TestCase
         $lain = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($lain);
 
-        // User "pakar" bukan pemohon — harus 403.
-        $pakar = User::factory()->create();
-        $pakar->assignRole('pakar');
-        Sanctum::actingAs($pakar);
+        // User "pimpinan" bukan pemohon — harus 403.
+        $pimpinan = User::factory()->create();
+        $pimpinan->assignRole('pimpinan');
+        Sanctum::actingAs($pimpinan);
 
         $this->postJson('/api/permohonan', $this->payloadDasar($diagnosis))->assertForbidden();
 

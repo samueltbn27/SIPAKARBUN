@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Contracts\KelompokTaniReferensiClient;
 use App\Models\Diagnosis;
+use App\Models\DiagnosisResult;
 use App\Models\PermohonanEvidence;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
@@ -44,7 +45,7 @@ class SecurityAuditTest extends TestCase
         config(['services.knowledge_api.base_url' => self::BASE_URL]);
         config(['services.knowledge_api.token' => 'rahasia-token']);
 
-        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pakar', 'pimpinan'] as $role) {
+        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pimpinan'] as $role) {
             Role::findOrCreate($role);
         }
 
@@ -90,11 +91,21 @@ class SecurityAuditTest extends TestCase
 
     private function diagnose(User $user): Diagnosis
     {
-        return Diagnosis::factory()->create([
+        $diagnosis = Diagnosis::factory()->create([
             'user_id' => $user->id,
             'commodity_id' => 1,
             'status' => Diagnosis::STATUS_SELESAI,
         ]);
+
+        DiagnosisResult::factory()->create([
+            'diagnosis_id' => $diagnosis->id,
+            'disease_id' => 1,
+            'disease_name_snapshot' => 'Karat Daun Kopi',
+            'cf_value' => 0.9,
+            'ranking' => 1,
+        ]);
+
+        return $diagnosis;
     }
 
     private function payloadPermohonan(Diagnosis $diagnosis): array

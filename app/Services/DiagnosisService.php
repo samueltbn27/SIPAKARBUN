@@ -6,6 +6,7 @@ use App\Models\Diagnosis;
 use App\Models\DiagnosisResult;
 use App\Models\DiagnosisSymptom;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * DiagnosisService — orkestrator alur diagnosis (M2).
@@ -96,10 +97,12 @@ class DiagnosisService
             ->values()
             ->map(fn (array $result, int $index): array => $result + ['ranking' => $index + 1]);
 
-        $diagnosis = $this->persist($commodityId, $symptomIds, $cfUserMap, $namaGejala, $results, $userId);
+        $diagnosis = $results->isEmpty()
+            ? null
+            : $this->persist($commodityId, $symptomIds, $cfUserMap, $namaGejala, $results, $userId);
 
         return $results->map(fn (array $result): array => [
-            'diagnosis_id' => $diagnosis->id,
+            'diagnosis_id' => $diagnosis?->id,
             'disease_id' => $result['disease_id'],
             'disease_name' => $result['disease_name'],
             'final_cf' => $result['final_cf'],
@@ -187,6 +190,7 @@ class DiagnosisService
         $diagnosis = Diagnosis::create([
             'user_id' => $userId,
             'commodity_id' => $commodityId,
+            'kode' => $this->generateKode(),
             'status' => Diagnosis::STATUS_SELESAI,
         ]);
 
@@ -212,5 +216,18 @@ class DiagnosisService
         }
 
         return $diagnosis;
+    }
+
+    /**
+     * Kode diagnosis dengan pola "DG-YYYYMMDD-XXXX", konsisten dengan
+     * kode permohonan ("PM-") dan kasus ("KS-") di modul lain.
+     */
+    private function generateKode(): string
+    {
+        $urutanHariIni = Diagnosis::query()
+            ->whereDate('created_at', now()->toDateString())
+            ->count() + 1;
+
+        return 'DG-'.now()->format('Ymd').'-'.Str::padLeft((string) $urutanHariIni, 4, '0');
     }
 }

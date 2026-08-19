@@ -30,7 +30,7 @@ class AturanCf extends Model
         'penyakit_id',
         'gejala_id',
         'cf_pakar',
-        'is_active',
+        'status',
         'version',
         'created_by',
         'updated_by',
@@ -38,7 +38,7 @@ class AturanCf extends Model
 
     protected $casts = [
         'cf_pakar' => 'decimal:3',
-        'is_active' => 'boolean',
+        'status' => 'string',
         'version' => 'integer',
     ];
 
@@ -58,6 +58,6 @@ class AturanCf extends Model
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'aktif');
     }
 }

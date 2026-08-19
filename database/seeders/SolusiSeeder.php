@@ -33,7 +33,7 @@ class SolusiSeeder extends Seeder
 
             Solusi::updateOrCreate(
                 ['penyakit_id' => $penyakit->id, 'judul' => $judul],
-                ['deskripsi' => $deskripsi, 'is_active' => true]
+                ['deskripsi' => $deskripsi, 'status' => 'aktif']
             );
         }
     }

@@ -16,7 +16,7 @@ class SolusiFactory extends Factory
             'penyakit_id' => Penyakit::factory(),
             'judul' => ucfirst($this->faker->words(4, true)),
             'deskripsi' => $this->faker->sentence(),
-            'is_active' => true,
+            'status' => 'aktif',
         ];
     }
 }

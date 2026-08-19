@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,12 +36,25 @@ class Diagnosis extends Model
     protected $fillable = [
         'user_id',
         'commodity_id',
+        'kode',
         'status',
     ];
 
     protected $casts = [
         'commodity_id' => 'integer',
     ];
+
+    /**
+     * Kode diagnosis. Untuk transaksi lama (sebelum kolom kode ada),
+     * turunkan kode sementara dari id supaya kolom "Kode Diagnosis"
+     * tidak pernah kosong.
+     */
+    protected function kode(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): string => $value ?? 'DG-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT),
+        );
+    }
 
     public function user(): BelongsTo
     {

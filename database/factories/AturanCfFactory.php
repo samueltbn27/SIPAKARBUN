@@ -17,7 +17,7 @@ class AturanCfFactory extends Factory
             'penyakit_id' => Penyakit::factory(),
             'gejala_id' => Gejala::factory(),
             'cf_pakar' => $this->faker->randomFloat(3, -1, 1),
-            'is_active' => true,
+            'status' => 'aktif',
             'version' => 1,
             'created_by' => null,
             'updated_by' => null,
@@ -26,6 +26,6 @@ class AturanCfFactory extends Factory
 
     public function nonaktif(): static
     {
-        return $this->state(fn () => ['is_active' => false]);
+        return $this->state(fn () => ['status' => 'nonaktif']);
     }
 }

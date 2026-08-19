@@ -33,7 +33,7 @@ class KasusFlowTest extends TestCase
         app()->instance(KelompokTaniReferensiClient::class, new MockKelompokTaniReferensiClient);
         app()->instance(KomoditasReferensiClient::class, new MockKomoditasReferensiClient);
 
-        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pakar', 'pimpinan'] as $role) {
+        foreach (['poktan', 'admin', 'operator_uptd', 'popt', 'pimpinan'] as $role) {
             Role::findOrCreate($role);
         }
     }
@@ -127,7 +127,7 @@ class KasusFlowTest extends TestCase
     {
         $pemohon = $this->buatUser('poktan');
         $operator = $this->buatUser('operator_uptd');
-        $bukanPopt = $this->buatUser('pakar');
+        $bukanPopt = $this->buatUser('pimpinan');
         $kasus = $this->buatKasusDiterima($pemohon, $operator);
 
         $this->assignPopt($operator, $bukanPopt, $kasus)

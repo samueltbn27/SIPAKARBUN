@@ -32,11 +32,11 @@ class Penyakit extends Model
         'kode',
         'nama',
         'deskripsi',
-        'is_active',
+        'status',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'status' => 'string',
     ];
 
     public function solusi(): HasMany
@@ -61,6 +61,6 @@ class Penyakit extends Model
      */
     public function scopeAktifSaja(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'aktif');
     }
 }

@@ -72,6 +72,7 @@ class PermohonanService
             ->whereKey($data['diagnosis_id'])
             ->where('user_id', $userId)
             ->where('status', Diagnosis::STATUS_SELESAI)
+            ->has('results')
             ->first();
 
         abort_unless($diagnosis !== null, 404, 'Diagnosis tidak ditemukan atau bukan milik Anda.');
