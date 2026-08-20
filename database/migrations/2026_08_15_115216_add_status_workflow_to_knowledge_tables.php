@@ -39,6 +39,13 @@ return new class extends Migration
                 'status' => DB::raw('CASE WHEN is_active = 1 THEN "aktif" ELSE "nonaktif" END'),
             ]);
 
+            // SQLite tidak bisa drop kolom yang masih punya index —
+            // drop index is_active_* lebih dulu (MySQL tidak wajib,
+            // tapi operasi ini aman di kedua driver).
+            Schema::table($table, function (Blueprint $t) use ($table) {
+                $t->dropIndex($table.'_is_active_index');
+            });
+
             Schema::table($table, function (Blueprint $t) {
                 $t->dropColumn('is_active');
             });
