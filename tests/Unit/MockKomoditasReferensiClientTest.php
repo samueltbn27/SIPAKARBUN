@@ -14,14 +14,14 @@ class MockKomoditasReferensiClientTest extends TestCase
 {
     public function test_all_mengembalikan_lima_komoditas(): void
     {
-        $client = new MockKomoditasReferensiClient();
+        $client = new MockKomoditasReferensiClient;
 
         $this->assertCount(5, $client->all());
     }
 
     public function test_find_mengembalikan_data_yang_benar(): void
     {
-        $client = new MockKomoditasReferensiClient();
+        $client = new MockKomoditasReferensiClient;
 
         $kopi = $client->find(1);
 
@@ -32,7 +32,7 @@ class MockKomoditasReferensiClientTest extends TestCase
 
     public function test_find_mengembalikan_null_untuk_id_tidak_ada(): void
     {
-        $client = new MockKomoditasReferensiClient();
+        $client = new MockKomoditasReferensiClient;
 
         $this->assertNull($client->find(999));
     }

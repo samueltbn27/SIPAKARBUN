@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
  *   mengembalikan SEMUA data (termasuk draft/nonaktif) ke user yang
  *   sudah login dengan role tertentu.
  * - Controller ini (/api/penyakit, /api/gejala) untuk DIKONSUMSI
- *   modul lain, HANYA mengembalikan data is_active = true, dan bentuk
+ *   modul lain, HANYA mengembalikan data status = 'aktif', dan bentuk
  *   response-nya sengaja dibuat stabil lewat API Resource (bukan
  *   model mentah) supaya perubahan struktur database internal tidak
  *   otomatis mematahkan integrasi Mahasiswa 2.
@@ -28,7 +28,7 @@ use Illuminate\Http\Request;
  *
  * CATATAN TERBUKA: §23.2 PRD menyebut Mahasiswa 2 butuh "knowledge
  * version", tapi model data final (§22.4) TIDAK punya tabel
- * knowledge_versions (sudah disederhanakan jadi kolom is_active saja
+ *  knowledge_versions (sudah disederhanakan jadi kolom status saja
  * per keputusan tim). Kemungkinan ini sisa dari draft PRD versi lama
  * yang belum dibersihkan. Endpoint ini TIDAK menyediakan data versi
  * terpisah — perlu dikonfirmasi ke tim apakah ini memang sudah

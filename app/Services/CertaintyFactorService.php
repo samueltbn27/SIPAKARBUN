@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Services;
+
+/**
+ * CertaintyFactorService — perhitungan Certainty Factor (tahap #6).
+ *
+ * Pemisahan tiga konsep (sesuai rancangan SIPAKARBUN):
+ *
+ *   1. CF PAKAR (input): nilai cf_pakar dari Knowledge API Mahasiswa 1.
+ *      Service ini TIDAK membuat / mengubah nilai tersebut — ia hanya
+ *      menerima sebagai argumen dan memprosesnya.
+ *   2. CF USER (input opsional): tingkat keyakinan user atas gejala
+ *      (0.0 s.d. 1.0, default 1.0). Kontrak Mahasiswa 2 §6:
+ *          CF_gejala = CF_user × CF_pakar
+ *      Kombinasi CF_user × CF_pakar dilakukan pemanggil (engine
+ *      DiagnosisService) memakai helper `cfGejala()` — service ini tetap
+ *      MURNI matematika dan tidak menyimpan nilai.
+ *   3. PROSES KOMBINASI: kombinasi beberapa CF_gejala menjadi satu nilai
+ *      CF hipotesis (penyakit) secara berpasangan berurutan (metode
+ *      kombinasi CF standar / Shortliffe-Buchanan):
+ *        - keduanya positif : CF1 + CF2 * (1 - CF1)
+ *        - keduanya negatif: CF1 + CF2 * (1 + CF1)
+ *        - salah satu negatif: (CF1 + CF2) / (1 - min(|CF1|, |CF2|))
+ *      Hasil kombinasi disebut CF HASIL (final_cf).
+ *   4. CF HASIL (output): nilai final_cf (-1.0 s.d. 1.0) plus konversi
+ *      ke percentage (0–100%) untuk tampilan user.
+ *
+ * Nilai final dibulatkan 3 desimal agar konsisten dengan presisi
+ * decimal(4,3) di tabel `diagnosis_results` dan `aturan_cf`.
+ *
+ * Perhitungan DETERMINISTIK dan dapat direproduksi: input yang sama
+ * selalu menghasilkan final_cf yang sama.
+ *
+ * Service ini MURNI matematika — tidak menyentuh DB/API, mudah diuji unit.
+ */
+class CertaintyFactorService
+{
+    /**
+     * CF_gejala = CF_user × CF_pakar (kontrak M2 §6).
+     *
+     * @param  float  $cfUser  tingkat keyakinan user (0.0 s.d. 1.0)
+     * @param  float  $cfPakar  nilai pakar dari Knowledge API M1
+     */
+    public function cfGejala(float $cfUser, float $cfPakar): float
+    {
+        return round($cfUser * $cfPakar, 3);
+    }
+
+    /**
+     * Proses kombinasi CF_gejala → satu CF hasil (final_cf).
+     *
+     * @param  array<int, float>  $cfGejala  daftar CF_gejala yang cocok
+     *                                       (TIDAK dimodifikasi di sini)
+     */
+    public function combine(array $cfGejala): float
+    {
+        if ($cfGejala === []) {
+            return 0.0;
+        }
+
+        $result = 0.0;
+
+        foreach ($cfGejala as $cf) {
+            $result = $this->combinePair($result, (float) $cf);
+        }
+
+        return round($result, 3);
+    }
+
+    /**
+     * Hitung CF hasil + percentage untuk satu hipotesis (penyakit).
+     *
+     * @param  array<int, float>  $cfGejala  daftar CF_gejala (sudah
+     *                                       CF_user × CF_pakar)
+     */
+    public function calculate(array $cfGejala): CfResult
+    {
+        $finalCf = $this->combine($cfGejala);
+
+        // Percentage: peta final_cf (-1..1) ke 0..100. Nilai negatif
+        // dianggap 0% (keyakinan tidak ada / menolak), nilai positif
+        // langsung dikali 100. Dua desimal untuk tampilan.
+        $percentage = max(0.0, $finalCf * 100);
+
+        return new CfResult(
+            final_cf: $finalCf,
+            percentage: round($percentage, 2),
+        );
+    }
+
+    private function combinePair(float $cf1, float $cf2): float
+    {
+        if ($cf1 >= 0.0 && $cf2 >= 0.0) {
+            return $cf1 + $cf2 * (1 - $cf1);
+        }
+
+        if ($cf1 < 0.0 && $cf2 < 0.0) {
+            return $cf1 + $cf2 * (1 + $cf1);
+        }
+
+        $denominator = 1 - min(abs($cf1), abs($cf2));
+
+        return $denominator == 0.0 ? 0.0 : ($cf1 + $cf2) / $denominator;
+    }
+}

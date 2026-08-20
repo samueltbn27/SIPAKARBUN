@@ -34,7 +34,7 @@ class PenyakitKomoditasSeeder extends Seeder
         foreach ($data as [$kodePenyakit, $kodeKomoditasList]) {
             $penyakit = Penyakit::where('kode', $kodePenyakit)->first();
 
-            if (!$penyakit) {
+            if (! $penyakit) {
                 continue;
             }
 

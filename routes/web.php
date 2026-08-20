@@ -1,9 +1,18 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KnowledgeController;
+use App\Http\Controllers\PlaceholderController;
+use App\Http\Controllers\Web\DiagnosisController as WebDiagnosisController;
+use App\Http\Controllers\Web\PermohonanController as WebPermohonanController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Autentikasi (shared — M1 + M2 + M3)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
@@ -15,13 +24,18 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 /*
 |--------------------------------------------------------------------------
+| Dashboard Umum — mengarahkan per role
+|--------------------------------------------------------------------------
+| Poktan → dashboard diagnosis (M2); Admin/POPT/OP → knowledge (M1).
+*/
+Route::middleware('auth')->group(function (): void {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Modul Knowledge — Mahasiswa 1
 |--------------------------------------------------------------------------
-| RBAC revisi terbaru:
-| - READ  (dashboard, daftar, lihat status): admin + POPT + OP
-|   (OP read-only — tanpa tombol/aksi CRUD, lihat controller & view)
-| - WRITE (create/store/edit/update/destroy/publish): admin + POPT
-| - OP    (pengajuan & monitoring): admin + OP
 */
 Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
     Route::get('/', [KnowledgeController::class, 'dashboard'])->name('dashboard');
@@ -61,13 +75,10 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
         Route::put('/solusi/{solusi}', [KnowledgeController::class, 'solusiUpdate'])->name('solusi.update');
         Route::delete('/solusi/{solusi}', [KnowledgeController::class, 'solusiDestroy'])->name('solusi.destroy');
 
-        // Publish/nonaktifkan knowledge — aksi tulis, POPT & Admin.
         Route::post('/publikasi/toggle', [KnowledgeController::class, 'publikasiToggle'])->name('publikasi.toggle');
     });
 
-    // ==== Halaman OP: Pengajuan Kasus & Monitoring ====
-    // Placeholder sampai modul Diagnosis & Kasus (Mahasiswa 2)
-    // terintegrasi — struktur menu OP sudah siap dipakai.
+    // ==== Halaman OP ====
     Route::middleware(['role:admin|operator_uptd'])->prefix('op')->name('op.')->group(function (): void {
         Route::get('/pengajuan-masuk', [KnowledgeController::class, 'opPengajuanMasuk'])->name('pengajuan-masuk');
         Route::get('/validasi', [KnowledgeController::class, 'opValidasiPengajuan'])->name('validasi');
@@ -83,6 +94,61 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
         Route::post('/{user}/toggle', [\App\Http\Controllers\UserController::class, 'toggle'])->name('toggle');
         Route::delete('/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])->name('destroy');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Diagnosis — Mahasiswa 2 (Poktan)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:poktan'])->prefix('diagnosis')->name('diagnosis.')->group(function (): void {
+    Route::get('/', [WebDiagnosisController::class, 'create'])->name('index');
+    Route::post('/', [WebDiagnosisController::class, 'store'])
+        ->middleware('throttle:diagnosis');
+    Route::get('/history', [WebDiagnosisController::class, 'history'])->name('history');
+    Route::get('/{id}', [WebDiagnosisController::class, 'show'])
+        ->whereNumber('id');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Permohonan Penanganan — Mahasiswa 2 (Poktan)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:poktan'])->prefix('permohonan')->name('permohonan.')->group(function (): void {
+    Route::get('/', [WebPermohonanController::class, 'index'])->name('index');
+    Route::get('/create', [WebPermohonanController::class, 'create'])->name('create');
+    Route::post('/', [WebPermohonanController::class, 'store'])
+        ->middleware('throttle:permohonan');
+    Route::get('/{id}', [WebPermohonanController::class, 'show'])
+        ->whereNumber('id');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Operator UPTD — Mahasiswa 2 (Admin + OP)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin|operator_uptd'])->prefix('operator')->name('operator.')->group(function (): void {
+    Route::get('/permohonan', PlaceholderController::class)->name('permohonan');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Kasus — Mahasiswa 2 (Admin + OP)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin|operator_uptd'])->prefix('kasus')->name('kasus.')->group(function (): void {
+    Route::get('/', PlaceholderController::class)->name('index');
+});
+
+/*
+|--------------------------------------------------------------------------
+| POPT — Mahasiswa 2 (POPT)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:popt'])->prefix('popt')->name('popt.')->group(function (): void {
+    Route::get('/penugasan', PlaceholderController::class)->name('penugasan');
 });
 
 Route::get('/', function () {

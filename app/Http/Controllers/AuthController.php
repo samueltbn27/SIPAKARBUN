@@ -39,12 +39,16 @@ class AuthController extends Controller
             return back()->with('error', 'Akun Anda menunggu persetujuan Admin. Silakan hubungi Admin untuk mengaktifkan akun Anda.')->withInput();
         }
 
-        // Cek role yang diizinkan: admin, POPT (pengelola knowledge),
-        // dan OP (operator — validasi pengajuan).
-        if (!$user->hasRole(['admin', 'popt', 'operator_uptd'])) {
+        // Cek role yang diizinkan: admin, POPT, OP, dan Poktan (modul M2).
+        if (!$user->hasRole(['admin', 'popt', 'operator_uptd', 'poktan'])) {
             auth()->logout();
             $request->session()->invalidate();
             return back()->with('error', 'Anda tidak memiliki akses ke sistem SIPAKARBUN.');
+        }
+
+        // Poktan diarahkan ke dashboard modul M2; yang lain ke knowledge dashboard.
+        if ($user->hasRole('poktan')) {
+            return redirect()->route('dashboard');
         }
 
         return redirect()->route('knowledge.dashboard');
@@ -65,6 +69,7 @@ class AuthController extends Controller
             'admin' => 'Admin',
             'popt' => 'POPT (Pengamat Organisme Pengganggu Tumbuhan)',
             'operator_uptd' => 'OP (Operator)',
+            'poktan' => 'Poktan (Kelompok Tani / Petani)',
         ];
 
         return view('auth.register', compact('roles'));

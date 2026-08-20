@@ -26,6 +26,7 @@ class PenyakitKnowledgeResource extends JsonResource
             'kode' => $this->kode,
             'nama' => $this->nama,
             'deskripsi' => $this->deskripsi,
+            'status' => $this->status,
 
             'komoditas_id' => $this->whenLoaded(
                 'penyakitKomoditas',
