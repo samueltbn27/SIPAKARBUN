@@ -79,7 +79,7 @@ class KnowledgeController extends Controller
             ];
 
             $roleBreakdown = [];
-            foreach (['admin', 'pakar', 'operator_uptd', 'popt'] as $role) {
+            foreach (['admin', 'popt', 'operator_uptd'] as $role) {
                 $roleBreakdown[$role] = \App\Models\User::role($role)->count();
             }
 
@@ -94,6 +94,13 @@ class KnowledgeController extends Controller
                 'roleBreakdown',
                 'adminLogs',
             ));
+        }
+
+        // OP (operator_uptd) melihat dashboard sendiri dengan template
+        // visual yang sama dengan dashboard POPT — isi disesuaikan
+        // tugas OP: pengajuan kasus & monitoring.
+        if (auth()->user()?->hasRole('operator_uptd')) {
+            return view('knowledge.op-dashboard', compact('stats', 'knowledgeStatus'));
         }
 
         return view('knowledge.dashboard', compact('stats', 'recentChanges', 'knowledgeStatus'));
@@ -494,5 +501,35 @@ class KnowledgeController extends Controller
         $riwayat = ActivityLog::latest('created_at')->paginate(20);
 
         return view('knowledge.riwayat.index', compact('riwayat'));
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Halaman OP (Operator) — placeholder
+    |----------------------------------------------------------------------
+    | Menu OP sudah disiapkan mengikuti struktur tugasnya (validasi
+    | pengajuan & monitoring). Data pengajuan kasus akan tersedia
+    | setelah modul Diagnosis & Kasus (Mahasiswa 2) terintegrasi;
+    | halaman-halaman ini akan menjadi konsumsi read model M2.
+    */
+
+    public function opPengajuanMasuk(): View
+    {
+        return view('knowledge.op.pengajuan-masuk');
+    }
+
+    public function opValidasiPengajuan(): View
+    {
+        return view('knowledge.op.validasi');
+    }
+
+    public function opRiwayatPengajuan(): View
+    {
+        return view('knowledge.op.riwayat-pengajuan');
+    }
+
+    public function opStatusKasus(): View
+    {
+        return view('knowledge.op.status-kasus');
     }
 }

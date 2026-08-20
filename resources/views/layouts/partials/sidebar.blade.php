@@ -3,10 +3,13 @@
     $isActive = fn($match) => $match !== '' && $currentRoute && str_starts_with($currentRoute, $match);
     $userName = auth()->user()?->name ?? 'Admin KM';
     $userRole = auth()->user()?->roles->first()?->name ?? 'user';
-    $roleLabels = ['admin' => 'Admin Sistem', 'operator_uptd' => 'Operator UPTD', 'popt' => 'POPT', 'pakar' => 'Knowledge Manager', 'pimpinan' => 'Pimpinan'];
+    $roleLabels = ['admin' => 'Admin Sistem', 'operator_uptd' => 'Operator UPTD', 'popt' => 'POPT', 'pimpinan' => 'Pimpinan'];
     $roleLabel = $roleLabels[$userRole] ?? ucfirst($userRole);
     $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($userName), 2))));
     $pendingUsers = $userRole === 'admin' ? \App\Models\User::where('is_active', false)->count() : 0;
+    $canAccessKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt', 'operator_uptd']) ?? false;
+    $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan']) ?? false;
+    $canAccessMonitoring = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'pimpinan']) ?? false;
     $navSections = [
         [
             'title' => 'Dashboard',
@@ -16,7 +19,7 @@
         ],
     ];
 
-    if (auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan'])) {
+    if ($canAccessWebgis) {
         $navSections[0]['items'][] = [
             'route' => 'webgis.index',
             'label' => 'WebGIS',
@@ -25,7 +28,7 @@
         ];
     }
 
-    if (auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'pimpinan'])) {
+    if ($canAccessMonitoring) {
         $navSections[0]['items'][] = [
             'route' => 'monitoring.dashboard',
             'label' => 'Dashboard Monitoring',
@@ -34,8 +37,35 @@
         ];
     }
 
-    // Master Data hanya untuk non-admin (pakar, operator, popt)
-    if ($userRole !== 'admin') {
+    if ($userRole === 'operator_uptd') {
+        // ==== SIDEBAR OP (Operator) ====
+        // Menu mengikuti tugas OP: validasi pengajuan kasus & monitoring.
+        // Akses ke data knowledge bersifat read-only (Referensi Knowledge).
+        $navSections[] = [
+            'title' => 'Pengajuan Kasus',
+            'items' => [
+                ['route' => 'knowledge.op.pengajuan-masuk', 'label' => 'Pengajuan Masuk', 'icon' => 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4', 'match' => 'knowledge.op.pengajuan-masuk'],
+                ['route' => 'knowledge.op.validasi', 'label' => 'Validasi Pengajuan', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'match' => 'knowledge.op.validasi'],
+                ['route' => 'knowledge.op.riwayat-pengajuan', 'label' => 'Riwayat Pengajuan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.op.riwayat-pengajuan'],
+            ],
+        ];
+        $navSections[] = [
+            'title' => 'Monitoring',
+            'items' => [
+                ['route' => 'knowledge.op.status-kasus', 'label' => 'Status Kasus', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'match' => 'knowledge.op.status-kasus'],
+            ],
+        ];
+        $navSections[] = [
+            'title' => 'Referensi Knowledge',
+            'items' => [
+                ['route' => 'knowledge.penyakit.index', 'label' => 'Penyakit (Read-only)', 'icon' => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', 'match' => 'knowledge.penyakit'],
+                ['route' => 'knowledge.gejala.index', 'label' => 'Gejala (Read-only)', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', 'match' => 'knowledge.gejala'],
+            ],
+        ];
+    }
+
+    // Master Data hanya untuk role yang memiliki akses Knowledge (bukan admin, bukan OP).
+    if ($canAccessKnowledge && !in_array($userRole, ['admin', 'operator_uptd'])) {
         $navSections[] = [
             'title' => 'Master Data',
             'items' => [
@@ -48,13 +78,27 @@
         ];
     }
 
-    $navSections[] = [
-        'title' => 'Knowledge',
-        'items' => [
-            ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
-            ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
-        ],
-    ];
+    if ($canAccessKnowledge) {
+        $navSections[] = [
+            'title' => 'Knowledge',
+            'items' => [
+                ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
+                ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
+            ],
+        ];
+    }
+
+    if (!$canAccessKnowledge) {
+        $navSections[0]['items'] = array_values(array_filter(
+            $navSections[0]['items'],
+            fn($item) => $item['route'] !== 'knowledge.dashboard',
+        ));
+    }
+
+    $navSections = array_values(array_filter(
+        $navSections,
+        fn($section) => $section['items'] !== [],
+    ));
 
     // Section Pengaturan hanya untuk admin
     if ($userRole === 'admin') {

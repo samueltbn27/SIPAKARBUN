@@ -7,28 +7,23 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 /**
- * Seed 6 role sesuai daftar aktor resmi di PRD:
- *   §9.2 Poktan/Gapoktan, §9.3 Operator UPTD, §9.4 POPT,
- *   §9.5 Pakar/Knowledge Manager, §9.6 Admin Sistem/Sekretariat,
- *   §9.7 Pimpinan Disbun
+ * Seed role sesuai revisi RBAC terbaru:
+ *   - admin          : Admin sistem (dashboard sendiri, manajemen user)
+ *   - popt           : POPT — Pakar + Knowledge Manager + Pelaksana
+ *                      Teknis. PEMEGANG CRUD Knowledge Management.
+ *   - operator_uptd  : OP — validator pengajuan kasus, pengambil
+ *                      keputusan, monitoring. READ-ONLY knowledge.
+ *   - poktan         : (modul Mahasiswa 2)
+ *   - pimpinan       : (modul Mahasiswa 3)
  *
- * PENTING: file ini HANYA membuat role + permission yang relevan untuk
- * modul Mahasiswa 1 (Knowledge Management). Role `operator_uptd`,
- * `popt`, `poktan`, `pimpinan` sengaja tetap dibuat di sini (supaya
- * kolom role_id di tabel users konsisten sejak awal), tapi permission
- * detail untuk role-role itu adalah tanggung jawab Mahasiswa 2/3 —
- * jangan tambah permission modul lain dari seeder ini.
- *
- * Prasyarat sebelum menjalankan seeder ini:
- *   composer require spatie/laravel-permission
- *   php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
- *   php artisan migrate
+ * Role `pakar` dihapus — fungsinya dilebur ke `popt`
+ * (lihat migration merge_pakar_role_into_popt).
  */
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = ['admin', 'pakar', 'operator_uptd', 'popt', 'poktan', 'pimpinan'];
+        $roles = ['admin', 'popt', 'operator_uptd', 'poktan', 'pimpinan'];
 
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName]);
@@ -46,14 +41,13 @@ class RoleSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permissionName]);
         }
 
-        // Operator UPTD & POPT (Knowledge Manager): C/R/U/D penuh ke
-        // knowledge base, sesuai RBAC Matrix §24.
-        Role::findByName('operator_uptd')->givePermissionTo($permissions);
-        Role::findByName('popt')->givePermissionTo($permissions);
+        // POPT: satu-satunya role pengelola knowledge (C/R/U/D penuh).
+        Role::findByName('popt')->syncPermissions($permissions);
 
-        // Admin: akses penuh ke SEMUA permission yang ada (bukan cuma
-        // punya Mahasiswa 1), karena di RBAC Matrix kolom Admin selalu
-        // "admin"/full-access di setiap baris fitur.
-        Role::findByName('admin')->givePermissionTo(Permission::all());
+        // Admin: akses penuh ke SEMUA permission yang ada.
+        Role::findByName('admin')->syncPermissions(Permission::all());
+
+        // OP (operator_uptd): TIDAK diberi permission knowledge —
+        // read-only di UI, tanpa hak Create/Update/Delete.
     }
 }

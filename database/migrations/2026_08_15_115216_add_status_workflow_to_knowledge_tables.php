@@ -40,6 +40,7 @@ return new class extends Migration
             ]);
 
             Schema::table($table, function (Blueprint $t) {
+                $t->dropIndex(['is_active']);
                 $t->dropColumn('is_active');
             });
         }

@@ -10,6 +10,14 @@ function normalizeNumber(value) {
     return Number.isFinite(numberValue) ? numberValue : null;
 }
 
+function normalizeCoordinate(value, minimum, maximum) {
+    const numberValue = normalizeNumber(value);
+
+    return numberValue !== null && numberValue >= minimum && numberValue <= maximum
+        ? numberValue
+        : null;
+}
+
 function normalizeReference(value, fields) {
     if (!value || typeof value !== 'object') {
         return null;
@@ -24,6 +32,36 @@ function normalizeReference(value, fields) {
     });
 
     return Object.keys(reference).length > 0 ? reference : null;
+}
+
+function normalizeCommodity(rawCase) {
+    const source = rawCase.komoditas ?? rawCase.commodity;
+    const commodity = typeof source === 'string'
+        ? { nama: source }
+        : typeof source === 'number'
+            ? { id: source }
+            : source;
+    const normalized = normalizeReference(commodity, [
+        'id',
+        'kode',
+        'nama',
+        'name',
+        'commodity_id',
+        'commodity_name',
+        'source_commodity_id',
+        'mapping_status',
+    ]) ?? {};
+
+    const reference = {
+        id: normalized.id ?? normalized.commodity_id ?? rawCase.commodity_id,
+        kode: normalized.kode,
+        nama: normalized.nama ?? normalized.name ?? normalized.commodity_name ?? rawCase.commodity_name,
+        source_commodity_id: normalized.source_commodity_id ?? rawCase.source_commodity_id,
+        mapping_status: normalized.mapping_status ?? rawCase.mapping_status,
+    };
+    const hasValue = Object.values(reference).some((value) => value !== null && value !== undefined);
+
+    return hasValue ? reference : null;
 }
 
 function normalizeStatusHistory(history) {
@@ -45,10 +83,10 @@ export function normalizeCase(rawCase) {
     return {
         case_id: source.case_id ?? null,
         case_code: source.case_code ?? null,
-        latitude: normalizeNumber(source.latitude),
-        longitude: normalizeNumber(source.longitude),
+        latitude: normalizeCoordinate(source.latitude, -90, 90),
+        longitude: normalizeCoordinate(source.longitude, -180, 180),
         kelompok_tani: normalizeReference(source.kelompok_tani, ['id', 'nama']),
-        komoditas: normalizeReference(source.komoditas, ['id', 'kode', 'nama']),
+        komoditas: normalizeCommodity(source),
         penyakit: normalizeReference(source.penyakit, ['id', 'nama']),
         wilayah: normalizeReference(source.wilayah, [
             'kode_kabupaten',
@@ -57,7 +95,8 @@ export function normalizeCase(rawCase) {
             'kecamatan',
         ]),
         popt: normalizeReference(source.popt, ['id', 'nama']),
-        status: source.status ?? null,
+        status: source.status ?? source.handling_status ?? null,
+        request_status: source.request_status ?? null,
         last_note: source.last_note ?? null,
         last_status_at: source.last_status_at ?? null,
         status_history: normalizeStatusHistory(source.status_history),
@@ -70,6 +109,65 @@ export function normalizeCases(rawCases) {
     }
 
     return rawCases.map(normalizeCase);
+}
+
+export function hasValidCaseCoordinates(caseData) {
+    return Boolean(
+        caseData
+        && Number.isFinite(caseData.latitude)
+        && Number.isFinite(caseData.longitude)
+        && caseData.latitude >= -90
+        && caseData.latitude <= 90
+        && caseData.longitude >= -180
+        && caseData.longitude <= 180,
+    );
+}
+
+export class ApiCaseProvider {
+    constructor({ endpoint = null, fetchImpl = null } = {}) {
+        this.endpoint = endpoint;
+        this.fetchImpl = fetchImpl;
+    }
+
+    async getCases() {
+        if (!this.endpoint) {
+            throw new Error('ApiCaseProvider endpoint is not configured.');
+        }
+
+        if (typeof this.fetchImpl !== 'function') {
+            throw new Error('ApiCaseProvider requires a fetch implementation.');
+        }
+
+        let response;
+
+        try {
+            response = await this.fetchImpl(this.endpoint, {
+                headers: { Accept: 'application/json' },
+            });
+        } catch (error) {
+            throw new Error('Case API request failed.', { cause: error });
+        }
+
+        if (!response?.ok) {
+            throw new Error(`Case API request failed with HTTP ${response?.status ?? 'unknown'}.`);
+        }
+
+        let payload;
+
+        try {
+            payload = await response.json();
+        } catch (error) {
+            throw new Error('Case API response is not valid JSON.', { cause: error });
+        }
+
+        const rawCases = Array.isArray(payload) ? payload : payload?.data;
+
+        if (!Array.isArray(rawCases)) {
+            throw new TypeError('Case API response must contain an array in data.');
+        }
+
+        return normalizeCases(rawCases);
+    }
 }
 
 /**

@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIconRetina from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { getCases } from './data-provider';
+import { getCases, hasValidCaseCoordinates } from './data-provider';
 import {
     closeCaseDetail,
     formatDateTime,
@@ -31,18 +31,6 @@ L.Icon.Default.mergeOptions({
 
 const WEST_JAVA_VIEW = [-6.9175, 107.6191];
 const WEST_JAVA_ZOOM = 9;
-
-function isValidCoordinate(caseData) {
-    return Boolean(
-        caseData
-        && Number.isFinite(caseData.latitude)
-        && Number.isFinite(caseData.longitude)
-        && caseData.latitude >= -90
-        && caseData.latitude <= 90
-        && caseData.longitude >= -180
-        && caseData.longitude <= 180,
-    );
-}
 
 function appendPopupField(list, label, value) {
     const row = document.createElement('div');
@@ -109,7 +97,7 @@ function createStatusIcon(status) {
 }
 
 function renderCaseMarker(caseLayer, caseData) {
-    if (!isValidCoordinate(caseData)) {
+    if (!hasValidCaseCoordinates(caseData)) {
         return null;
     }
 
@@ -257,7 +245,7 @@ export function initializeWebGIS(container, cases) {
     const emptyMessage = document.querySelector('[data-webgis-empty]');
     const datasetEmptyMessage = document.querySelector('[data-webgis-dataset-empty]');
     const filterState = createFilterState();
-    const mappableCases = cases.filter(isValidCoordinate);
+    const mappableCases = cases.filter(hasValidCaseCoordinates);
 
     setSelectOptions(controls.status, getStatusOptions(), 'Semua Status');
     setSelectOptions(controls.commodity, getUniqueCommodities(mappableCases), 'Semua Komoditas');

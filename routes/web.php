@@ -23,7 +23,7 @@ Route::middleware(['auth', 'role:admin|operator_uptd|pimpinan'])->group(function
     Route::get('/dashboard-monitoring', [MonitoringDashboardController::class, 'index'])->name('monitoring.dashboard');
 });
 
-Route::middleware(['auth', 'role:admin|pakar|operator_uptd|popt'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
+Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
     Route::get('/', [KnowledgeController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/komoditas', [KnowledgeController::class, 'komoditasIndex'])->name('komoditas.index');
@@ -60,6 +60,14 @@ Route::middleware(['auth', 'role:admin|pakar|operator_uptd|popt'])->prefix('know
     Route::post('/publikasi/toggle', [KnowledgeController::class, 'publikasiToggle'])->name('publikasi.toggle');
 
     Route::get('/riwayat', [KnowledgeController::class, 'riwayatIndex'])->name('riwayat.index');
+
+    // Halaman OP (Operator): validasi pengajuan kasus & monitoring.
+    Route::middleware(['role:admin|operator_uptd'])->prefix('op')->name('op.')->group(function (): void {
+        Route::get('/pengajuan-masuk', [KnowledgeController::class, 'opPengajuanMasuk'])->name('pengajuan-masuk');
+        Route::get('/validasi', [KnowledgeController::class, 'opValidasiPengajuan'])->name('validasi');
+        Route::get('/riwayat-pengajuan', [KnowledgeController::class, 'opRiwayatPengajuan'])->name('riwayat-pengajuan');
+        Route::get('/status-kasus', [KnowledgeController::class, 'opStatusKasus'])->name('status-kasus');
+    });
 
     // Manajemen Pengguna (admin only)
     Route::middleware(['role:admin'])->prefix('pengguna')->name('pengguna.')->group(function (): void {

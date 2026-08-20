@@ -55,7 +55,7 @@ class AturanCfCrudTest extends TestCase
         AturanCf::factory()->create([
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
-            'is_active' => true,
+            'status' => AturanCf::STATUS_AKTIF,
         ]);
 
         // Coba bikin rule KEDUA yang juga aktif untuk pasangan yang sama.
@@ -75,7 +75,7 @@ class AturanCfCrudTest extends TestCase
         AturanCf::factory()->create([
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
-            'is_active' => false, // rule lama sudah nonaktif
+            'status' => AturanCf::STATUS_NONAKTIF, // rule lama sudah nonaktif
         ]);
 
         $this->postJson('/api/admin/aturan-cf', [

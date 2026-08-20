@@ -39,11 +39,15 @@ class AuthController extends Controller
             return back()->with('error', 'Akun Anda menunggu persetujuan Admin. Silakan hubungi Admin untuk mengaktifkan akun Anda.')->withInput();
         }
 
-        // Cek role yang diizinkan
-        if (!$user->hasRole(['admin', 'pakar', 'operator_uptd', 'popt'])) {
+        // Role tetap diverifikasi dari relasi user di backend, bukan dari input browser.
+        if (!$user->hasRole(['admin', 'popt', 'operator_uptd', 'pimpinan'])) {
             auth()->logout();
             $request->session()->invalidate();
-            return back()->with('error', 'Anda tidak memiliki akses ke modul Knowledge Management.');
+            return back()->with('error', 'Role akun belum memiliki modul aplikasi yang tersedia.');
+        }
+
+        if ($user->hasRole('pimpinan')) {
+            return redirect()->route('monitoring.dashboard');
         }
 
         return redirect()->route('knowledge.dashboard');
@@ -62,7 +66,8 @@ class AuthController extends Controller
     {
         $roles = [
             'admin' => 'Admin',
-            'pakar' => 'Pakar (Knowledge Manager)',
+            'popt' => 'POPT (Pengamat Organisme Pengganggu Tumbuhan)',
+            'operator_uptd' => 'OP (Operator)',
         ];
 
         return view('auth.register', compact('roles'));

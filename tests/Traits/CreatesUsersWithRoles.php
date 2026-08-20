@@ -7,7 +7,7 @@ use Spatie\Permission\Models\Role;
 
 /**
  * Trait dipakai di test Feature yang butuh user dengan role tertentu
- * (admin/pakar), supaya tiap test class tidak menulis ulang logika
+ * (admin/popt), supaya tiap test class tidak menulis ulang logika
  * bikin role dari nol. RefreshDatabase mengosongkan tabel role tiap
  * test, jadi role dibuat ulang lewat firstOrCreate() di sini.
  */
@@ -25,10 +25,10 @@ trait CreatesUsersWithRoles
 
     protected function createPakar(): User
     {
-        Role::firstOrCreate(['name' => 'pakar']);
+        Role::firstOrCreate(['name' => 'popt']);
 
         $user = User::factory()->create();
-        $user->assignRole('pakar');
+        $user->assignRole('popt');
 
         return $user;
     }

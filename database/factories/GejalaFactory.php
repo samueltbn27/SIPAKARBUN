@@ -15,12 +15,17 @@ class GejalaFactory extends Factory
             'kode' => 'GJ-' . $this->faker->unique()->numberBetween(100, 999),
             'nama' => ucfirst($this->faker->words(4, true)),
             'deskripsi' => $this->faker->sentence(),
-            'is_active' => true,
+            'status' => Gejala::STATUS_AKTIF,
         ];
+    }
+
+    public function draft(): static
+    {
+        return $this->state(fn () => ['status' => Gejala::STATUS_DRAFT]);
     }
 
     public function nonaktif(): static
     {
-        return $this->state(fn () => ['is_active' => false]);
+        return $this->state(fn () => ['status' => Gejala::STATUS_NONAKTIF]);
     }
 }
