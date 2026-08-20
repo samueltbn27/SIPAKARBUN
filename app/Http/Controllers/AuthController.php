@@ -65,6 +65,7 @@ class AuthController extends Controller
             'admin' => 'Admin',
             'popt' => 'POPT (Pengamat Organisme Pengganggu Tumbuhan)',
             'operator_uptd' => 'OP (Operator)',
+            'poktan' => 'Poktan (Kelompok Tani / Petani)',
         ];
 
         return view('auth.register', compact('roles'));
