@@ -19,13 +19,13 @@ use Tests\Traits\CreatesUsersWithRoles;
  */
 class KnowledgeApiContractTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
-    public function test_butuh_login_tapi_tidak_perlu_role_admin_pakar(): void
+    public function test_butuh_login_tapi_tidak_perlu_role_admin_popt(): void
     {
         // Sengaja pakai user TANPA role apa pun — endpoint kontrak M2
-        // hanya butuh auth:sanctum, bukan role admin/pakar (beda
+        // hanya butuh auth:sanctum, bukan role admin/popt (beda
         // dengan /api/admin/*).
         Sanctum::actingAs($this->createUserTanpaRole());
 
@@ -49,6 +49,9 @@ class KnowledgeApiContractTest extends TestCase
 
         $this->assertTrue($nama->contains('Penyakit Aktif'));
         $this->assertFalse($nama->contains('Penyakit Nonaktif'));
+        $this->assertTrue(collect($response->json('data'))->every(
+            fn ($item) => ($item['status'] ?? null) === 'aktif'
+        ));
     }
 
     public function test_response_menyertakan_aturan_cf_dan_solusi(): void

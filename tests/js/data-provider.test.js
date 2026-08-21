@@ -82,6 +82,54 @@ test('ApiCaseProvider treats an empty data array as an empty dataset', async () 
     assert.deepEqual(await provider.getCases(), []);
 });
 
+test('ApiCaseProvider adapts the actual M2 case resource shape', async () => {
+    const provider = new ApiCaseProvider({
+        endpoint: '/api/kasus',
+        fetchImpl: async () => ({
+            ok: true,
+            status: 200,
+            async json() {
+                return {
+                    data: [{
+                        kasus_id: 17,
+                        kasus_code: 'KS-20260820-0001',
+                        status: 'dalam_pelaksanaan',
+                        komoditas: { id: 5, kode: 'KP-045', nama: 'Karet' },
+                        penyakit: { id: 4, nama: 'Jamur Akar Putih' },
+                        lokasi_kasus: {
+                            latitude: '-6.9123',
+                            longitude: '107.6123',
+                        },
+                        penugasan_popt: {
+                            popt_id: 33,
+                            popt_name: 'Budi',
+                        },
+                        riwayat_status: [{
+                            status: 'ditugaskan',
+                            catatan: 'POPT ditugaskan.',
+                            created_at: '2026-08-19T08:00:00+07:00',
+                        }],
+                    }],
+                };
+            },
+        }),
+    });
+
+    const [caseData] = await provider.getCases();
+
+    assert.equal(caseData.case_id, 17);
+    assert.equal(caseData.case_code, 'KS-20260820-0001');
+    assert.equal(caseData.status, 'in_progress');
+    assert.equal(caseData.latitude, -6.9123);
+    assert.equal(caseData.longitude, 107.6123);
+    assert.deepEqual(caseData.popt, { id: 33, nama: 'Budi' });
+    assert.deepEqual(caseData.status_history, [{
+        status: 'assigned',
+        note: 'POPT ditugaskan.',
+        changed_at: '2026-08-19T08:00:00+07:00',
+    }]);
+});
+
 test('ApiCaseProvider exposes HTTP and invalid response errors', async () => {
     const httpErrorProvider = new ApiCaseProvider({
         endpoint: '/configured-only',

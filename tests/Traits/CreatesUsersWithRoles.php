@@ -23,7 +23,7 @@ trait CreatesUsersWithRoles
         return $user;
     }
 
-    protected function createPakar(): User
+    protected function createPopt(): User
     {
         Role::firstOrCreate(['name' => 'popt']);
 

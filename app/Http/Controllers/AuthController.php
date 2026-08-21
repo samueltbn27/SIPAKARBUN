@@ -40,7 +40,7 @@ class AuthController extends Controller
         }
 
         // Role tetap diverifikasi dari relasi user di backend, bukan dari input browser.
-        if (!$user->hasRole(['admin', 'popt', 'operator_uptd', 'pimpinan'])) {
+        if (!$user->hasRole(['admin', 'operator_uptd', 'popt', 'poktan', 'pimpinan'])) {
             auth()->logout();
             $request->session()->invalidate();
             return back()->with('error', 'Role akun belum memiliki modul aplikasi yang tersedia.');
@@ -50,7 +50,9 @@ class AuthController extends Controller
             return redirect()->route('monitoring.dashboard');
         }
 
-        return redirect()->route('knowledge.dashboard');
+        // Semua role operasional memakai dashboard shell bersama; modul yang
+        // tampil tetap dibatasi oleh role di dalam dashboard dan route backend.
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $request): RedirectResponse
@@ -68,6 +70,7 @@ class AuthController extends Controller
             'admin' => 'Admin',
             'popt' => 'POPT (Pengamat Organisme Pengganggu Tumbuhan)',
             'operator_uptd' => 'OP (Operator)',
+            'poktan' => 'Poktan (Kelompok Tani / Petani)',
         ];
 
         return view('auth.register', compact('roles'));

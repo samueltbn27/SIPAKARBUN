@@ -11,12 +11,12 @@ use Tests\Traits\CreatesUsersWithRoles;
 
 class SolusiCrudTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_bisa_membuat_solusi_untuk_penyakit_yang_ada(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createPopt());
         $penyakit = Penyakit::factory()->create();
 
         $this->postJson('/api/admin/solusi', [
@@ -32,7 +32,7 @@ class SolusiCrudTest extends TestCase
 
     public function test_penyakit_id_harus_ada_di_tabel_penyakit(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createPopt());
 
         $this->postJson('/api/admin/solusi', [
             'penyakit_id' => 99999, // sengaja id yang tidak ada
@@ -42,7 +42,7 @@ class SolusiCrudTest extends TestCase
 
     public function test_judul_wajib_diisi(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createPopt());
         $penyakit = Penyakit::factory()->create();
 
         $this->postJson('/api/admin/solusi', ['penyakit_id' => $penyakit->id])

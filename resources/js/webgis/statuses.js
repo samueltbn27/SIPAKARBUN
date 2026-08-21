@@ -7,6 +7,18 @@ export const STATUS_ORDER = [
     'completed',
 ];
 
+// M2 stores handling statuses in Indonesian; M3 keeps its existing
+// normalized machine values so the WebGIS and dashboard remain unchanged.
+export const M2_STATUS_MAP = {
+    diterima: null,
+    ditugaskan: 'assigned',
+    sedang_direview: 'under_review',
+    ditunda: 'postponed',
+    siap_dieksekusi: 'ready_for_execution',
+    dalam_pelaksanaan: 'in_progress',
+    selesai: 'completed',
+};
+
 export const STATUS_CONFIG = {
     assigned: {
         label: 'Ditugaskan',
@@ -62,6 +74,16 @@ const FALLBACK_STATUS = {
 
 export function getStatusConfig(status) {
     return STATUS_CONFIG[status] || FALLBACK_STATUS;
+}
+
+export function normalizeHandlingStatus(status) {
+    if (status === null || status === undefined || status === '') {
+        return null;
+    }
+
+    return Object.prototype.hasOwnProperty.call(M2_STATUS_MAP, status)
+        ? M2_STATUS_MAP[status]
+        : STATUS_ORDER.includes(status) ? status : null;
 }
 
 export function getStatusOptions() {

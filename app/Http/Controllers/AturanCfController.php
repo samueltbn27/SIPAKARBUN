@@ -64,7 +64,7 @@ class AturanCfController extends Controller
     public function destroy(AturanCf $aturanCf)
     {
         // Catatan bisnis: karena ada kolom `version`, pertimbangkan
-        // nonaktifkan (is_active=false) daripada hard delete, supaya
+        // nonaktifkan (status='nonaktif') daripada hard delete, supaya
         // riwayat versi rule tidak hilang (M1-FR-010: audit perubahan).
         $aturanCf->delete();
 

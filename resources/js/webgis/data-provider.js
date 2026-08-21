@@ -1,4 +1,5 @@
 import { mockCases } from './mock-cases.js';
+import { normalizeHandlingStatus } from './statuses.js';
 
 function normalizeNumber(value) {
     if (value === null || value === undefined || value === '') {
@@ -69,7 +70,31 @@ function normalizeStatusHistory(history) {
         return [];
     }
 
-    return history.map((entry) => normalizeReference(entry, ['status', 'note', 'changed_at'])).filter(Boolean);
+    return history.map((entry) => {
+        const source = entry && typeof entry === 'object' ? entry : {};
+        const status = normalizeHandlingStatus(source.status ?? source.handling_status);
+        const note = source.note ?? source.catatan ?? null;
+        const changedAt = source.changed_at ?? source.created_at ?? null;
+
+        if (status === null && note === null && changedAt === null) {
+            return null;
+        }
+
+        return { status, note, changed_at: changedAt };
+    }).filter(Boolean);
+}
+
+function normalizePopt(rawCase) {
+    const source = rawCase.popt ?? rawCase.penugasan_popt;
+
+    if (!source || typeof source !== 'object') {
+        return null;
+    }
+
+    return normalizeReference({
+        id: source.id ?? source.popt_id,
+        nama: source.nama ?? source.name ?? source.popt_name,
+    }, ['id', 'nama']);
 }
 
 /**
@@ -79,27 +104,33 @@ function normalizeStatusHistory(history) {
  */
 export function normalizeCase(rawCase) {
     const source = rawCase && typeof rawCase === 'object' ? rawCase : {};
+    const location = source.lokasi_kasus ?? source.location ?? {};
+    const request = source.permohonan ?? {};
+    const requestLocation = request.lokasi_kasus ?? {};
+    const history = source.status_history ?? source.riwayat_status;
+    const normalizedHistory = normalizeStatusHistory(history);
+    const latestHistory = normalizedHistory[normalizedHistory.length - 1] ?? null;
 
     return {
-        case_id: source.case_id ?? null,
-        case_code: source.case_code ?? null,
-        latitude: normalizeCoordinate(source.latitude, -90, 90),
-        longitude: normalizeCoordinate(source.longitude, -180, 180),
-        kelompok_tani: normalizeReference(source.kelompok_tani, ['id', 'nama']),
+        case_id: source.case_id ?? source.kasus_id ?? null,
+        case_code: source.case_code ?? source.kasus_code ?? null,
+        latitude: normalizeCoordinate(source.latitude ?? location.latitude ?? requestLocation.latitude, -90, 90),
+        longitude: normalizeCoordinate(source.longitude ?? location.longitude ?? requestLocation.longitude, -180, 180),
+        kelompok_tani: normalizeReference(source.kelompok_tani ?? request.kelompok_tani, ['id', 'nama']),
         komoditas: normalizeCommodity(source),
         penyakit: normalizeReference(source.penyakit, ['id', 'nama']),
-        wilayah: normalizeReference(source.wilayah, [
+        wilayah: normalizeReference(source.wilayah ?? requestLocation, [
             'kode_kabupaten',
             'kabupaten',
             'kode_kecamatan',
             'kecamatan',
         ]),
-        popt: normalizeReference(source.popt, ['id', 'nama']),
-        status: source.status ?? source.handling_status ?? null,
-        request_status: source.request_status ?? null,
-        last_note: source.last_note ?? null,
-        last_status_at: source.last_status_at ?? null,
-        status_history: normalizeStatusHistory(source.status_history),
+        popt: normalizePopt(source),
+        status: normalizeHandlingStatus(source.status ?? source.current_status ?? source.handling_status),
+        request_status: source.request_status ?? request.status ?? null,
+        last_note: source.last_note ?? latestHistory?.note ?? null,
+        last_status_at: source.last_status_at ?? latestHistory?.changed_at ?? null,
+        status_history: normalizedHistory,
     };
 }
 
@@ -142,7 +173,11 @@ export class ApiCaseProvider {
 
         try {
             response = await this.fetchImpl(this.endpoint, {
-                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
             });
         } catch (error) {
             throw new Error('Case API request failed.', { cause: error });
