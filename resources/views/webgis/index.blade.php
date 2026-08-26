@@ -66,11 +66,11 @@
         <div class="flex items-center justify-between gap-3 border-b border-[#eef3ef] px-5 py-4 sm:px-6">
             <div>
                 <h2 id="map-heading" class="text-base font-bold text-[#173b29]">Peta Persebaran Kasus</h2>
-                <p class="mt-1 text-xs text-[#89968e]" data-webgis-case-count>Menyiapkan data kasus demo...</p>
+            <p class="mt-1 text-xs text-[#89968e]" data-webgis-case-count>Menyiapkan data kasus...</p>
             </div>
             <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#eef6f1] px-3 py-1 text-xs font-medium text-[#2d6b4a]">
                 <span class="h-1.5 w-1.5 rounded-full bg-[#176b45]" aria-hidden="true"></span>
-                Demo aktif
+                API aktif
             </span>
         </div>
 
@@ -132,6 +132,8 @@
                 <span data-case-detail="status">-</span>
             </div>
             <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="rounded-lg bg-[#fffaf0] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Status permohonan</dt><dd data-case-detail="request-status" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
+                <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Status penanganan</dt><dd data-case-detail="handling-status" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3 sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Poktan</dt><dd data-case-detail="kelompok-tani" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Komoditas</dt><dd data-case-detail="commodity" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kode komoditas</dt><dd data-case-detail="commodity-code" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>

@@ -17,8 +17,9 @@ use Illuminate\Http\Request;
  *   GET   /api/kasus/{id}/history      — riwayat status (append-only).
  *   POST  /api/kasus/{id}/assign-popt  — tetapkan POPT ke kasus.
  *
- * Middleware role `admin|operator_uptd`. Distribusi kerja POPT diakses
- * oleh POPT itu sendiri lewat endpoint /api/popt/* (POPTController).
+ * GET read contract dibuka untuk admin/operator/pimpinan secara global dan
+ * untuk POPT dengan scope penugasan aktifnya. Mutation tetap hanya milik
+ * admin/operator.
  */
 class KasusController extends Controller
 {
@@ -26,21 +27,35 @@ class KasusController extends Controller
 
     public function index(Request $request)
     {
-        return KasusPenangananResource::collection(
-            $this->service->kasusOperator(
-                $request->only(['status', 'per_page'])
+        $user = $request->user();
+        $kasus = $user->hasRole('popt')
+            ? $this->service->kasusPopt(
+                poptId: (int) $user->id,
+                filters: $request->only(['status', 'per_page']),
             )
+            : $this->service->kasusOperator(
+                $request->only(['status', 'per_page'])
+            );
+
+        return KasusPenangananResource::collection(
+            $kasus
         );
     }
 
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        return new KasusPenangananResource($this->service->detailKasus($id));
+        $kasus = $request->user()->hasRole('popt')
+            ? $this->service->detailKasusPopt($id, (int) $request->user()->id)
+            : $this->service->detailKasus($id);
+
+        return new KasusPenangananResource($kasus);
     }
 
-    public function history(int $id)
+    public function history(Request $request, int $id)
     {
-        $kasus = $this->service->detailKasus($id);
+        $kasus = $request->user()->hasRole('popt')
+            ? $this->service->detailKasusPopt($id, (int) $request->user()->id)
+            : $this->service->detailKasus($id);
 
         return response()->json([
             'kasus_id' => $kasus->id,
@@ -48,8 +63,10 @@ class KasusController extends Controller
                 'previous_status' => $riwayat->previous_status,
                 'status' => $riwayat->status,
                 'catatan' => $riwayat->catatan,
+                'note' => $riwayat->catatan,
                 'actor_id' => $riwayat->actor_id,
                 'created_at' => $riwayat->created_at?->toIso8601String(),
+                'changed_at' => $riwayat->created_at?->toIso8601String(),
             ])->values(),
         ]);
     }

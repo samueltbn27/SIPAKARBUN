@@ -88,7 +88,7 @@ class KasusService
     public function kasusOperator(array $filters = []): LengthAwarePaginator
     {
         $query = KasusPenanganan::query()
-            ->with(['permohonan.diagnosis', 'penugasanAktif.popt']);
+            ->with($this->readContractRelations());
 
         if (! empty($filters['status'])) {
             $query->where('current_status', $filters['status']);
@@ -104,7 +104,7 @@ class KasusService
     {
         $query = KasusPenanganan::query()
             ->whereHas('penugasanAktif', fn ($q) => $q->where('popt_id', $poptId))
-            ->with(['permohonan.diagnosis', 'penugasanAktif.popt']);
+            ->with($this->readContractRelations());
 
         if (! empty($filters['status'])) {
             $query->where('current_status', $filters['status']);
@@ -119,8 +119,33 @@ class KasusService
     public function detailKasus(int $id): KasusPenanganan
     {
         return KasusPenanganan::query()
-            ->with(['permohonan.diagnosis', 'penugasanAktif.popt', 'riwayatStatus.actor', 'creator'])
+            ->with([...$this->readContractRelations(), 'creator'])
             ->findOrFail($id);
+    }
+
+    /**
+     * Detail read-only yang dibatasi pada penugasan aktif POPT yang login.
+     */
+    public function detailKasusPopt(int $id, int $poptId): KasusPenanganan
+    {
+        $kasus = KasusPenanganan::query()
+            ->whereHas('penugasanAktif', fn ($q) => $q->where('popt_id', $poptId))
+            ->with([...$this->readContractRelations(), 'creator'])
+            ->find($id);
+
+        abort_unless($kasus !== null, 403, 'Kasus ini bukan penugasan Anda.');
+
+        return $kasus;
+    }
+
+    /** @return array<int, string> */
+    private function readContractRelations(): array
+    {
+        return [
+            'permohonan',
+            'penugasanAktif.popt',
+            'riwayatStatus',
+        ];
     }
 
     private function perPage(array $filters): int

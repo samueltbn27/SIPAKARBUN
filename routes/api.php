@@ -56,8 +56,12 @@ Route::middleware(['auth:sanctum', 'role:operator_uptd'])
             ->whereNumber('id');
     });
 
-/* M2: operator/admin case read and POPT assignment. */
-Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
+/*
+|--------------------------------------------------------------------------
+| Kasus Penanganan — shared M2 → M3 read contract
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd|popt|pimpinan'])
     ->prefix('kasus')
     ->group(function (): void {
         Route::get('/', [KasusController::class, 'index']);
@@ -65,6 +69,12 @@ Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
             ->whereNumber('id');
         Route::get('/{id}/history', [KasusController::class, 'history'])
             ->whereNumber('id');
+    });
+
+/* M2 mutations remain restricted to Admin/Operator UPTD. */
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
+    ->prefix('kasus')
+    ->group(function (): void {
         Route::post('/{id}/assign-popt', [KasusController::class, 'assignPopt'])
             ->whereNumber('id');
     });

@@ -1,16 +1,17 @@
 export const STATUS_ORDER = [
+    'accepted',
     'assigned',
     'under_review',
     'postponed',
     'ready_for_execution',
     'in_progress',
     'completed',
+    'unknown',
 ];
 
-// M2 stores handling statuses in Indonesian; M3 keeps its existing
-// normalized machine values so the WebGIS and dashboard remain unchanged.
+// M2 handling statuses are normalized here once for every M3 consumer.
 export const M2_STATUS_MAP = {
-    diterima: null,
+    diterima: 'accepted',
     ditugaskan: 'assigned',
     sedang_direview: 'under_review',
     ditunda: 'postponed',
@@ -19,7 +20,21 @@ export const M2_STATUS_MAP = {
     selesai: 'completed',
 };
 
+export const REQUEST_STATUS_LABELS = {
+    diajukan: 'Diajukan',
+    sedang_direview: 'Sedang Direview',
+    diterima: 'Diterima',
+    ditolak: 'Ditolak',
+};
+
 export const STATUS_CONFIG = {
+    accepted: {
+        label: 'Diterima — Menunggu Penugasan',
+        markerSymbol: '○',
+        markerClass: 'bg-[#c47a16] text-white',
+        badgeClass: 'bg-[#fff3df] text-[#8a560d]',
+        chartColor: '#c47a16',
+    },
     assigned: {
         label: 'Ditugaskan',
         markerSymbol: '●',
@@ -62,18 +77,17 @@ export const STATUS_CONFIG = {
         badgeClass: 'bg-[#edf1ee] text-[#526159]',
         chartColor: '#526159',
     },
-};
-
-const FALLBACK_STATUS = {
-    label: 'Status tidak diketahui',
-    markerSymbol: '?',
-    markerClass: 'bg-[#526159] text-white',
-    badgeClass: 'bg-[#edf1ee] text-[#526159]',
-    chartColor: '#526159',
+    unknown: {
+        label: 'Status tidak diketahui',
+        markerSymbol: '?',
+        markerClass: 'bg-[#526159] text-white',
+        badgeClass: 'bg-[#edf1ee] text-[#526159]',
+        chartColor: '#526159',
+    },
 };
 
 export function getStatusConfig(status) {
-    return STATUS_CONFIG[status] || FALLBACK_STATUS;
+    return STATUS_CONFIG[status] || STATUS_CONFIG.unknown;
 }
 
 export function normalizeHandlingStatus(status) {
@@ -81,9 +95,11 @@ export function normalizeHandlingStatus(status) {
         return null;
     }
 
-    return Object.prototype.hasOwnProperty.call(M2_STATUS_MAP, status)
-        ? M2_STATUS_MAP[status]
-        : STATUS_ORDER.includes(status) ? status : null;
+    if (Object.prototype.hasOwnProperty.call(M2_STATUS_MAP, status)) {
+        return M2_STATUS_MAP[status];
+    }
+
+    return STATUS_ORDER.includes(status) ? status : 'unknown';
 }
 
 export function getStatusOptions() {
@@ -91,4 +107,8 @@ export function getStatusOptions() {
         value,
         label: STATUS_CONFIG[value].label,
     }));
+}
+
+export function getRequestStatusLabel(status) {
+    return REQUEST_STATUS_LABELS[status] || status || '-';
 }

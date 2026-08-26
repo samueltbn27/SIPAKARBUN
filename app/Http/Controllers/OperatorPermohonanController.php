@@ -59,7 +59,9 @@ class OperatorPermohonanController extends Controller
             catatan: $request->validated('catatan'),
         );
 
-        return (new KasusPenangananResource($kasus))
+        return (new KasusPenangananResource(
+            $kasus->load(['permohonan', 'penugasanAktif.popt', 'riwayatStatus'])
+        ))
             ->response($request)
             ->setStatusCode(201);
     }

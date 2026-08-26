@@ -1,4 +1,4 @@
-import { getStatusConfig } from './statuses';
+import { getRequestStatusLabel, getStatusConfig } from './statuses';
 
 let drawerElements = null;
 let previousFocusedElement = null;
@@ -41,6 +41,8 @@ function getDrawerElements() {
         closeButton: document.querySelector('[data-case-detail-close]'),
         caseCode: document.querySelector('[data-case-detail="case-code"]'),
         statusBadge: document.querySelector('[data-case-detail="status"]'),
+        requestStatus: document.querySelector('[data-case-detail="request-status"]'),
+        handlingStatus: document.querySelector('[data-case-detail="handling-status"]'),
         kelompokTani: document.querySelector('[data-case-detail="kelompok-tani"]'),
         commodity: document.querySelector('[data-case-detail="commodity"]'),
         commodityCode: document.querySelector('[data-case-detail="commodity-code"]'),
@@ -148,7 +150,7 @@ function renderCaseDetail(caseData) {
     setText(drawerElements.disease, caseData.penyakit?.nama);
     setText(drawerElements.regency, caseData.wilayah?.kabupaten);
     setText(drawerElements.district, caseData.wilayah?.kecamatan);
-    setText(drawerElements.popt, caseData.popt?.nama);
+    setText(drawerElements.popt, caseData.popt?.nama ?? 'Belum ditugaskan');
     setText(drawerElements.latitude, caseData.latitude);
     setText(drawerElements.longitude, caseData.longitude);
     setText(drawerElements.updatedAt, formatDateTime(caseData.last_status_at));
@@ -158,6 +160,9 @@ function renderCaseDetail(caseData) {
         drawerElements.statusBadge.className = `inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ${config.badgeClass}`;
         drawerElements.statusBadge.textContent = config.label;
     }
+
+    setText(drawerElements.requestStatus, getRequestStatusLabel(caseData.request_status));
+    setText(drawerElements.handlingStatus, config.label);
 
     renderTimeline(caseData.status_history);
 }

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { mockCases } from './mock-cases.js';
 import { normalizeHandlingStatus } from './statuses.js';
 
@@ -65,6 +66,20 @@ function normalizeCommodity(rawCase) {
     return hasValue ? reference : null;
 }
 
+function normalizeDisease(rawCase) {
+    const source = rawCase.penyakit;
+
+    if (!source || typeof source !== 'object') {
+        return null;
+    }
+
+    return {
+        id: source.id ?? null,
+        kode: source.kode ?? null,
+        nama: source.nama ?? source.name ?? null,
+    };
+}
+
 function normalizeStatusHistory(history) {
     if (!Array.isArray(history)) {
         return [];
@@ -106,27 +121,37 @@ export function normalizeCase(rawCase) {
     const source = rawCase && typeof rawCase === 'object' ? rawCase : {};
     const location = source.lokasi_kasus ?? source.location ?? {};
     const request = source.permohonan ?? {};
-    const requestLocation = request.lokasi_kasus ?? {};
     const history = source.status_history ?? source.riwayat_status;
     const normalizedHistory = normalizeStatusHistory(history);
-    const latestHistory = normalizedHistory[normalizedHistory.length - 1] ?? null;
+    // M2 returns riwayat_status newest-first. The date comparison also keeps
+    // the normalizer tolerant of older development fixtures.
+    const latestHistory = normalizedHistory.reduce((latest, entry) => {
+        if (!latest || !entry.changed_at) {
+            return latest ?? entry;
+        }
+
+        return new Date(entry.changed_at) > new Date(latest.changed_at) ? entry : latest;
+    }, null);
 
     return {
         case_id: source.case_id ?? source.kasus_id ?? null,
         case_code: source.case_code ?? source.kasus_code ?? null,
-        latitude: normalizeCoordinate(source.latitude ?? location.latitude ?? requestLocation.latitude, -90, 90),
-        longitude: normalizeCoordinate(source.longitude ?? location.longitude ?? requestLocation.longitude, -180, 180),
+        request_id: source.request_id ?? source.permohonan_id ?? request.id ?? null,
+        // Only the case coordinate fields are authoritative. There is no
+        // fallback to the Poktan reference location.
+        latitude: normalizeCoordinate(source.latitude_kasus ?? source.latitude ?? location.latitude, -90, 90),
+        longitude: normalizeCoordinate(source.longitude_kasus ?? source.longitude ?? location.longitude, -180, 180),
         kelompok_tani: normalizeReference(source.kelompok_tani ?? request.kelompok_tani, ['id', 'nama']),
         komoditas: normalizeCommodity(source),
-        penyakit: normalizeReference(source.penyakit, ['id', 'nama']),
-        wilayah: normalizeReference(source.wilayah ?? requestLocation, [
+        penyakit: normalizeDisease(source),
+        wilayah: normalizeReference(source.wilayah ?? request.wilayah, [
             'kode_kabupaten',
             'kabupaten',
             'kode_kecamatan',
             'kecamatan',
         ]),
         popt: normalizePopt(source),
-        status: normalizeHandlingStatus(source.status ?? source.current_status ?? source.handling_status),
+        status: normalizeHandlingStatus(source.handling_status ?? source.current_status ?? source.status),
         request_status: source.request_status ?? request.status ?? null,
         last_note: source.last_note ?? latestHistory?.note ?? null,
         last_status_at: source.last_status_at ?? latestHistory?.changed_at ?? null,
@@ -155,9 +180,10 @@ export function hasValidCaseCoordinates(caseData) {
 }
 
 export class ApiCaseProvider {
-    constructor({ endpoint = null, fetchImpl = null } = {}) {
+    constructor({ endpoint = null, fetchImpl = null, httpClient = null } = {}) {
         this.endpoint = endpoint;
         this.fetchImpl = fetchImpl;
+        this.httpClient = httpClient;
     }
 
     async getCases() {
@@ -165,34 +191,50 @@ export class ApiCaseProvider {
             throw new Error('ApiCaseProvider endpoint is not configured.');
         }
 
-        if (typeof this.fetchImpl !== 'function') {
-            throw new Error('ApiCaseProvider requires a fetch implementation.');
-        }
-
-        let response;
-
-        try {
-            response = await this.fetchImpl(this.endpoint, {
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            });
-        } catch (error) {
-            throw new Error('Case API request failed.', { cause: error });
-        }
-
-        if (!response?.ok) {
-            throw new Error(`Case API request failed with HTTP ${response?.status ?? 'unknown'}.`);
+        if (typeof this.fetchImpl !== 'function' && typeof this.httpClient?.get !== 'function') {
+            throw new Error('ApiCaseProvider requires a fetch implementation or HTTP client.');
         }
 
         let payload;
 
-        try {
-            payload = await response.json();
-        } catch (error) {
-            throw new Error('Case API response is not valid JSON.', { cause: error });
+        if (typeof this.fetchImpl === 'function') {
+            let response;
+
+            try {
+                response = await this.fetchImpl(this.endpoint, {
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+            } catch (error) {
+                throw new Error('Case API request failed.', { cause: error });
+            }
+
+            if (!response?.ok) {
+                throw new Error(`Case API request failed with HTTP ${response?.status ?? 'unknown'}.`);
+            }
+
+            try {
+                payload = await response.json();
+            } catch (error) {
+                throw new Error('Case API response is not valid JSON.', { cause: error });
+            }
+        } else {
+            try {
+                const response = await this.httpClient.get(this.endpoint, {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                payload = response?.data;
+            } catch (error) {
+                const status = error?.response?.status;
+                const suffix = status ? ` with HTTP ${status}` : '';
+                throw new Error(`Case API request failed${suffix}.`, { cause: error });
+            }
         }
 
         const rawCases = Array.isArray(payload) ? payload : payload?.data;
@@ -206,8 +248,8 @@ export class ApiCaseProvider {
 }
 
 /**
- * Development-only provider. Replace this provider implementation with an M2
- * API adapter after the normalized contract has been agreed and delivered.
+ * Development-only provider. It remains available for isolated tests and
+ * development, but is never selected as the live runtime provider.
  */
 export class MockCaseProvider {
     async getCases() {
@@ -215,8 +257,15 @@ export class MockCaseProvider {
     }
 }
 
-const caseDataProvider = new MockCaseProvider();
+function getRuntimeHttpClient() {
+    return globalThis.window?.axios ?? axios;
+}
+
+export const activeCaseProvider = new ApiCaseProvider({
+    endpoint: '/api/kasus',
+    httpClient: getRuntimeHttpClient(),
+});
 
 export async function getCases() {
-    return caseDataProvider.getCases();
+    return activeCaseProvider.getCases();
 }

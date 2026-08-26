@@ -19,7 +19,7 @@
                 <span class="text-[#176b45]">Dashboard</span>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-[#173b29] sm:text-[28px]">Dashboard Monitoring</h1>
-            <p class="mt-1 text-sm text-[#77847c]">Ringkasan read-only dari data kasus demo yang sama dengan WebGIS.</p>
+            <p class="mt-1 text-sm text-[#77847c]">Ringkasan read-only dari data kasus yang sama dengan WebGIS.</p>
         </div>
         <a href="{{ route('webgis.index') }}"
            class="inline-flex w-fit items-center justify-center rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#125437] focus:outline-none focus:ring-2 focus:ring-[#b8d7c3]">
