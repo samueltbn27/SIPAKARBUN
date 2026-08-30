@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+});
+
+// Account provisioning is an administrative action. Admin bootstrap accounts
+// are created outside this form and can never be selected here.
+Route::middleware(['auth', 'role:admin'])->group(function (): void {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 });
