@@ -54,16 +54,25 @@ class AccountProvisioningTest extends TestCase
             ->assertDontSee('value="pakar"');
     }
 
-    public function test_non_admin_cannot_open_or_submit_create_account(): void
+    public function test_guest_can_open_create_account_page(): void
+    {
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('Poktan / Gapoktan')
+            ->assertDontSee('value="admin"')
+            ->assertDontSee('value="pakar"');
+    }
+
+    public function test_authenticated_non_admin_can_open_and_submit_create_account(): void
     {
         $operator = User::factory()->create(['is_active' => true]);
         $operator->assignRole('operator_uptd');
 
-        $this->actingAs($operator)->get(route('register'))->assertForbidden();
+        $this->actingAs($operator)->get(route('register'))->assertOk();
         $this->actingAs($operator)->post(route('register.store'), $this->accountPayload('popt'))
-            ->assertForbidden();
+            ->assertRedirect(route('login'));
 
-        $this->assertDatabaseMissing('users', ['email' => 'popt-new@example.test']);
+        $this->assertDatabaseHas('users', ['email' => 'popt-new@example.test']);
     }
 
     #[DataProvider('nonAdminRoles')]

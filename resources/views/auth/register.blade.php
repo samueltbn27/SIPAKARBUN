@@ -17,7 +17,7 @@
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
             </span>
             <h1 class="text-2xl font-extrabold tracking-tight text-[#173b29]">SIPAKARBUN</h1>
-            <p class="text-sm text-[#8a9990] mt-1">Provision akun non-admin oleh Admin</p>
+            <p class="text-sm text-[#8a9990] mt-1">Daftar akun SIPAKARBUN</p>
         </div>
 
         {{-- Card --}}

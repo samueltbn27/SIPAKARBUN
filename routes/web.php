@@ -17,12 +17,10 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 });
 
-// Account provisioning is an administrative action. Admin bootstrap accounts
-// are created outside this form and can never be selected here.
-Route::middleware(['auth', 'role:admin'])->group(function (): void {
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
-});
+// Public registration may provision only the four non-admin application
+// roles; the admin bootstrap account is never selectable here.
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
