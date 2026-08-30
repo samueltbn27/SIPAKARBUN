@@ -25,7 +25,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('knowledge.penyakit.update', $penyakit) }}" class="space-y-6">
+    <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.penyakit.update', $penyakit) }}" class="space-y-6">
         @method('PUT')
         @csrf
 
@@ -60,6 +60,14 @@
 
             <div class="sm:col-span-1">
                 <x-knowledge.status-select name="status" :value="$penyakit->status" />
+            </div>
+
+            <div>
+                <label for="image" class="block text-sm font-medium text-gray-700">Foto penyakit <span class="text-gray-400 font-normal">(opsional)</span></label>
+                @if ($penyakit->image_path)<p class="mb-2 text-xs text-gray-500">Foto saat ini tersedia. Pilih file baru untuk menggantinya.</p>@endif
+                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                <p class="mt-1 text-xs text-gray-500">JPG, PNG, atau WebP; maksimal 5 MB.</p>
+                @error('image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
         </div>
 

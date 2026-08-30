@@ -7,32 +7,43 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Akun default untuk development & deployment.
- * Password: Sipakarbun#2026 (diganti di production via .env SECURE_PASSWORD).
+ * UserSeeder — akun demo siap pakai untuk menguji navigasi per role
+ * (TAHAP 1). Idempoten: cukup jalankan berulang kali.
+ *
+ *   php artisan db:seed --class=UserSeeder
+ *
+ * Kredensial:
+ *   admin@example.com     / password123  (Admin)
+ *   operator@example.com  / password123  (Operator UPTD)
+ *   popt@example.com      / password123  (POPT)
+ *   poktan@example.com    / password123  (Poktan / Petani)
  */
 class UserSeeder extends Seeder
 {
+    private const DEMO_USERS = [
+        ['name' => 'Admin SIPAKARBUN', 'email' => 'admin@example.com', 'role' => 'admin'],
+        ['name' => 'Operator UPTD', 'email' => 'operator@example.com', 'role' => 'operator_uptd'],
+        ['name' => 'POPT Lapangan', 'email' => 'popt@example.com', 'role' => 'popt'],
+        ['name' => 'Petani Poktan', 'email' => 'poktan@example.com', 'role' => 'poktan'],
+    ];
+
     public function run(): void
     {
-        $password = Hash::make(env('SECURE_PASSWORD', 'Sipakarbun#2026'));
-
-        $users = [
-            ['name' => 'Admin Sistem', 'email' => 'admin@sipakarbun.go.id', 'phone' => '081200000001', 'role' => 'admin'],
-            ['name' => 'Operator (OP)', 'email' => 'operator@sipakarbun.go.id', 'phone' => '081200000002', 'role' => 'operator_uptd'],
-            ['name' => 'POPT', 'email' => 'popt@sipakarbun.go.id', 'phone' => '081200000003', 'role' => 'popt'],
-            ['name' => 'Poktan Test', 'email' => 'poktan@test.com', 'phone' => '081200000004', 'role' => 'poktan'],
-        ];
-
-        foreach ($users as $data) {
-            $role = $data['role'];
-            unset($data['role']);
-
-            $user = User::updateOrCreate(
+        foreach (self::DEMO_USERS as $data) {
+            $user = User::firstOrCreate(
                 ['email' => $data['email']],
-                ['password' => $password, 'is_active' => true] + $data,
+                [
+                    'name' => $data['name'],
+                    'password' => Hash::make('password123'),
+                    'is_active' => true,
+                ]
             );
 
-            $user->syncRoles([$role]);
+            if (! $user->hasRole($data['role'])) {
+                $user->assignRole($data['role']);
+            }
+
+            $this->command?->info("Akun demo siap: {$data['email']} ({$data['role']})");
         }
     }
 }

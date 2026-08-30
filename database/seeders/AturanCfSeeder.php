@@ -46,7 +46,7 @@ class AturanCfSeeder extends Seeder
             $penyakit = Penyakit::where('kode', $kodePenyakit)->first();
             $gejala = Gejala::where('kode', $kodeGejala)->first();
 
-            if (!$penyakit || !$gejala) {
+            if (! $penyakit || ! $gejala) {
                 // Lewati kalau data induknya belum ada — jalankan
                 // PenyakitSeeder & GejalaSeeder dulu sebelum seeder ini.
                 continue;

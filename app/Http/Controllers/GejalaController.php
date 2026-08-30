@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGejalaRequest;
 use App\Http\Requests\UpdateGejalaRequest;
 use App\Models\Gejala;
+use App\Services\KnowledgeImageService;
 use Illuminate\Http\Request;
 
 class GejalaController extends Controller
 {
+    public function __construct(private readonly KnowledgeImageService $images) {}
+
     public function index(Request $request)
     {
         $query = Gejala::query();
@@ -28,7 +31,12 @@ class GejalaController extends Controller
 
     public function store(StoreGejalaRequest $request)
     {
-        $gejala = Gejala::create($request->validated());
+        $data = $request->safe()->except('image');
+        $gejala = Gejala::create($data);
+
+        if ($request->hasFile('image')) {
+            $gejala->update(['image_path' => $this->images->store($request->file('image'), 'gejala')]);
+        }
 
         return response()->json($gejala, 201);
     }
@@ -40,7 +48,11 @@ class GejalaController extends Controller
 
     public function update(UpdateGejalaRequest $request, Gejala $gejala)
     {
-        $gejala->update($request->validated());
+        $data = $request->safe()->except('image');
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $this->images->replace($request->file('image'), $gejala->image_path, 'gejala');
+        }
+        $gejala->update($data);
 
         return response()->json($gejala);
     }
@@ -50,6 +62,7 @@ class GejalaController extends Controller
         // Sama seperti PenyakitController: pertimbangkan nonaktifkan
         // daripada hard delete. Hard delete akan CASCADE menghapus
         // aturan_cf yang memakai gejala ini.
+        $this->images->deleteIfLocal($gejala->image_path);
         $gejala->delete();
 
         return response()->json(null, 204);

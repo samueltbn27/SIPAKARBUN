@@ -10,8 +10,8 @@ use Tests\Traits\CreatesUsersWithRoles;
 
 class PenyakitCrudTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_tamu_tanpa_login_ditolak(): void
     {
@@ -35,15 +35,15 @@ class PenyakitCrudTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
-    public function test_pakar_bisa_membuat_penyakit_baru(): void
+    public function test_operator_bisa_membuat_penyakit_baru(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createOperator());
 
         $response = $this->postJson('/api/admin/penyakit', [
             'kode' => 'PY-999',
             'nama' => 'Penyakit Uji Coba',
             'deskripsi' => 'Deskripsi contoh',
-            'is_active' => true,
+            'status' => 'aktif',
         ]);
 
         $response->assertCreated()
@@ -54,7 +54,7 @@ class PenyakitCrudTest extends TestCase
 
     public function test_nama_wajib_diisi(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createOperator());
 
         $this->postJson('/api/admin/penyakit', ['kode' => 'PY-001'])
             ->assertUnprocessable()
@@ -63,7 +63,7 @@ class PenyakitCrudTest extends TestCase
 
     public function test_kode_harus_unik(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createOperator());
         Penyakit::factory()->create(['kode' => 'PY-001']);
 
         $this->postJson('/api/admin/penyakit', [
@@ -74,7 +74,7 @@ class PenyakitCrudTest extends TestCase
 
     public function test_bisa_assign_komoditas_yang_valid(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createOperator());
 
         // id 1 & 3 ada di MockKomoditasReferensiClient (tahap #8):
         // 1 = Kopi Arabika, 3 = Kakao.
@@ -89,7 +89,7 @@ class PenyakitCrudTest extends TestCase
 
     public function test_komoditas_tidak_valid_ditolak(): void
     {
-        Sanctum::actingAs($this->createPakar());
+        Sanctum::actingAs($this->createOperator());
 
         // id 999 sengaja tidak ada di MockKomoditasReferensiClient.
         $this->postJson('/api/admin/penyakit', [

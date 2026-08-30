@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Bentuk response /api/penyakit — ini KONTRAK yang dipakai Mahasiswa 2
@@ -26,6 +27,9 @@ class PenyakitKnowledgeResource extends JsonResource
             'kode' => $this->kode,
             'nama' => $this->nama,
             'deskripsi' => $this->deskripsi,
+            'status' => $this->status,
+            'image_path' => $this->image_path,
+            'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
 
             'komoditas_id' => $this->whenLoaded(
                 'penyakitKomoditas',

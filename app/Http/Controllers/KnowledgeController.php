@@ -13,16 +13,21 @@ use App\Http\Requests\UpdateSolusiRequest;
 use App\Models\ActivityLog;
 use App\Models\AturanCf;
 use App\Models\Gejala;
+use App\Models\KasusPenanganan;
 use App\Models\Penyakit;
 use App\Models\PenyakitKomoditas;
+use App\Models\PermohonanPenanganan;
 use App\Models\RefKomoditas;
 use App\Models\Solusi;
+use App\Services\KnowledgeImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class KnowledgeController extends Controller
 {
+    public function __construct(private readonly KnowledgeImageService $images) {}
+
     public function dashboard(): View
     {
         $stats = [
@@ -59,6 +64,8 @@ class KnowledgeController extends Controller
             ->limit(6)
             ->get();
 
+        $cards = $this->knowledgeCards($stats);
+
         // Admin melihat dashboard berbeda
         if (auth()->user()?->hasRole('admin')) {
             $pendingUsers = \App\Models\User::where('is_active', false)
@@ -80,7 +87,9 @@ class KnowledgeController extends Controller
 
             $roleBreakdown = [];
             foreach (['admin', 'popt', 'operator_uptd'] as $role) {
-                $roleBreakdown[$role] = \App\Models\User::role($role)->count();
+                $roleBreakdown[$role] = \App\Models\User::query()
+                    ->whereHas('roles', fn ($query) => $query->where('name', $role))
+                    ->count();
             }
 
             $adminLogs = ActivityLog::latest('created_at')->limit(8)->get();
@@ -100,15 +109,41 @@ class KnowledgeController extends Controller
         // visual yang sama dengan dashboard POPT — isi disesuaikan
         // tugas OP: pengajuan kasus & monitoring.
         if (auth()->user()?->hasRole('operator_uptd')) {
-            return view('knowledge.op-dashboard', compact('stats', 'knowledgeStatus'));
+            $opStats = [
+                'masuk' => PermohonanPenanganan::whereIn('status', [PermohonanPenanganan::STATUS_DIAJUKAN, PermohonanPenanganan::STATUS_SEDANG_DIREVIEW])->count(),
+                'review' => PermohonanPenanganan::where('status', PermohonanPenanganan::STATUS_SEDANG_DIREVIEW)->count(),
+                'diterima' => PermohonanPenanganan::where('status', PermohonanPenanganan::STATUS_DITERIMA)->count(),
+                'ditolak' => PermohonanPenanganan::where('status', PermohonanPenanganan::STATUS_DITOLAK)->count(),
+                'kasus' => KasusPenanganan::count(),
+            ];
+
+            return view('knowledge.op-dashboard', compact('stats', 'knowledgeStatus', 'opStats'));
         }
 
-        return view('knowledge.dashboard', compact('stats', 'recentChanges', 'knowledgeStatus'));
+        return view('knowledge.dashboard', compact('stats', 'cards', 'recentChanges', 'knowledgeStatus'));
+    }
+
+    /**
+     * Stable controller → view contract for the POPT knowledge dashboard.
+     *
+     * @param  array<string, int>  $stats
+     * @return array<int, array<string, int|string>>
+     */
+    private function knowledgeCards(array $stats): array
+    {
+        return [
+            ['label' => 'Komoditas', 'value' => $stats['komoditas'], 'meta' => 'Aktif', 'icon' => 'M12 3c-4 2-7 5-7 9a7 7 0 0 0 14 0c0-4-3-7-7-9Z', 'color' => '#e8f4ed', 'href' => route('knowledge.komoditas.index')],
+            ['label' => 'Penyakit', 'value' => $stats['penyakit'], 'meta' => $stats['penyakit_aktif'].' Aktif', 'icon' => 'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z', 'color' => '#f2edf8', 'href' => route('knowledge.penyakit.index')],
+            ['label' => 'Gejala', 'value' => $stats['gejala'], 'meta' => $stats['gejala_aktif'].' Aktif', 'icon' => 'M6 3h12v18H6zM9 7h6M9 11h6M9 15h4', 'color' => '#eef5e7', 'href' => route('knowledge.gejala.index')],
+            ['label' => 'Aturan CF', 'value' => $stats['aturan_cf'], 'meta' => $stats['aturan_cf_aktif'].' Aktif', 'icon' => 'M4 18V6m0 12h16M8 15V9m4 6V5m4 10v-3', 'color' => '#fff4df', 'href' => route('knowledge.aturan-cf.index')],
+            ['label' => 'Solusi', 'value' => $stats['solusi'], 'meta' => $stats['solusi_aktif'].' Aktif', 'icon' => 'M9 18h6m-5 3h4M12 3a6 6 0 0 0-3 11c.6.4 1 1.1 1 2h4c0-.9.4-1.6 1-2a6 6 0 0 0-3-11Z', 'color' => '#e7f3f4', 'href' => route('knowledge.solusi.index')],
+        ];
     }
 
     public function komoditasIndex(Request $request): View
     {
         $komoditas = RefKomoditas::query()
+            ->disbun()
             ->when($request->filled('q'), function ($q) use ($request) {
                 $q->where(fn ($q2) => $q2
                     ->where('kode', 'like', "%{$request->q}%")
@@ -119,7 +154,7 @@ class KnowledgeController extends Controller
             ->orderBy('nama')
             ->get();
 
-        $totalKomoditas = RefKomoditas::count();
+        $totalKomoditas = RefKomoditas::disbun()->count();
 
         $komoditasDipakai = PenyakitKomoditas::selectRaw('komoditas_id, COUNT(*) as jumlah')
             ->groupBy('komoditas_id')
@@ -132,7 +167,7 @@ class KnowledgeController extends Controller
     private function hitungKomoditas(): int
     {
         try {
-            return RefKomoditas::tersedia()->count();
+            return RefKomoditas::runtimeTersedia()->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -156,7 +191,7 @@ class KnowledgeController extends Controller
 
     public function penyakitCreate(): View
     {
-        $komoditas = RefKomoditas::tersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
+        $komoditas = RefKomoditas::runtimeTersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
         return view('knowledge.penyakit.create', compact('komoditas'));
     }
 
@@ -164,13 +199,19 @@ class KnowledgeController extends Controller
     {
         $data = $request->validated();
         $komoditasIds = $data['komoditas_id'] ?? [];
+        $image = $request->file('image');
         unset($data['komoditas_id']);
+        unset($data['image']);
 
         // Knowledge baru default DRAFT — harus dipublikasikan lewat
         // halaman Publikasi sebelum dipakai diagnosis (M1-FR-008).
         $data['status'] = $data['status'] ?? Penyakit::STATUS_DRAFT;
 
         $penyakit = Penyakit::create($data);
+
+        if ($image !== null) {
+            $penyakit->update(['image_path' => $this->images->store($image, 'penyakit')]);
+        }
 
         foreach (array_unique($komoditasIds) as $id) {
             PenyakitKomoditas::create([
@@ -186,7 +227,7 @@ class KnowledgeController extends Controller
 
     public function penyakitEdit(Penyakit $penyakit): View
     {
-        $komoditas = RefKomoditas::tersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
+        $komoditas = RefKomoditas::runtimeTersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $selectedKomoditas = $penyakit->penyakitKomoditas->pluck('komoditas_id')->toArray();
         return view('knowledge.penyakit.edit', compact('penyakit', 'komoditas', 'selectedKomoditas'));
     }
@@ -196,7 +237,13 @@ class KnowledgeController extends Controller
         $data = $request->validated();
         $hasKomoditas = array_key_exists('komoditas_id', $data);
         $komoditasIds = $data['komoditas_id'] ?? [];
+        $image = $request->file('image');
         unset($data['komoditas_id']);
+        unset($data['image']);
+
+        if ($image !== null) {
+            $data['image_path'] = $this->images->replace($image, $penyakit->image_path, 'penyakit');
+        }
 
         $penyakit->update($data);
 
@@ -219,6 +266,7 @@ class KnowledgeController extends Controller
     {
         $nama = $penyakit->nama;
         $id = $penyakit->id;
+        $this->images->deleteIfLocal($penyakit->image_path);
         $penyakit->delete();
 
         ActivityLog::record('Penyakit', 'deleted', $nama, $id, "Menghapus Penyakit \"{$nama}\"");
@@ -249,9 +297,15 @@ class KnowledgeController extends Controller
     public function gejalaStore(StoreGejalaRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $image = $request->file('image');
+        unset($data['image']);
         $data['status'] = $data['status'] ?? Gejala::STATUS_DRAFT;
 
         $gejala = Gejala::create($data);
+
+        if ($image !== null) {
+            $gejala->update(['image_path' => $this->images->store($image, 'gejala')]);
+        }
 
         ActivityLog::record('Gejala', 'created', $gejala->nama, $gejala->id, "Menambahkan Gejala \"{$gejala->nama}\"");
 
@@ -265,7 +319,15 @@ class KnowledgeController extends Controller
 
     public function gejalaUpdate(UpdateGejalaRequest $request, Gejala $gejala): RedirectResponse
     {
-        $gejala->update($request->validated());
+        $data = $request->validated();
+        $image = $request->file('image');
+        unset($data['image']);
+
+        if ($image !== null) {
+            $data['image_path'] = $this->images->replace($image, $gejala->image_path, 'gejala');
+        }
+
+        $gejala->update($data);
 
         ActivityLog::record('Gejala', 'updated', $gejala->nama, $gejala->id, "Mengubah Gejala \"{$gejala->nama}\"");
 
@@ -276,6 +338,7 @@ class KnowledgeController extends Controller
     {
         $nama = $gejala->nama;
         $id = $gejala->id;
+        $this->images->deleteIfLocal($gejala->image_path);
         $gejala->delete();
 
         ActivityLog::record('Gejala', 'deleted', $nama, $id, "Menghapus Gejala \"{$nama}\"");
@@ -361,10 +424,8 @@ class KnowledgeController extends Controller
 
     public function aturanCfDestroy(AturanCf $aturanCf): RedirectResponse
     {
-        // CRUD knowledge adalah hak Admin & POPT (route middleware sudah
-        // membatasi; cek ini lapisan kedua).
-        if (!auth()->user()->hasRole(['admin', 'popt'])) {
-            return back()->with('error', 'Hanya Admin dan POPT yang dapat menghapus aturan CF.');
+        if (!auth()->user()->hasAnyRole(['admin', 'operator_uptd'])) {
+            return back()->with('error', 'Anda tidak memiliki hak menghapus aturan CF.');
         }
 
         $nama = $aturanCf->penyakit?->nama . ' — ' . $aturanCf->gejala?->nama;
@@ -467,6 +528,8 @@ class KnowledgeController extends Controller
 
     public function publikasiToggle(Request $request): RedirectResponse
     {
+        abort_unless($request->user()?->hasAnyRole(['admin', 'operator_uptd']), 403);
+
         $request->validate([
             'model' => ['required', 'in:Penyakit,Gejala,AturanCf,Solusi'],
             'id' => ['required', 'integer'],
@@ -505,33 +568,4 @@ class KnowledgeController extends Controller
         return view('knowledge.riwayat.index', compact('riwayat'));
     }
 
-    /*
-    |----------------------------------------------------------------------
-    | Halaman OP (Operator) — placeholder
-    |----------------------------------------------------------------------
-    | Menu OP sudah disiapkan mengikuti struktur tugasnya (validasi
-    | pengajuan & monitoring). Data pengajuan kasus akan tersedia
-    | setelah modul Diagnosis & Kasus (Mahasiswa 2) terintegrasi;
-    | halaman-halaman ini akan menjadi konsumsi read model M2.
-    */
-
-    public function opPengajuanMasuk(): View
-    {
-        return view('knowledge.op.pengajuan-masuk');
-    }
-
-    public function opValidasiPengajuan(): View
-    {
-        return view('knowledge.op.validasi');
-    }
-
-    public function opRiwayatPengajuan(): View
-    {
-        return view('knowledge.op.riwayat-pengajuan');
-    }
-
-    public function opStatusKasus(): View
-    {
-        return view('knowledge.op.status-kasus');
-    }
 }
