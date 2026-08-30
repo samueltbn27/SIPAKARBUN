@@ -89,6 +89,14 @@ class KasusPenanganan extends Model
             ->latestOfMany();
     }
 
+    /**
+     * Penugasan terakhir untuk kebutuhan baca historis setelah kasus selesai.
+     */
+    public function penugasanTerakhir(): HasOne
+    {
+        return $this->hasOne(PenugasanPopt::class, 'kasus_id')->latestOfMany();
+    }
+
     public function riwayatStatus(): HasMany
     {
         return $this->hasMany(RiwayatStatusPenanganan::class, 'kasus_id')

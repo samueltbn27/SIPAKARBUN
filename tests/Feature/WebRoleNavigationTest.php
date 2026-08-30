@@ -16,7 +16,7 @@ class WebRoleNavigationTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['admin', 'popt', 'operator_uptd', 'poktan', 'pimpinan'] as $role) {
+        foreach (['admin', 'popt', 'operator_uptd', 'poktan', 'pimpinan', 'legacy'] as $role) {
             Role::findOrCreate($role);
         }
     }
@@ -148,7 +148,7 @@ class WebRoleNavigationTest extends TestCase
 
     public function test_login_ditolak_untuk_role_di_luar_daftar(): void
     {
-        $user = $this->buatUser('pimpinan');
+        $user = $this->buatUser('legacy');
 
         $this->post('/login', [
             'email' => $user->email,

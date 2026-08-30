@@ -38,6 +38,7 @@ class Penyakit extends Model
         'kode',
         'nama',
         'deskripsi',
+        'image_path',
         'status',
     ];
 

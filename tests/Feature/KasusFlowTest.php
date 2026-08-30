@@ -89,6 +89,18 @@ class KasusFlowTest extends TestCase
         ]);
     }
 
+    private function selesaikanKasus(User $popt, KasusPenanganan $kasus): void
+    {
+        Sanctum::actingAs($popt);
+
+        foreach (['sedang_direview', 'siap_dieksekusi', 'dalam_pelaksanaan', 'selesai'] as $status) {
+            $this->postJson("/api/popt/kasus/{$kasus->id}/status", [
+                'status' => $status,
+                'catatan' => 'Catatan '.$status,
+            ])->assertOk();
+        }
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Penugasan POPT
@@ -265,6 +277,49 @@ class KasusFlowTest extends TestCase
             ->assertJsonPath('data.0.kasus_id', $kasusSaya->id);
     }
 
+    public function test_popt_can_read_active_assigned_case(): void
+    {
+        $pemohon = $this->buatUser('poktan');
+        $operator = $this->buatUser('operator_uptd');
+        $popt = $this->buatUser('popt');
+        $kasus = $this->buatKasusDiterima($pemohon, $operator);
+        $this->assignPopt($operator, $popt, $kasus)->assertOk();
+
+        Sanctum::actingAs($popt);
+
+        $this->getJson("/api/popt/kasus/{$kasus->id}")
+            ->assertOk()
+            ->assertJsonPath('data.kasus_id', $kasus->id)
+            ->assertJsonPath('data.penugasan_popt.popt_id', $popt->id);
+    }
+
+    public function test_popt_can_read_completed_case_previously_assigned_to_self(): void
+    {
+        $pemohon = $this->buatUser('poktan');
+        $operator = $this->buatUser('operator_uptd');
+        $popt = $this->buatUser('popt');
+        $kasus = $this->buatKasusDiterima($pemohon, $operator);
+        $this->assignPopt($operator, $popt, $kasus)->assertOk();
+        $this->selesaikanKasus($popt, $kasus);
+
+        Sanctum::actingAs($popt);
+
+        $this->getJson("/api/popt/kasus/{$kasus->id}")
+            ->assertOk()
+            ->assertJsonPath('data.current_status', KasusPenanganan::STATUS_SELESAI)
+            ->assertJsonPath('data.penugasan_popt.popt_id', $popt->id)
+            ->assertJsonPath('data.penugasan_popt.status', PenugasanPopt::STATUS_SELESAI);
+
+        $this->getJson('/api/kasus')
+            ->assertOk()
+            ->assertJsonPath('data.0.kasus_id', $kasus->id)
+            ->assertJsonPath('data.0.current_status', KasusPenanganan::STATUS_SELESAI);
+
+        $this->getJson("/api/kasus/{$kasus->id}/history")
+            ->assertOk()
+            ->assertJsonPath('kasus_id', $kasus->id);
+    }
+
     public function test_popt_tidak_bisa_akses_kasus_penugasan_orang_lain(): void
     {
         $pemohon = $this->buatUser('poktan');
@@ -326,7 +381,7 @@ class KasusFlowTest extends TestCase
         $this->assertSame(KasusPenanganan::STATUS_DITUGASKAN, $kasus->current_status);
     }
 
-    public function test_kasus_selesai_menutup_penugasan_popt(): void
+    public function test_popt_cannot_mutate_completed_case(): void
     {
         $pemohon = $this->buatUser('poktan');
         $operator = $this->buatUser('operator_uptd');
@@ -349,10 +404,70 @@ class KasusFlowTest extends TestCase
             'status' => PenugasanPopt::STATUS_SELESAI,
         ]);
 
-        // Setelah selesai, penugasan POPT DITUTUP (status 'selesai') sehingga
-        // akses POPT ke kasus dicabut — update berikutnya ditolak 403.
+        // Setelah selesai, penugasan POPT ditutup tetapi read historis tetap
+        // tersedia; mutation berikutnya harus ditolak 403.
         $this->postJson("/api/popt/kasus/{$kasus->id}/status", ['status' => 'ditunda'])
             ->assertForbidden();
+    }
+
+    public function test_other_popt_cannot_read_completed_case(): void
+    {
+        $pemohon = $this->buatUser('poktan');
+        $operator = $this->buatUser('operator_uptd');
+        $poptPemilik = $this->buatUser('popt');
+        $poptLain = $this->buatUser('popt');
+        $kasus = $this->buatKasusDiterima($pemohon, $operator);
+        $this->assignPopt($operator, $poptPemilik, $kasus)->assertOk();
+        $this->selesaikanKasus($poptPemilik, $kasus);
+
+        Sanctum::actingAs($poptLain);
+
+        $this->getJson("/api/popt/kasus/{$kasus->id}")->assertForbidden();
+        $this->getJson('/api/kasus')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/popt/penugasan')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_other_popt_cannot_mutate_case(): void
+    {
+        $pemohon = $this->buatUser('poktan');
+        $operator = $this->buatUser('operator_uptd');
+        $poptPemilik = $this->buatUser('popt');
+        $poptLain = $this->buatUser('popt');
+        $kasus = $this->buatKasusDiterima($pemohon, $operator);
+        $this->assignPopt($operator, $poptPemilik, $kasus)->assertOk();
+
+        Sanctum::actingAs($poptLain);
+
+        $this->postJson("/api/popt/kasus/{$kasus->id}/status", [
+            'status' => KasusPenanganan::STATUS_SEDANG_DIREVIEW,
+        ])->assertForbidden();
+    }
+
+    public function test_completed_case_remains_visible_in_popt_assignment_history(): void
+    {
+        $pemohon = $this->buatUser('poktan');
+        $operator = $this->buatUser('operator_uptd');
+        $popt = $this->buatUser('popt');
+        $kasus = $this->buatKasusDiterima($pemohon, $operator);
+        $this->assignPopt($operator, $popt, $kasus)->assertOk();
+        $this->selesaikanKasus($popt, $kasus);
+
+        Sanctum::actingAs($popt);
+
+        $this->getJson('/api/popt/penugasan')
+            ->assertOk()
+            ->assertJsonPath('data.0.kasus_id', $kasus->id)
+            ->assertJsonPath('data.0.current_status', KasusPenanganan::STATUS_SELESAI);
+
+        $this->actingAs($popt)
+            ->get(route('popt.penugasan.show', $kasus->id))
+            ->assertOk()
+            ->assertSee($kasus->kasus_code)
+            ->assertSee('Kasus sudah selesai')
+            ->assertSee('Riwayat penanganan')
+            ->assertDontSee('Simpan Progres');
     }
 
     public function test_operator_tidak_bisa_akses_endpoint_popt(): void

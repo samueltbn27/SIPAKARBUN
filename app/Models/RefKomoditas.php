@@ -28,14 +28,18 @@ class RefKomoditas extends Model
     public const SYNC_QUARANTINED = 'quarantined';
     public const SYNC_PENDING = 'pending';
 
+    public const SOURCE_DISBUN = 'disbun';
+
     protected $fillable = [
         'disbun_record_id',
+        'source',
         'kode',
         'nama',
         'nama_latin',
         'source_is_active',
         'is_verified',
         'sync_status',
+        'quarantine_reason',
         'source_updated_at',
         'last_synced_at',
     ];
@@ -72,5 +76,15 @@ class RefKomoditas extends Model
     public function scopeQuarantined(Builder $query): Builder
     {
         return $query->where('sync_status', self::SYNC_QUARANTINED);
+    }
+
+    public function scopeDisbun(Builder $query): Builder
+    {
+        return $query->where('source', self::SOURCE_DISBUN);
+    }
+
+    public function scopeRuntimeTersedia(Builder $query): Builder
+    {
+        return $query->disbun()->tersedia();
     }
 }

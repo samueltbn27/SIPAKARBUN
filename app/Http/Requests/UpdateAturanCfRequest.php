@@ -10,8 +10,7 @@ class UpdateAturanCfRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya Admin & POPT (Knowledge Manager) yang boleh mengelola
-        return $this->user() !== null && $this->user()->hasRole(['admin', 'popt']);
+        return $this->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     }
 
     public function rules(): array

@@ -17,7 +17,7 @@
     ];
 
     $penangananLabels = [
-        'diterima' => ['Belum Ditugaskan', 'bg-[#eef3ef] text-[#66746c]'],
+        'diterima' => ['Diterima — Menunggu Penugasan', 'bg-[#eef3ef] text-[#66746c]'],
         'ditugaskan' => ['POPT Ditugaskan', 'bg-blue-50 text-blue-700'],
         'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
         'ditunda' => ['Ditunda', 'bg-orange-50 text-orange-700'],
@@ -45,6 +45,12 @@
     $primary = $permohonan->diagnosis?->results?->first();
     $komoditasNama = $komoditas['nama'] ?? ($permohonan->diagnosis === null ? null : 'Komoditas #'.$permohonan->diagnosis->commodity_id);
     $waktu = $permohonan->created_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y H:i') ?? '—';
+    $penugasanStatus = match ($penugasan?->status) {
+        'aktif' => ['Penugasan Aktif', 'bg-blue-50 text-blue-700'],
+        'selesai' => ['Penugasan Selesai', 'bg-[#e8f4ed] text-[#176b45]'],
+        'dicabut' => ['Penugasan Dicabut', 'bg-[#eef3ef] text-[#66746c]'],
+        default => ['Riwayat Penugasan', 'bg-[#eef3ef] text-[#66746c]'],
+    };
 @endphp
 
 @section('content')
@@ -167,8 +173,8 @@
                         </p>
                     </div>
                 </div>
-                <span class="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    Penugasan Aktif
+                <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold {{ $penugasanStatus[1] }}">
+                    {{ $penugasanStatus[0] }}
                 </span>
             </div>
             @if ($penugasan->catatan !== null && $penugasan->catatan !== '')
@@ -184,7 +190,7 @@
                 </span>
                 <p class="mt-4 text-sm font-semibold text-[#66746c]">Belum ada petugas yang ditugaskan.</p>
                 <p class="mt-1 max-w-sm text-xs text-[#8a9990]">
-                    Petugas (POPT) akan muncul di sini setelah Operator UPTD menugaskannya ke kasus Anda.
+                    Status akan berubah setelah Operator UPTD menugaskan POPT ke kasus Anda.
                 </p>
             </div>
         @endif

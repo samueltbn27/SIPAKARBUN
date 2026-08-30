@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Resource untuk kontrak API M1 -> M2 (GET /api/gejala).
@@ -21,6 +22,8 @@ class GejalaKnowledgeResource extends JsonResource
             'nama' => $this->nama,
             'deskripsi' => $this->deskripsi,
             'status' => $this->status,
+            'image_path' => $this->image_path,
+            'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
         ];
     }
 }

@@ -138,6 +138,7 @@ class WebDiagnosisTest extends TestCase
         $response->assertSee('Kopi Arabika')
             ->assertSee('Bercak jingga')
             ->assertSee('Batang layu')
+            ->assertSee('Foto belum tersedia')
             ->assertSee('Tidak Yakin')
             ->assertSee('Sangat Yakin');
     }
@@ -515,6 +516,7 @@ class WebDiagnosisTest extends TestCase
             'diagnosis_id' => $diagnosis->id,
             'disease_id' => 1,
             'disease_name_snapshot' => 'Karat Daun Kopi',
+            'disease_image_url' => 'http://localhost/storage/knowledge/penyakit/karat.webp',
             'solution_snapshot' => [
                 ['judul' => 'Pangkas bagian tanaman yang terinfeksi', 'deskripsi' => 'Buang daun terinfeksi.'],
                 ['judul' => 'Lakukan penanganan sesuai rekomendasi', 'deskripsi' => null],
@@ -555,6 +557,7 @@ class WebDiagnosisTest extends TestCase
             'diagnosis_id' => $diagnosis->id,
             'disease_id' => 1,
             'disease_name_snapshot' => 'Karat Daun Kopi',
+            'disease_image_url' => 'http://localhost/storage/knowledge/penyakit/karat.webp',
             'solution_snapshot' => [],
             'trace_snapshot' => [],
             'cf_value' => 0.82,
@@ -575,6 +578,7 @@ class WebDiagnosisTest extends TestCase
             ->assertSee('Ranking Kandidat')
             ->assertSee('Peringkat #1 dari 2 kandidat')
             ->assertSee('Karat Daun Kopi')
+            ->assertSee('http://localhost/storage/knowledge/penyakit/karat.webp')
             ->assertSee('Layu Bakteri');
     }
 

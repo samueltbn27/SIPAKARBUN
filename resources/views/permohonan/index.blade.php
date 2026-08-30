@@ -10,7 +10,7 @@
         'ditolak' => ['Ditolak', 'bg-red-50 text-red-700'],
     ];
     $penangananLabels = [
-        'diterima' => ['Belum Ditugaskan', 'bg-[#eef3ef] text-[#66746c]'],
+        'diterima' => ['Diterima — Menunggu Penugasan', 'bg-[#eef3ef] text-[#66746c]'],
         'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
         'ditugaskan' => ['Ditugaskan', 'bg-blue-50 text-blue-700'],
         'ditunda' => ['Ditunda', 'bg-orange-50 text-orange-700'],

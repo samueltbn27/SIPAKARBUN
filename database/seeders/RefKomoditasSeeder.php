@@ -34,6 +34,7 @@ class RefKomoditasSeeder extends Seeder
                     'kode' => $row['kode'],
                     'nama' => $row['nama'],
                     'nama_latin' => $row['nama_latin'] ?? null,
+                    'source' => 'manual',
                     'source_is_active' => $row['is_active'] ?? true,
                     'is_verified' => true,
                     'sync_status' => RefKomoditas::SYNC_SYNCED,

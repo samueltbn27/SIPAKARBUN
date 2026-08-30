@@ -12,26 +12,14 @@ use App\Http\Controllers\PoptController;
 use App\Http\Controllers\SolusiController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Kontrak API publik — Mahasiswa 1 → Mahasiswa 2
-|--------------------------------------------------------------------------
-| Hanya mengembalikan knowledge berstatus aktif (status=aktif).
-*/
+/* M1 → M2: active Knowledge read contract. */
 Route::middleware(['auth:sanctum'])
     ->group(function (): void {
         Route::get('/penyakit', [KnowledgeApiController::class, 'penyakit']);
         Route::get('/gejala', [KnowledgeApiController::class, 'gejala']);
     });
 
-/*
-|--------------------------------------------------------------------------
-| Diagnosis — Mahasiswa 2
-|--------------------------------------------------------------------------
-| POST /api/diagnosis    — jalankan diagnosis baru.
-| GET  /api/diagnosis    — histori diagnosis milik user yang login.
-| GET  /api/diagnosis/{id} — detail diagnosis.
-*/
+/* M2: diagnosis history and execution. */
 Route::middleware(['auth:sanctum'])
     ->prefix('diagnosis')
     ->group(function (): void {
@@ -42,11 +30,7 @@ Route::middleware(['auth:sanctum'])
             ->whereNumber('id');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Permohonan Penanganan (Poktan) — Mahasiswa 2
-|--------------------------------------------------------------------------
-*/
+/* M2: Poktan-owned handling requests. */
 Route::middleware(['auth:sanctum'])
     ->prefix('permohonan')
     ->group(function (): void {
@@ -57,12 +41,7 @@ Route::middleware(['auth:sanctum'])
             ->whereNumber('id');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Operator UPTD — Review & Keputusan Permohonan — Mahasiswa 2
-|--------------------------------------------------------------------------
-| HANYA role operator_uptd.
-*/
+/* M2: Operator review and decision workflow. */
 Route::middleware(['auth:sanctum', 'role:operator_uptd'])
     ->prefix('operator/permohonan')
     ->group(function (): void {
@@ -79,10 +58,10 @@ Route::middleware(['auth:sanctum', 'role:operator_uptd'])
 
 /*
 |--------------------------------------------------------------------------
-| Kasus Penanganan — Operator UPTD / Admin — Mahasiswa 2
+| Kasus Penanganan — shared M2 → M3 read contract
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd|popt|pimpinan'])
     ->prefix('kasus')
     ->group(function (): void {
         Route::get('/', [KasusController::class, 'index']);
@@ -90,16 +69,17 @@ Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
             ->whereNumber('id');
         Route::get('/{id}/history', [KasusController::class, 'history'])
             ->whereNumber('id');
+    });
+
+/* M2 mutations remain restricted to Admin/Operator UPTD. */
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
+    ->prefix('kasus')
+    ->group(function (): void {
         Route::post('/{id}/assign-popt', [KasusController::class, 'assignPopt'])
             ->whereNumber('id');
     });
 
-/*
-|--------------------------------------------------------------------------
-| POPT — Penugasan & Status Kasus — Mahasiswa 2
-|--------------------------------------------------------------------------
-| HANYA role popt.
-*/
+/* M2: POPT assigned-case read and status update. */
 Route::middleware(['auth:sanctum', 'role:popt'])
     ->prefix('popt')
     ->group(function (): void {
@@ -110,12 +90,8 @@ Route::middleware(['auth:sanctum', 'role:popt'])
             ->whereNumber('id');
     });
 
-/*
-|--------------------------------------------------------------------------
-| CRUD internal Admin/POPT — Mahasiswa 1
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'role:admin|popt'])
+/* M1: Knowledge CRUD is owned by Admin/Operator; POPT is read-only. */
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->prefix('admin')
     ->group(function (): void {
         Route::apiResource('penyakit', PenyakitController::class);
@@ -125,8 +101,7 @@ Route::middleware(['auth:sanctum', 'role:admin|popt'])
             ->except(['destroy']);
     });
 
-// DELETE aturan CF: Admin & POPT (POPT pemegang CRUD knowledge).
-Route::middleware(['auth:sanctum', 'role:admin|popt'])
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->prefix('admin')
     ->group(function (): void {
         Route::delete('aturan-cf/{aturanCf}', [AturanCfController::class, 'destroy'])

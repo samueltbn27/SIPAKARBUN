@@ -363,6 +363,39 @@ class WebPermohonanTest extends TestCase
             ->assertSee('Tinjau Permohonan');
     }
 
+    public function test_create_menyediakan_pencarian_kelompok_tani_dengan_wilayah(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('Cari nama, kode, kabupaten, kecamatan, atau kelurahan...')
+            ->assertSee('kabupaten')
+            ->assertSee('kecamatan')
+            ->assertSee('Pangalengan')
+            ->assertSee('Kabupaten Bandung');
+    }
+
+    public function test_create_menampilkan_error_state_jelas_saat_referensi_kelompok_tani_gagal(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+        app()->instance(KelompokTaniReferensiClient::class, new class implements KelompokTaniReferensiClient {
+            public function all(): array { return []; }
+            public function find(int $id): ?array { return null; }
+        });
+
+        $this->actingAs($user);
+
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('Referensi kelompok tani tidak dapat dimuat')
+            ->assertDontSee('Memuat opsi');
+    }
+
     public function test_create_dengan_diagnosis_di_luar_daftar_tampil_empty(): void
     {
         $user = $this->buatUserPoktan();
@@ -793,13 +826,17 @@ class WebPermohonanTest extends TestCase
                 'created_at' => now()->subDays(4),
             ]);
 
-            PenugasanPopt::factory()->aktif()->create([
+            $penugasan = PenugasanPopt::factory()->aktif()->create([
                 'kasus_id' => $kasus->id,
                 'popt_id' => $popt->id,
                 'assigned_by' => $operator->id,
                 'catatan' => 'Kerjakan segera.',
                 'assigned_at' => now()->subDays(4),
             ]);
+
+            if ($kasusStatus === KasusPenanganan::STATUS_SELESAI) {
+                $penugasan->update(['status' => PenugasanPopt::STATUS_SELESAI]);
+            }
         }
 
         if ($kasusStatus === KasusPenanganan::STATUS_DALAM_PELAKSANAAN
@@ -944,7 +981,10 @@ class WebPermohonanTest extends TestCase
             ->assertSee('POPT Ditugaskan')
             ->assertSee('Dalam Pelaksanaan')
             ->assertSee('Selesai')
-            ->assertSee('Penanganan selesai.');
+            ->assertSee('Penanganan selesai.')
+            ->assertSee($popt->name)
+            ->assertSee('Penugasan Selesai')
+            ->assertDontSee('Belum ada petugas yang ditugaskan.');
     }
 
     public function test_show_bersifat_read_only_tanpa_aksi_perubahan(): void

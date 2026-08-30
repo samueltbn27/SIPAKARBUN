@@ -41,8 +41,8 @@ class KnowledgeApiContractTest extends TestCase
     {
         Sanctum::actingAs($this->createUserTanpaRole());
 
-        Penyakit::factory()->create(['nama' => 'Penyakit Aktif', 'status' => 'aktif']);
-        Penyakit::factory()->create(['nama' => 'Penyakit Nonaktif', 'status' => 'nonaktif']);
+        Penyakit::factory()->create(['nama' => 'Penyakit Aktif', 'status' => Penyakit::STATUS_AKTIF]);
+        Penyakit::factory()->create(['nama' => 'Penyakit Nonaktif', 'status' => Penyakit::STATUS_NONAKTIF]);
 
         $response = $this->getJson('/api/penyakit')->assertOk();
         $nama = collect($response->json('data'))->pluck('nama');
@@ -64,7 +64,7 @@ class KnowledgeApiContractTest extends TestCase
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
             'cf_pakar' => 0.75,
-            'status' => 'aktif',
+            'status' => AturanCf::STATUS_AKTIF,
         ]);
         Solusi::factory()->create(['penyakit_id' => $penyakit->id]);
 
@@ -97,8 +97,8 @@ class KnowledgeApiContractTest extends TestCase
     {
         Sanctum::actingAs($this->createUserTanpaRole());
 
-        Gejala::factory()->create(['nama' => 'Gejala Aktif', 'status' => 'aktif']);
-        Gejala::factory()->create(['nama' => 'Gejala Nonaktif', 'status' => 'nonaktif']);
+        Gejala::factory()->create(['nama' => 'Gejala Aktif', 'status' => Gejala::STATUS_AKTIF]);
+        Gejala::factory()->create(['nama' => 'Gejala Nonaktif', 'status' => Gejala::STATUS_NONAKTIF]);
 
         $response = $this->getJson('/api/gejala')->assertOk();
         $nama = collect($response->json('data'))->pluck('nama');

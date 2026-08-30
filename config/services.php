@@ -57,8 +57,8 @@ return [
     | Shared Integration API — referensi lintas modul
     |--------------------------------------------------------------------------
     | Domain SHARED INTEGRATION (bukan M1, bukan M2). Dikonsumsi untuk:
-    |   GET {base_url}/api/referensi/komoditas
-    |   GET {base_url}/api/referensi/kelompok-tani
+    |   GET {base_url}/api/komoditas?start=0&limit={page_size}
+    |   GET {base_url}/api/kelompok-tani?start=0&limit={page_size}
     |
     | Memakai token terpisah dari knowledge_api (service-to-service auth
     | antar-modul masih ditetapkan final oleh tim — lihat OPEN ISSUES).
@@ -66,7 +66,19 @@ return [
     'shared_referensi' => [
         'base_url' => env('SHARED_API_BASE_URL'),
         'token' => env('SHARED_API_TOKEN'),
-        'timeout' => env('SHARED_API_TIMEOUT', 5),
+        'timeout' => env('SHARED_API_TIMEOUT', 30),
+        'page_size' => env('SHARED_API_PAGE_SIZE', 50),
+        'max_pages' => env('SHARED_API_MAX_PAGES', 250),
+        'user_agent' => env('SHARED_API_USER_AGENT', 'SIPAKARBUN/1.0'),
+        'page_delay_ms' => env('SHARED_API_PAGE_DELAY_MS', 750),
+        'rate_limit_retries' => env('SHARED_API_RATE_LIMIT_RETRIES', 3),
+        'rate_limit_backoff_ms' => env('SHARED_API_RATE_LIMIT_BACKOFF_MS', 60000),
+        'source_exhaustion_warning_ratio' => env('SHARED_API_SOURCE_EXHAUSTION_WARNING_RATIO', 0.90),
+    ],
+
+    // Local/UAT only. Keep the actual value in the ignored .env file.
+    'uat' => [
+        'password' => env('SIPAKARBUN_UAT_PASSWORD'),
     ],
 
     /*

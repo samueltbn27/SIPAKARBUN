@@ -3,20 +3,16 @@
 @section('title', 'Dashboard')
 
 @section('content')
+@php
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
+@endphp
 <div class="max-w-[1500px] mx-auto space-y-7">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div><div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge Management</span><span>/</span><span class="text-[#176b45]">Dashboard</span></div><h1 class="text-2xl sm:text-[28px] font-bold tracking-tight text-[#173b29]">Selamat datang, {{ auth()->user()?->name ?? 'Admin KM' }} <span class="text-xl">👋</span></h1><p class="mt-1 text-sm text-[#77847c]">Pantau dan kelola basis pengetahuan perkebunan dalam satu tempat.</p></div>
-        <a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#115a39] transition"><span class="text-lg leading-none">+</span> Tambah Penyakit</a>
+        @if($canManageKnowledge)<a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#115a39] transition"><span class="text-lg leading-none">+</span> Tambah Penyakit</a>@endif
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        @php $cards = [
-            ['label'=>'Komoditas','value'=>$stats['komoditas'],'meta'=>'Aktif','icon'=>'M12 3c-4 2-7 5-7 9a7 7 0 0 0 14 0c0-4-3-7-7-9Z','color'=>'#e8f4ed','href'=>route('knowledge.komoditas.index')],
-            ['label'=>'Penyakit','value'=>$stats['penyakit'],'meta'=>$stats['penyakit_aktif'].' Aktif','icon'=>'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z','color'=>'#f2edf8','href'=>route('knowledge.penyakit.index')],
-            ['label'=>'Gejala','value'=>$stats['gejala'],'meta'=>$stats['gejala_aktif'].' Aktif','icon'=>'M6 3h12v18H6zM9 7h6M9 11h6M9 15h4','color'=>'#eef5e7','href'=>route('knowledge.gejala.index')],
-            ['label'=>'Aturan CF','value'=>$stats['aturan_cf'],'meta'=>$stats['aturan_cf_aktif'].' Aktif','icon'=>'M4 18V6m0 12h16M8 15V9m4 6V5m4 10v-3','color'=>'#fff4df','href'=>route('knowledge.aturan-cf.index')],
-            ['label'=>'Solusi','value'=>$stats['solusi'],'meta'=>$stats['solusi_aktif'].' Aktif','icon'=>'M9 18h6m-5 3h4M12 3a6 6 0 0 0-3 11c.6.4 1 1.1 1 2h4c0-.9.4-1.6 1-2a6 6 0 0 0-3-11Z','color'=>'#e7f3f4','href'=>route('knowledge.solusi.index')],
-        ]; @endphp
         @foreach($cards as $card)
         <a href="{{ $card['href'] }}" class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 hover:-translate-y-0.5 transition">
             <div class="flex items-start justify-between"><span class="flex items-center justify-center w-10 h-10 rounded-xl" style="background:{{ $card['color'] }}"><svg class="w-5 h-5 text-[#176b45]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="{{ $card['icon'] }}"/></svg></span><span class="text-[#a9b4ad]">•••</span></div>

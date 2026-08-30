@@ -9,8 +9,7 @@ class UpdateGejalaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya Admin & POPT (Knowledge Manager) yang boleh mengelola
-        return $this->user() !== null && $this->user()->hasRole(['admin', 'popt']);
+        return $this->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     }
 
     public function rules(): array
@@ -21,6 +20,7 @@ class UpdateGejalaRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('gejala', 'kode')->ignore($gejalaId)],
             'nama' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }

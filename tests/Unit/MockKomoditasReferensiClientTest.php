@@ -12,11 +12,11 @@ use PHPUnit\Framework\TestCase;
  */
 class MockKomoditasReferensiClientTest extends TestCase
 {
-    public function test_all_mengembalikan_lima_komoditas(): void
+    public function test_all_mengembalikan_data_komoditas(): void
     {
         $client = new MockKomoditasReferensiClient;
 
-        $this->assertCount(5, $client->all());
+        $this->assertCount(41, $client->all());
     }
 
     public function test_find_mengembalikan_data_yang_benar(): void

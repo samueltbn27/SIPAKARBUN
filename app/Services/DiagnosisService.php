@@ -87,6 +87,7 @@ class DiagnosisService
                 return [
                     'disease_id' => (int) $candidate['penyakit']['id'],
                     'disease_name' => (string) $candidate['penyakit']['nama'],
+                    'disease_image_url' => $candidate['penyakit']['image_url'] ?? null,
                     'final_cf' => $cfResult->final_cf,
                     'percentage' => $cfResult->percentage,
                     'solution' => $candidate['penyakit']['solusi'] ?? [],
@@ -105,6 +106,7 @@ class DiagnosisService
             'diagnosis_id' => $diagnosis?->id,
             'disease_id' => $result['disease_id'],
             'disease_name' => $result['disease_name'],
+            'disease_image_url' => $result['disease_image_url'],
             'final_cf' => $result['final_cf'],
             'percentage' => $result['percentage'],
             'ranking' => $result['ranking'],
@@ -208,6 +210,7 @@ class DiagnosisService
                 'diagnosis_id' => $diagnosis->id,
                 'disease_id' => $result['disease_id'],
                 'disease_name_snapshot' => $result['disease_name'],
+                'disease_image_url' => $result['disease_image_url'] ?? null,
                 'solution_snapshot' => $result['solution'],
                 'trace_snapshot' => $result['trace'],
                 'cf_value' => $result['final_cf'],

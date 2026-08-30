@@ -39,19 +39,20 @@ class AuthController extends Controller
             return back()->with('error', 'Akun Anda menunggu persetujuan Admin. Silakan hubungi Admin untuk mengaktifkan akun Anda.')->withInput();
         }
 
-        // Cek role yang diizinkan: admin, POPT, OP, dan Poktan (modul M2).
-        if (!$user->hasRole(['admin', 'popt', 'operator_uptd', 'poktan'])) {
+        // Role tetap diverifikasi dari relasi user di backend, bukan dari input browser.
+        if (!$user->hasRole(['admin', 'operator_uptd', 'popt', 'poktan', 'pimpinan'])) {
             auth()->logout();
             $request->session()->invalidate();
-            return back()->with('error', 'Anda tidak memiliki akses ke sistem SIPAKARBUN.');
+            return back()->with('error', 'Role akun belum memiliki modul aplikasi yang tersedia.');
         }
 
-        // Poktan diarahkan ke dashboard modul M2; yang lain ke knowledge dashboard.
-        if ($user->hasRole('poktan')) {
-            return redirect()->route('dashboard');
+        if ($user->hasRole('pimpinan')) {
+            return redirect()->route('monitoring.dashboard');
         }
 
-        return redirect()->route('knowledge.dashboard');
+        // Semua role operasional memakai dashboard shell bersama; modul yang
+        // tampil tetap dibatasi oleh role di dalam dashboard dan route backend.
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $request): RedirectResponse
