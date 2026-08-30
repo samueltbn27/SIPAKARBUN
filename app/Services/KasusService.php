@@ -98,12 +98,15 @@ class KasusService
     }
 
     /**
-     * Daftar kasus milik seorang POPT (penugasan aktif).
+     * Daftar kasus yang pernah ditugaskan kepada seorang POPT.
+     *
+     * Assignment yang sudah selesai tetap menjadi bagian dari riwayat baca;
+     * kontrol mutasi memakai detailKasusPoptForMutation() di bawah.
      */
     public function kasusPopt(int $poptId, array $filters = []): LengthAwarePaginator
     {
         $query = KasusPenanganan::query()
-            ->whereHas('penugasanAktif', fn ($q) => $q->where('popt_id', $poptId))
+            ->whereHas('penugasanPopt', fn ($q) => $q->where('popt_id', $poptId))
             ->with($this->readContractRelations());
 
         if (! empty($filters['status'])) {
@@ -124,16 +127,35 @@ class KasusService
     }
 
     /**
-     * Detail read-only yang dibatasi pada penugasan aktif POPT yang login.
+     * Detail read-only yang dibatasi pada riwayat penugasan POPT yang login.
+     *
+     * Kasus selesai tidak lagi memiliki penugasan aktif, namun tetap boleh
+     * dibaca oleh POPT yang pernah menangani kasus tersebut.
      */
     public function detailKasusPopt(int $id, int $poptId): KasusPenanganan
+    {
+        $kasus = KasusPenanganan::query()
+            ->whereHas('penugasanPopt', fn ($q) => $q->where('popt_id', $poptId))
+            ->with([...$this->readContractRelations(), 'creator'])
+            ->find($id);
+
+        abort_unless($kasus !== null, 403, 'Kasus ini bukan penugasan Anda.');
+
+        return $kasus;
+    }
+
+    /**
+     * Detail yang hanya boleh dipakai untuk mutation oleh POPT pemilik
+     * assignment aktif. State machine tetap menjadi penjaga transisi akhir.
+     */
+    public function detailKasusPoptForMutation(int $id, int $poptId): KasusPenanganan
     {
         $kasus = KasusPenanganan::query()
             ->whereHas('penugasanAktif', fn ($q) => $q->where('popt_id', $poptId))
             ->with([...$this->readContractRelations(), 'creator'])
             ->find($id);
 
-        abort_unless($kasus !== null, 403, 'Kasus ini bukan penugasan Anda.');
+        abort_unless($kasus !== null, 403, 'Kasus ini bukan penugasan aktif Anda.');
 
         return $kasus;
     }
@@ -144,6 +166,7 @@ class KasusService
         return [
             'permohonan',
             'penugasanAktif.popt',
+            'penugasanPopt.popt',
             'riwayatStatus',
         ];
     }

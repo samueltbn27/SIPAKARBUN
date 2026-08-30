@@ -48,6 +48,8 @@ class HttpKnowledgeApiClient implements KnowledgeApiClient
                 'kode' => $item['kode'] ?? null,
                 'nama' => (string) $item['nama'],
                 'deskripsi' => $item['deskripsi'] ?? null,
+                'image_path' => $item['image_path'] ?? null,
+                'image_url' => $item['image_url'] ?? null,
                 'komoditas_id' => $this->intList($item['komoditas_id'] ?? []),
                 'aturan_cf' => $this->normalizeAturanCf($item['aturan_cf'] ?? []),
                 'solusi' => $this->normalizeSolusi($item['solusi'] ?? []),
@@ -72,6 +74,8 @@ class HttpKnowledgeApiClient implements KnowledgeApiClient
                 'kode' => $item['kode'] ?? null,
                 'nama' => (string) $item['nama'],
                 'deskripsi' => $item['deskripsi'] ?? null,
+                'image_path' => $item['image_path'] ?? null,
+                'image_url' => $item['image_url'] ?? null,
             ];
         })->values();
     }

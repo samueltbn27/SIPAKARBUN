@@ -23,7 +23,8 @@ interface KelompokTaniReferensiClient
      * Ambil semua kelompok tani aktif/terverifikasi.
      *
      * @return array<int, array{
-     *     id:int, kode:string, nama:string, ketua:?string, is_active:bool
+     *     id:int, kode:string, nama:string, ketua:?string, is_active:bool,
+     *     kabupaten:?string, kecamatan:?string, desa:?string
      * }>
      */
     public function all(): array;
@@ -33,7 +34,8 @@ interface KelompokTaniReferensiClient
      * ref_kelompok_tani milik Shared Integration).
      *
      * @return array{
-     *     id:int, kode:string, nama:string, ketua:?string, is_active:bool
+     *     id:int, kode:string, nama:string, ketua:?string, is_active:bool,
+     *     kabupaten:?string, kecamatan:?string, desa:?string
      * }|null
      */
     public function find(int $id): ?array;

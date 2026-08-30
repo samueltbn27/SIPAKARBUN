@@ -256,12 +256,18 @@
 
                         <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" x-show="!gejalaLoading && filteredGejala().length > 0" x-cloak>
                             <template x-for="g in filteredGejala()" :key="g.id">
-                                <label class="soft-card flex cursor-pointer items-start gap-3 rounded-xl border bg-white p-4 transition-colors"
+                                <label class="soft-card cursor-pointer rounded-xl border bg-white p-3 transition-colors"
                                        :class="isSelected(g.id) ? 'border-[#176b45] ring-2 ring-[#176b45]/15' : 'border-[#e4ece7] hover:border-[#176b45]/40'">
                                     <input type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 rounded border-[#dbe5df] text-[#176b45] focus:ring-[#176b45]/15"
                                            :checked="isSelected(g.id)" @change="toggleGejala(g.id)">
-                                    <span class="min-w-0">
-                                        <span class="flex items-center gap-2">
+                                    <span class="block min-w-0">
+                                        <template x-if="g.image_url">
+                                            <img :src="g.image_url" :alt="'Gejala: ' + g.nama" class="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy">
+                                        </template>
+                                        <template x-if="!g.image_url">
+                                            <span class="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-[#eef3ef] text-xs font-semibold text-[#8a9990]">Foto belum tersedia</span>
+                                        </template>
+                                        <span class="mt-3 flex items-center gap-2">
                                             <span class="text-sm font-bold text-[#173b29]" x-text="g.nama"></span>
                                             <span class="rounded bg-[#eef3ef] px-1.5 py-0.5 text-[10px] font-semibold text-[#8a9990]" x-text="g.kode ?? ''"></span>
                                         </span>

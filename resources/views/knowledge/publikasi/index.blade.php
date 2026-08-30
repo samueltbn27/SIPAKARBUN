@@ -4,12 +4,13 @@
 @section('subtitle', 'Kelola workflow draft → aktif → nonaktif')
 
 @section('content')
-<?php
+@php
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     // Petakan tiap entity ke baris seragam: id, nama, sub.
-    $mapPenyakit = fn ($i) => ['id' => $i->id, 'nama' => $i->nama, 'sub' => $i->kode ? "Kode {$i->kode}" : null];
-    $mapGejala = fn ($i) => ['id' => $i->id, 'nama' => $i->nama, 'sub' => $i->kode ? "Kode {$i->kode}" : null];
-    $mapAturan = fn ($i) => ['id' => $i->id, 'nama' => ($i->penyakit?->nama ?? '-') . ' — ' . ($i->gejala?->nama ?? '-'), 'sub' => 'CF ' . number_format((float) $i->cf_pakar, 3)];
-    $mapSolusi = fn ($i) => ['id' => $i->id, 'nama' => $i->judul, 'sub' => $i->penyakit?->nama];
+    $mapPenyakit = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
+    $mapGejala = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
+    $mapAturan = fn ($item) => ['id' => $item->id, 'nama' => ($item->penyakit?->nama ?? '-') . ' — ' . ($item->gejala?->nama ?? '-'), 'sub' => 'CF ' . number_format((float) $item->cf_pakar, 3)];
+    $mapSolusi = fn ($item) => ['id' => $item->id, 'nama' => $item->judul, 'sub' => $item->penyakit?->nama];
 
     $entityDefs = [
         ['model' => 'Penyakit', 'label' => 'Penyakit'],
@@ -28,7 +29,13 @@
     ];
     $totalDraft = array_sum(array_map(fn ($s) => $s->count(), $draftSets));
     $totalNonaktif = array_sum(array_map(fn ($s) => $s->count(), $nonaktifSets));
-?>
+    $aktifCounts = [
+        'Penyakit' => [\App\Models\Penyakit::aktifSaja()->count(), 'knowledge.penyakit.index'],
+        'Gejala' => [\App\Models\Gejala::aktifSaja()->count(), 'knowledge.gejala.index'],
+        'AturanCf' => [\App\Models\AturanCf::aktifSaja()->count(), 'knowledge.aturan-cf.index'],
+        'Solusi' => [\App\Models\Solusi::aktifSaja()->count(), 'knowledge.solusi.index'],
+    ];
+@endphp
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge</span><span>/</span><span class="text-[#176b45]">Publikasi</span></div>
@@ -71,8 +78,8 @@
 
         {{-- TAB DRAFT --}}
         <div x-show="tab === 'draft'" class="p-5 space-y-5">
-            @foreach ($entityDefs as $i => $def)
-                <?php $rows = $draftSets[$i]; ?>
+            @foreach ($entityDefs as $def)
+                @php($rows = $draftSets[$loop->index])
                 <div>
                     <h3 class="text-xs font-bold text-[#8b9790] uppercase tracking-wider mb-2">{{ $def['label'] }}</h3>
                     @if ($rows->isNotEmpty())
@@ -83,7 +90,7 @@
                                 <div class="text-sm font-semibold text-[#173b29] truncate">{{ $row['nama'] }}</div>
                                 @if ($row['sub'])<div class="text-xs text-[#9aa59e]">{{ $row['sub'] }}</div>@endif
                             </div>
-                            <form method="POST" action="{{ route('knowledge.publikasi.toggle') }}" class="flex-shrink-0">
+                            @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.publikasi.toggle') }}" class="flex-shrink-0">
                                 @csrf
                                 <input type="hidden" name="model" value="{{ $def['model'] }}">
                                 <input type="hidden" name="id" value="{{ $row['id'] }}">
@@ -92,7 +99,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     Publish
                                 </button>
-                            </form>
+                            </form>@else<span class="text-xs text-[#8b9790]">Read-only</span>@endif
                         </div>
                         @endforeach
                     </div>
@@ -105,8 +112,8 @@
 
         {{-- TAB NONAKTIF --}}
         <div x-show="tab === 'nonaktif'" x-cloak style="display:none;" class="p-5 space-y-5">
-            @foreach ($entityDefs as $i => $def)
-                <?php $rows = $nonaktifSets[$i]; ?>
+            @foreach ($entityDefs as $def)
+                @php($rows = $nonaktifSets[$loop->index])
                 <div>
                     <h3 class="text-xs font-bold text-[#8b9790] uppercase tracking-wider mb-2">{{ $def['label'] }}</h3>
                     @if ($rows->isNotEmpty())
@@ -117,7 +124,7 @@
                                 <div class="text-sm font-semibold text-[#173b29] truncate">{{ $row['nama'] }}</div>
                                 @if ($row['sub'])<div class="text-xs text-[#9aa59e]">{{ $row['sub'] }}</div>@endif
                             </div>
-                            <form method="POST" action="{{ route('knowledge.publikasi.toggle') }}" class="flex-shrink-0">
+                            @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.publikasi.toggle') }}" class="flex-shrink-0">
                                 @csrf
                                 <input type="hidden" name="model" value="{{ $def['model'] }}">
                                 <input type="hidden" name="id" value="{{ $row['id'] }}">
@@ -126,7 +133,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     Aktifkan Kembali
                                 </button>
-                            </form>
+                            </form>@else<span class="text-xs text-[#8b9790]">Read-only</span>@endif
                         </div>
                         @endforeach
                     </div>
@@ -143,14 +150,6 @@
         <h2 class="text-base font-bold text-[#173b29]">Knowledge Aktif</h2>
         <p class="text-xs text-[#89968e] mt-1 mb-4">Nonaktifkan jika tidak lagi layak dipakai diagnosis.</p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            @php
-                $aktifCounts = [
-                    'Penyakit' => [\App\Models\Penyakit::aktifSaja()->count(), 'knowledge.penyakit.index'],
-                    'Gejala' => [\App\Models\Gejala::aktifSaja()->count(), 'knowledge.gejala.index'],
-                    'AturanCf' => [\App\Models\AturanCf::aktifSaja()->count(), 'knowledge.aturan-cf.index'],
-                    'Solusi' => [\App\Models\Solusi::aktifSaja()->count(), 'knowledge.solusi.index'],
-                ];
-            @endphp
             @foreach ($aktifCounts as $label => [$count, $routeName])
             <a href="{{ route($routeName) }}" class="rounded-xl border border-[#e8f4ed] bg-[#f7fcf9] p-4 hover:border-[#176b45]/40 transition">
                 <div class="text-xl font-bold text-[#176b45]">{{ $count }}</div>

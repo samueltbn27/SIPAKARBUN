@@ -166,6 +166,7 @@ class PermohonanController extends Controller
                 'creator',
                 'reviewer',
                 'kasus.penugasanAktif.popt',
+                'kasus.penugasanTerakhir.popt',
                 'kasus.riwayatStatus.actor',
             ])
             ->firstOrFail();
@@ -175,7 +176,9 @@ class PermohonanController extends Controller
             : $this->komoditasClient->find((int) $permohonan->diagnosis->commodity_id);
 
         $kasus = $permohonan->kasus;
-        $penugasan = $kasus?->penugasanAktif;
+        // Assignment aktif diprioritaskan. Setelah kasus selesai assignment
+        // ditutup, tetapi Poktan tetap harus dapat membaca POPT terakhirnya.
+        $penugasan = $kasus?->penugasanAktif ?? $kasus?->penugasanTerakhir;
         $timeline = $this->bangunTimeline($permohonan);
 
         return view('permohonan.show', compact(
@@ -292,8 +295,13 @@ class PermohonanController extends Controller
             $list = collect($this->kelompokTaniClient->all())
                 ->filter(fn (array $item): bool => ($item['is_active'] ?? false) === true)
                 ->sortBy('nama')
+                ->take(25)
                 ->values()
                 ->all();
+
+            if ($list === []) {
+                return [[], true];
+            }
 
             return [$list, false];
         } catch (Throwable $e) {

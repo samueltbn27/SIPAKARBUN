@@ -8,8 +8,7 @@ class StoreSolusiRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // TODO(tahap 6 - Auth & Role): cek role Pakar/Admin.
-        return $this->user() !== null && $this->user()->hasRole(['admin', 'operator_uptd', 'popt']);
+        return $this->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     }
 
     public function rules(): array

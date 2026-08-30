@@ -9,10 +9,8 @@ use Spatie\Permission\Models\Role;
 /**
  * Seed role sesuai revisi RBAC terbaru:
  *   - admin          : Admin sistem (dashboard sendiri, manajemen user)
- *   - popt           : POPT — Pakar + Knowledge Manager + Pelaksana
- *                      Teknis. PEMEGANG CRUD Knowledge Management.
- *   - operator_uptd  : OP — validator pengajuan kasus, pengambil
- *                      keputusan, monitoring. READ-ONLY knowledge.
+ *   - popt           : pelaksana teknis dan pembaca Knowledge.
+ *   - operator_uptd  : validator, koordinator, dan pengelola Knowledge.
  *   - poktan         : (modul Mahasiswa 2)
  *   - pimpinan       : (modul Mahasiswa 3)
  *
@@ -41,13 +39,13 @@ class RoleSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permissionName]);
         }
 
-        // POPT: satu-satunya role pengelola knowledge (C/R/U/D penuh).
-        Role::findByName('popt')->syncPermissions($permissions);
+        // Operator UPTD mengelola Knowledge; POPT hanya mendapat read access
+        // melalui route dan tidak memegang permission mutasi.
+        Role::findByName('operator_uptd')->syncPermissions($permissions);
+        Role::findByName('popt')->syncPermissions([]);
 
         // Admin: akses penuh ke SEMUA permission yang ada.
         Role::findByName('admin')->syncPermissions(Permission::all());
 
-        // OP (operator_uptd): TIDAK diberi permission knowledge —
-        // read-only di UI, tanpa hak Create/Update/Delete.
     }
 }

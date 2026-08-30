@@ -11,9 +11,7 @@ class UpdatePenyakitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Hanya Admin & Pakar (Knowledge Manager) yang boleh mengelola
-        // basis pengetahuan — sesuai RBAC Matrix PRD §24.
-        return $this->user()?->hasRole(['admin', 'operator_uptd', 'popt']) ?? false;
+        return $this->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     }
 
     public function rules(): array
@@ -26,6 +24,7 @@ class UpdatePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')->ignore($penyakitId)],
             'nama' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
             'komoditas_id' => ['sometimes', 'array'],
             'komoditas_id.*' => ['integer', 'min:1'],

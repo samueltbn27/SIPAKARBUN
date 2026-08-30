@@ -35,6 +35,7 @@ class DiagnosisResult extends Model
         'diagnosis_id',
         'disease_id',
         'disease_name_snapshot',
+        'disease_image_url',
         'solution_snapshot',
         'trace_snapshot',
         'cf_value',

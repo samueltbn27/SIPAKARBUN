@@ -3,15 +3,16 @@
 @section('title', 'Daftar Penyakit')
 
 @section('content')
+@php($canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false)
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900">Daftar Penyakit</h1>
             <p class="mt-1 text-sm text-gray-600">Kelola data penyakit pada basis pengetahuan SIPAKARBUN.</p>
         </div>
-        <a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
-            Tambah Penyakit
-        </a>
+        @if($canManageKnowledge)
+            <a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">Tambah Penyakit</a>
+        @endif
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
@@ -66,7 +67,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm whitespace-nowrap text-right">
-                                <div class="inline-flex items-center gap-2">
+                                @if($canManageKnowledge)<div class="inline-flex items-center gap-2">
                                     <a href="{{ route('knowledge.penyakit.edit', $p) }}" class="inline-flex items-center bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg px-3 py-1.5 text-xs font-medium">
                                         Edit
                                     </a>
@@ -77,7 +78,7 @@
                                             Hapus
                                         </button>
                                     </form>
-                                </div>
+                                </div>@else<span class="text-xs text-gray-500">Read-only</span>@endif
                             </td>
                         </tr>
                     @empty
@@ -88,7 +89,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     <p class="text-sm font-medium">Belum ada data penyakit.</p>
-                                    <a href="{{ route('knowledge.penyakit.create') }}" class="text-sm text-green-600 hover:text-green-700 font-medium">Tambah penyakit pertama</a>
+                                    @if($canManageKnowledge)<a href="{{ route('knowledge.penyakit.create') }}" class="text-sm text-green-600 hover:text-green-700 font-medium">Tambah penyakit pertama</a>@endif
                                 </div>
                             </td>
                         </tr>

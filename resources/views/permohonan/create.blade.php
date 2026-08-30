@@ -83,12 +83,43 @@
             submitting: false,
             kelompokTaniList: {{ Js::from($kelompokTaniList) }},
             kelompokTaniId: {{ Js::from(old('kelompok_tani_id')) }},
+            kelompokTaniQuery: '',
+            kelompokTaniLoading: false,
+            kelompokTaniSearchError: false,
+            async cariKelompokTani() {
+                const query = this.kelompokTaniQuery.trim();
+                this.kelompokTaniLoading = true;
+                this.kelompokTaniSearchError = false;
+                try {
+                    const params = new URLSearchParams({ q: query });
+                    if (this.kelompokTaniId) params.set('selected', this.kelompokTaniId);
+                    const response = await fetch('{{ route('references.kelompok-tani') }}?' + params.toString(), {
+                        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    if (! response.ok) throw new Error('reference-search-failed');
+                    const payload = await response.json();
+                    this.kelompokTaniList = Array.isArray(payload.data) ? payload.data : [];
+                } catch (error) {
+                    this.kelompokTaniList = [];
+                    this.kelompokTaniSearchError = true;
+                } finally {
+                    this.kelompokTaniLoading = false;
+                }
+            },
             files: [],
             onFiles(e) {
                 this.files = Array.from(e.target.files || []);
             },
             get kelompokTaniTerpilih() {
                 return this.kelompokTaniList.find((k) => String(k.id) === String(this.kelompokTaniId)) || null;
+            },
+            get kelompokTaniHasil() {
+                const query = this.kelompokTaniQuery.trim().toLowerCase();
+                if (! query) return this.kelompokTaniList;
+
+                return this.kelompokTaniList.filter((k) => [k.nama, k.kode, k.kode_kelompok, k.kabupaten, k.kecamatan, k.kelurahan, k.desa]
+                    .filter(Boolean)
+                    .some((value) => String(value).toLowerCase().includes(query)));
             },
             fmtBytes(b) {
                 if (! b) return '0 B';
@@ -171,16 +202,26 @@
 
                         @if ($kelompokTaniError)
                             <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-                                Referensi kelompok tani tidak dapat dimuat. Silakan coba kembali.
+                                <p class="font-semibold">Data Kelompok Tani belum tersedia.</p>
+                                <p class="mt-1">Referensi kelompok tani tidak dapat dimuat. Silakan lakukan sinkronisasi data Disbun lalu coba kembali.</p>
                             </div>
                         @else
+                            <label for="kelompok-tani-search" class="sr-only">Cari kelompok tani</label>
+                            <input type="search" id="kelompok-tani-search" x-model="kelompokTaniQuery"
+                                   @input.debounce.300ms="cariKelompokTani()"
+                                   placeholder="Cari nama, kode, kabupaten, kecamatan, atau kelurahan..."
+                                   class="mb-2 w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
                             <select name="kelompok_tani_id" id="kelompok-tani" x-model="kelompokTaniId" required
                                     class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
                                 <option value="">Pilih Kelompok Tani</option>
-                                <template x-for="k in kelompokTaniList" :key="k.id">
-                                    <option :value="String(k.id)" x-text="k.nama + ' · ' + k.kode"></option>
+                                <option value="" disabled x-show="kelompokTaniLoading">Memuat opsi...</option>
+                                <template x-for="k in kelompokTaniHasil" :key="k.id">
+                                    <option :value="String(k.id)" x-text="[k.nama, k.jenis_komoditi, [k.kecamatan, k.kabupaten].filter(Boolean).join(' · ')].filter(Boolean).join(' — ')"></option>
                                 </template>
                             </select>
+                            <p x-show="kelompokTaniLoading" class="mt-2 text-xs text-[#66746c]">Mencari data kelompok tani...</p>
+                            <p x-show="!kelompokTaniLoading && kelompokTaniSearchError" class="mt-2 text-xs text-red-600">Data Kelompok Tani tidak tersedia. Sinkronisasi data Disbun mungkin gagal.</p>
+                            <p x-show="!kelompokTaniLoading && !kelompokTaniSearchError && kelompokTaniHasil.length === 0" class="mt-2 text-xs text-amber-700">Data tidak tersedia untuk pencarian ini.</p>
                             @error('kelompok_tani_id')
                                 <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
                             @enderror
@@ -189,7 +230,8 @@
                                 <div class="mt-3 rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
                                     <p class="font-semibold text-[#173b29]" x-text="kelompokTaniTerpilih.nama"></p>
                                     <p class="mt-0.5">Kode: <span class="font-semibold text-[#176b45]" x-text="kelompokTaniTerpilih.kode"></span></p>
-                                    <p x-show="kelompokTaniTerpilih.ketua">Ketua: <span x-text="kelompokTaniTerpilih.ketua"></span></p>
+                                    <p x-show="kelompokTaniTerpilih.jenis_komoditi">Komoditas: <span x-text="kelompokTaniTerpilih.jenis_komoditi"></span></p>
+                                    <p x-show="kelompokTaniTerpilih.kecamatan || kelompokTaniTerpilih.kabupaten">Wilayah: <span x-text="[kelompokTaniTerpilih.kecamatan, kelompokTaniTerpilih.kabupaten].filter(Boolean).join(', ')"></span></p>
                                 </div>
                             </template>
                         @endif

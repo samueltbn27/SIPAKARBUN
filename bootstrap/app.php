@@ -14,7 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withCommands([__DIR__.'/../app/Console/Commands'])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Allow the first-party Blade application to authenticate its
+        // same-origin API requests through the existing web session guard.
+        // Route authorization remains enforced by auth:sanctum and Spatie
+        // role middleware on each API route.
+        $middleware->statefulApi();
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

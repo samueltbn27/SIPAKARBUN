@@ -12,8 +12,9 @@ use App\Services\HttpKelompokTaniReferensiClient;
 use App\Services\HttpKnowledgeApiClient;
 use App\Services\HttpKomoditasReferensiClient;
 use App\Services\KnowledgeService;
-use App\Services\MockKelompokTaniReferensiClient;
-use App\Services\MockKomoditasReferensiClient;
+use App\Services\LocalKelompokTaniReferensiClient;
+use App\Services\LocalKnowledgeApiClient;
+use App\Services\LocalKomoditasReferensiClient;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -26,45 +27,60 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // PRD §23.4: komoditas & kelompok tani adalah domain Shared
-        // Integration. Saat `SHARED_API_BASE_URL` belum diisi di .env,
-        // otomatis memakai MOCK; begitu endpoint Integration tersedia,
-        // cukup isi env tersebut dan client bertukar ke HTTP — tanpa
-        // mengubah kode lain karena semuanya bergantung ke interface.
+        // Runtime selalu membaca normalized local references. HTTP Disbun
+        // hanya dipakai oleh command sync; mock sengaja dibatasi ke testing.
         $this->app->bind(KomoditasReferensiClient::class, static function (): KomoditasReferensiClient {
-            $baseUrl = (string) config('services.shared_referensi.base_url', '');
-
-            if ($baseUrl === '') {
-                return new MockKomoditasReferensiClient;
+            if (app()->runningUnitTests()) {
+                return new \App\Services\MockKomoditasReferensiClient;
             }
 
-            return new HttpKomoditasReferensiClient(
-                baseUrl: $baseUrl,
-                token: (string) config('services.shared_referensi.token', ''),
-                timeout: (int) config('services.shared_referensi.timeout', 5),
-            );
+            return new LocalKomoditasReferensiClient;
         });
 
         $this->app->bind(KelompokTaniReferensiClient::class, static function (): KelompokTaniReferensiClient {
-            $baseUrl = (string) config('services.shared_referensi.base_url', '');
-
-            if ($baseUrl === '') {
-                return new MockKelompokTaniReferensiClient;
+            if (app()->runningUnitTests()) {
+                return new \App\Services\MockKelompokTaniReferensiClient;
             }
 
-            return new HttpKelompokTaniReferensiClient(
-                baseUrl: $baseUrl,
-                token: (string) config('services.shared_referensi.token', ''),
-                timeout: (int) config('services.shared_referensi.timeout', 5),
-            );
+            return new LocalKelompokTaniReferensiClient;
         });
+
+        $this->app->singleton(HttpKomoditasReferensiClient::class, static fn (): HttpKomoditasReferensiClient => new HttpKomoditasReferensiClient(
+            baseUrl: (string) config('services.shared_referensi.base_url', ''),
+            token: (string) config('services.shared_referensi.token', ''),
+            timeout: (int) config('services.shared_referensi.timeout', 30),
+            pageSize: (int) config('services.shared_referensi.page_size', 50),
+            maxPages: (int) config('services.shared_referensi.max_pages', 250),
+            userAgent: (string) config('services.shared_referensi.user_agent', 'SIPAKARBUN/1.0'),
+        ));
+
+        $this->app->singleton(HttpKelompokTaniReferensiClient::class, static fn (): HttpKelompokTaniReferensiClient => new HttpKelompokTaniReferensiClient(
+            baseUrl: (string) config('services.shared_referensi.base_url', ''),
+            token: (string) config('services.shared_referensi.token', ''),
+            timeout: (int) config('services.shared_referensi.timeout', 30),
+            pageSize: (int) config('services.shared_referensi.page_size', 50),
+            maxPages: (int) config('services.shared_referensi.max_pages', 250),
+            userAgent: (string) config('services.shared_referensi.user_agent', 'SIPAKARBUN/1.0'),
+            pageDelayMs: (int) config('services.shared_referensi.page_delay_ms', 750),
+            rateLimitRetries: (int) config('services.shared_referensi.rate_limit_retries', 3),
+            rateLimitBackoffMs: (int) config('services.shared_referensi.rate_limit_backoff_ms', 60000),
+            sourceExhaustionWarningRatio: (float) config('services.shared_referensi.source_exhaustion_warning_ratio', 0.90),
+        ));
 
         // Knowledge API (Mahasiswa 1) untuk modul Diagnosis (Mahasiswa 2).
         // Base URL, token, dan timeout dibaca dari .env — lihat
-        // config/services.php. Tidak ada nilai yang di-hardcode.
-        $this->app->bind(KnowledgeApiClient::class, static function (): HttpKnowledgeApiClient {
+        // config/services.php. Pada local monolith tanpa base URL, gunakan
+        // adapter yang tetap melewati Knowledge API controller/envelope;
+        // production/staging tetap wajib memakai HTTP + Sanctum token.
+        $this->app->bind(KnowledgeApiClient::class, static function (): KnowledgeApiClient {
+            $baseUrl = (string) config('services.knowledge_api.base_url', '');
+
+            if ($baseUrl === '' && app()->environment('local')) {
+                return app(LocalKnowledgeApiClient::class);
+            }
+
             return new HttpKnowledgeApiClient(
-                baseUrl: (string) config('services.knowledge_api.base_url', ''),
+                baseUrl: $baseUrl,
                 token: (string) config('services.knowledge_api.token', ''),
                 timeout: (int) config('services.knowledge_api.timeout', 5),
             );

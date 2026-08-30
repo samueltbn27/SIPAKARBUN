@@ -21,9 +21,13 @@ class KasusPenangananResource extends JsonResource
         $permohonan = $this->relationLoaded('permohonan')
             ? $this->permohonan
             : null;
-        $penugasan = $this->relationLoaded('penugasanAktif')
+        $penugasanAktif = $this->relationLoaded('penugasanAktif')
             ? $this->penugasanAktif
             : null;
+        $penugasanTerakhir = $this->relationLoaded('penugasanPopt')
+            ? $this->penugasanPopt->sortByDesc('assigned_at')->first()
+            : null;
+        $penugasan = $penugasanAktif ?? $penugasanTerakhir;
         $riwayat = $this->relationLoaded('riwayatStatus')
             ? $this->riwayatStatus
             : collect();

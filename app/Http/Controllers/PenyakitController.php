@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePenyakitRequest;
 use App\Http\Requests\UpdatePenyakitRequest;
 use App\Models\Penyakit;
+use App\Services\KnowledgeImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\DB;
  */
 class PenyakitController extends Controller
 {
+    public function __construct(private readonly KnowledgeImageService $images) {}
+
     public function index(Request $request)
     {
         $query = Penyakit::query()->with('penyakitKomoditas');
@@ -39,7 +42,12 @@ class PenyakitController extends Controller
     public function store(StorePenyakitRequest $request)
     {
         return DB::transaction(function () use ($request) {
-            $penyakit = Penyakit::create($request->safe()->except('komoditas_id'));
+            $data = $request->safe()->except(['komoditas_id', 'image']);
+            $penyakit = Penyakit::create($data);
+
+            if ($request->hasFile('image')) {
+                $penyakit->update(['image_path' => $this->images->store($request->file('image'), 'penyakit')]);
+            }
 
             $this->syncKomoditas($penyakit, $request->input('komoditas_id', []));
 
@@ -57,7 +65,11 @@ class PenyakitController extends Controller
     public function update(UpdatePenyakitRequest $request, Penyakit $penyakit)
     {
         return DB::transaction(function () use ($request, $penyakit) {
-            $penyakit->update($request->safe()->except('komoditas_id'));
+            $data = $request->safe()->except(['komoditas_id', 'image']);
+            if ($request->hasFile('image')) {
+                $data['image_path'] = $this->images->replace($request->file('image'), $penyakit->image_path, 'penyakit');
+            }
+            $penyakit->update($data);
 
             // Hanya sinkronkan relasi komoditas kalau field-nya memang
             // dikirim — supaya update parsial (mis. cuma ganti nama)
@@ -78,6 +90,7 @@ class PenyakitController extends Controller
         // referensi. Hard delete di bawah ini akan CASCADE menghapus
         // solusi, aturan_cf, dan penyakit_komoditas terkait (lihat
         // migration masing-masing tabel).
+        $this->images->deleteIfLocal($penyakit->image_path);
         $penyakit->delete();
 
         return response()->json(null, 204);

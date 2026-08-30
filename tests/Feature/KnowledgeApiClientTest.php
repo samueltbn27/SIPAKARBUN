@@ -104,6 +104,37 @@ class KnowledgeApiClientTest extends TestCase
         $this->assertSame('Pangkas daun', $item['solusi'][0]['judul']);
     }
 
+    public function test_penyakit_dan_gejala_meneruskan_image_path_dan_url(): void
+    {
+        $this->fakePenyakit([[
+            'id' => 1,
+            'nama' => 'Karat Daun Kopi',
+            'image_path' => 'knowledge/penyakit/karat.webp',
+            'image_url' => '/storage/knowledge/penyakit/karat.webp',
+            'komoditas_id' => [],
+            'aturan_cf' => [],
+            'solusi' => [],
+        ]]);
+        Http::fake([
+            self::BASE_URL.'/api/penyakit*' => Http::response(['data' => [[
+                'id' => 1, 'nama' => 'Karat Daun Kopi', 'image_path' => 'knowledge/penyakit/karat.webp',
+                'image_url' => '/storage/knowledge/penyakit/karat.webp', 'komoditas_id' => [], 'aturan_cf' => [], 'solusi' => [],
+            ]]], 200),
+            self::BASE_URL.'/api/gejala*' => Http::response(['data' => [[
+                'id' => 2, 'nama' => 'Bercak', 'image_path' => 'knowledge/gejala/bercak.webp',
+                'image_url' => '/storage/knowledge/gejala/bercak.webp',
+            ]]], 200),
+        ]);
+
+        $penyakit = $this->client()->penyakit()->first();
+        $gejala = $this->client()->gejala()->first();
+
+        $this->assertSame('/storage/knowledge/penyakit/karat.webp', $penyakit['image_url']);
+        $this->assertSame('knowledge/penyakit/karat.webp', $penyakit['image_path']);
+        $this->assertSame('/storage/knowledge/gejala/bercak.webp', $gejala['image_url']);
+        $this->assertSame('knowledge/gejala/bercak.webp', $gejala['image_path']);
+    }
+
     public function test_gejala_mengambil_dan_menormalkan_data(): void
     {
         Http::fake([

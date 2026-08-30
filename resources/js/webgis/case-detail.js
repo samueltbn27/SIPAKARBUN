@@ -79,9 +79,20 @@ function renderTimeline(history) {
         return;
     }
 
-    const sortedHistory = [...history].sort((first, second) => (
-        new Date(first.changed_at).getTime() - new Date(second.changed_at).getTime()
-    ));
+    // The M2 read contract returns history newest-first. Keep that contract
+    // as the tie-breaker because SQLite can persist rapid transitions with
+    // the same second-level timestamp during UAT seeding.
+    const sortedHistory = history
+        .map((entry, index) => ({ entry, index }))
+        .sort((first, second) => {
+            const timeDifference = new Date(first.entry.changed_at).getTime()
+                - new Date(second.entry.changed_at).getTime();
+
+            return timeDifference === 0
+                ? second.index - first.index
+                : timeDifference;
+        })
+        .map(({ entry }) => entry);
 
     sortedHistory.forEach((entry, index) => {
         const config = getStatusConfig(entry.status);

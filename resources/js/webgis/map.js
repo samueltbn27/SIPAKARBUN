@@ -167,6 +167,20 @@ function setSelectOptions(select, options, defaultLabel) {
     });
 }
 
+function setFilterErrorState() {
+    document.querySelectorAll('[data-webgis-filter]').forEach((select) => {
+        setSelectOptions(select, [], 'Data tidak tersedia');
+        select.disabled = true;
+        select.setAttribute('aria-invalid', 'true');
+    });
+
+    const resetButton = document.querySelector('[data-webgis-reset]');
+
+    if (resetButton) {
+        resetButton.disabled = true;
+    }
+}
+
 function renderStatusLegend() {
     const legend = document.querySelector('[data-webgis-status-legend]');
 
@@ -327,6 +341,7 @@ async function loadWebGIS(container) {
         initializeWebGIS(container, cases);
     } catch (error) {
         console.error('WebGIS case data could not be loaded.', error);
+        setFilterErrorState();
 
         if (loadingState) {
             loadingState.hidden = true;

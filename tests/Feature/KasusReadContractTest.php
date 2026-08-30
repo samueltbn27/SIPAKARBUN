@@ -9,7 +9,9 @@ use App\Models\RiwayatStatusPenanganan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\Sanctum;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -133,6 +135,31 @@ class KasusReadContractTest extends TestCase
     public function test_guest_tidak_dapat_membaca_contract(): void
     {
         $this->getJson('/api/kasus')->assertUnauthorized();
+    }
+
+    public function test_web_session_dapat_membaca_contract_dari_same_origin_api(): void
+    {
+        config(['session.driver' => 'database']);
+        $this->assertContains(
+            EnsureFrontendRequestsAreStateful::class,
+            app('router')->getMiddlewareGroups()['api'],
+        );
+
+        $admin = $this->buatUser('admin');
+
+        $login = $this->post('/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+        ])->assertRedirect();
+
+        $sessionCookie = $login->getCookie(config('session.cookie'));
+        Auth::forgetGuards();
+        app('session')->forgetDrivers();
+
+        $this->withCookie($sessionCookie->getName(), $sessionCookie->getValue())
+            ->withHeader('Referer', 'http://localhost:8000/webgis')
+            ->getJson('/api/kasus')
+            ->assertOk();
     }
 
     public function test_koordinat_kasus_tidak_fallback_ke_lokasi_poktan(): void

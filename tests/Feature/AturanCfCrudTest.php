@@ -17,7 +17,7 @@ class AturanCfCrudTest extends TestCase
 
     public function test_bisa_membuat_rule_cf_baru(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
         $penyakit = Penyakit::factory()->create();
         $gejala = Gejala::factory()->create();
 
@@ -35,7 +35,7 @@ class AturanCfCrudTest extends TestCase
 
     public function test_cf_pakar_di_luar_rentang_ditolak(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
         $penyakit = Penyakit::factory()->create();
         $gejala = Gejala::factory()->create();
 
@@ -48,7 +48,7 @@ class AturanCfCrudTest extends TestCase
 
     public function test_tidak_boleh_dua_rule_aktif_untuk_pasangan_sama(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
         $penyakit = Penyakit::factory()->create();
         $gejala = Gejala::factory()->create();
 
@@ -69,7 +69,7 @@ class AturanCfCrudTest extends TestCase
 
     public function test_boleh_tambah_rule_baru_setelah_rule_lama_dinonaktifkan(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
         $penyakit = Penyakit::factory()->create();
         $gejala = Gejala::factory()->create();
 
@@ -89,7 +89,7 @@ class AturanCfCrudTest extends TestCase
 
     public function test_update_boleh_kalau_tidak_bentrok_dengan_rule_aktif_lain(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
         $rule = AturanCf::factory()->create(['cf_pakar' => 0.5]);
 
         $this->putJson("/api/admin/aturan-cf/{$rule->id}", [
