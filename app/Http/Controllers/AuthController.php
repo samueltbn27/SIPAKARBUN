@@ -66,12 +66,7 @@ class AuthController extends Controller
 
     public function showRegister(): View
     {
-        $roles = [
-            'admin' => 'Admin',
-            'popt' => 'POPT (Pengamat Organisme Pengganggu Tumbuhan)',
-            'operator_uptd' => 'OP (Operator)',
-            'poktan' => 'Poktan (Kelompok Tani / Petani)',
-        ];
+        $roles = RegisterRequest::ROLE_OPTIONS;
 
         return view('auth.register', compact('roles'));
     }

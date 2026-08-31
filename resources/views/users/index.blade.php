@@ -9,14 +9,19 @@
         <div>
             <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Pengaturan</span><span>/</span><span class="text-[#176b45]">Pengguna</span></div>
             <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Manajemen Pengguna</h1>
-            <p class="mt-1 text-sm text-[#77847c]">Kelola akun pengguna dan setujui permohonan registrasi.</p>
+            <p class="mt-1 text-sm text-[#77847c]">Kelola akun pengguna dan provision akun sesuai role aplikasi.</p>
         </div>
-        @if($pendingCount > 0)
-        <a href="{{ route('knowledge.pengguna.index', ['status' => 'pending']) }}" class="inline-flex items-center gap-2 rounded-lg bg-[#fff4df] border border-[#f0d98a] px-4 py-2.5 text-sm font-semibold text-[#b8860b] hover:bg-[#fef0d0] transition">
-            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-[#d7a735] text-white text-xs font-bold">{{ $pendingCount }}</span>
-            {{ $pendingCount }} akun menunggu persetujuan
-        </a>
-        @endif
+        <div class="flex items-center gap-3">
+            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115a39] transition">
+                <span class="text-lg leading-none">+</span> Buat Akun
+            </a>
+            @if($pendingCount > 0)
+            <a href="{{ route('knowledge.pengguna.index', ['status' => 'pending']) }}" class="inline-flex items-center gap-2 rounded-lg bg-[#fff4df] border border-[#f0d98a] px-4 py-2.5 text-sm font-semibold text-[#b8860b] hover:bg-[#fef0d0] transition">
+                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-[#d7a735] text-white text-xs font-bold">{{ $pendingCount }}</span>
+                {{ $pendingCount }} menunggu
+            </a>
+            @endif
+        </div>
     </div>
 
     {{-- Toolbar --}}
@@ -57,7 +62,7 @@
                 <tbody class="divide-y divide-[#f0f4f1] bg-white">
                     @foreach($users as $user)
                     <?php $roleName = $user->roles->first()?->name ?? '-'; ?>
-                    <?php $roleLabels = ['admin' => 'Admin', 'popt' => 'POPT', 'operator_uptd' => 'Operator UPTD']; ?>
+                    <?php $roleLabels = ['admin' => 'Admin', 'popt' => 'POPT', 'operator_uptd' => 'Operator UPTD', 'poktan' => 'Poktan / Gapoktan', 'pimpinan' => 'Pimpinan']; ?>
                     <?php $roleLabel = $roleLabels[$roleName] ?? ucfirst($roleName); ?>
                     <?php $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($user->name), 2)))); ?>
                     <tr class="hover:bg-[#f7faf8] transition-colors">

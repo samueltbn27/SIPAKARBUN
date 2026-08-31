@@ -17,9 +17,9 @@ class DatabaseSeeder extends Seeder
     {
         // Jangan membuat akun dengan password default yang diketahui.
         if ($password = env('ADMIN_SEED_PASSWORD')) {
-            User::updateOrCreate(
+            User::firstOrCreate(
                 ['email' => env('ADMIN_SEED_EMAIL', 'admin@example.com')],
-                ['name' => 'Admin Knowledge', 'password' => $password]
+                ['name' => 'Admin Knowledge', 'password' => $password, 'is_active' => true]
             );
         }
 

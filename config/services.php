@@ -76,9 +76,22 @@ return [
         'source_exhaustion_warning_ratio' => env('SHARED_API_SOURCE_EXHAUSTION_WARNING_RATIO', 0.90),
     ],
 
-    // Local/UAT only. Keep the actual value in the ignored .env file.
+    // Local/UAT only. Keep the actual values in the ignored .env file.
     'uat' => [
-        'password' => env('SIPAKARBUN_UAT_PASSWORD'),
+        'accounts' => [
+            'operator_uptd' => [
+                'password' => env('SIPAKARBUN_UAT_OPERATOR_PASSWORD'),
+            ],
+            'popt' => [
+                'password' => env('SIPAKARBUN_UAT_POPT_PASSWORD'),
+            ],
+            'poktan' => [
+                'password' => env('SIPAKARBUN_UAT_POKTAN_PASSWORD'),
+            ],
+            'pimpinan' => [
+                'password' => env('SIPAKARBUN_UAT_PIMPINAN_PASSWORD'),
+            ],
+        ],
     ],
 
     /*

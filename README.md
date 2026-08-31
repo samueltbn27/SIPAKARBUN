@@ -1,3 +1,83 @@
+# SIPAKARBUN
+
+SIPAKARBUN adalah aplikasi Laravel untuk diagnosis penyakit tanaman,
+permohonan penanganan, workflow Operator UPTD/POPT, Knowledge Management,
+WebGIS, dan dashboard monitoring.
+
+## Menjalankan di Local
+
+Persyaratan: PHP 8.2+, Composer, Node.js/npm, dan database sesuai konfigurasi
+`.env`.
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+Buka [http://127.0.0.1:8000/login](http://127.0.0.1:8000/login).
+
+Untuk pengembangan frontend dengan hot reload, gunakan `npm run dev` pada
+terminal terpisah sebagai pengganti `npm run build`.
+
+## Pendaftaran Akun
+
+Halaman `/register` menyediakan pilihan role berikut:
+
+- Operator UPTD
+- POPT
+- Poktan / Gapoktan
+- Pimpinan
+
+Role `admin` dan `pakar` tidak dapat dipilih. Akun hasil pendaftaran berstatus
+menunggu persetujuan dan harus diaktifkan melalui menu Pengguna oleh Admin.
+
+## Akun UAT/Development Lokal
+
+Akun berikut hanya untuk local/UAT. Jangan gunakan untuk production.
+
+| Role | Email | Password |
+|---|---|---|
+| Operator UPTD | `operator@sipakarbun.local` | `Operator2026!` |
+| POPT | `popt@sipakarbun.local` | `Popt2026!` |
+| Poktan | `poktan@sipakarbun.local` | `Poktan2026!` |
+| Pimpinan | `pimpinan@sipakarbun.local` | `Pimpinan2026!` |
+| Admin | akun bootstrap existing | tidak didokumentasikan di repository |
+
+Siapkan password UAT pada `.env` yang diabaikan Git sebelum menjalankan:
+
+```dotenv
+SIPAKARBUN_UAT_OPERATOR_PASSWORD=Operator2026!
+SIPAKARBUN_UAT_POPT_PASSWORD=Popt2026!
+SIPAKARBUN_UAT_POKTAN_PASSWORD=Poktan2026!
+SIPAKARBUN_UAT_PIMPINAN_PASSWORD=Pimpinan2026!
+```
+
+Lalu jalankan seeder secara eksplisit:
+
+```bash
+php artisan db:seed --class=UatUserSeeder
+```
+
+Seeder UAT bersifat idempotent dan tidak dipanggil otomatis oleh
+`DatabaseSeeder` pada production.
+
+## Pengujian
+
+```bash
+php artisan test
+npm run test:provider
+npm run build
+php artisan view:clear
+php artisan view:cache
+```
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

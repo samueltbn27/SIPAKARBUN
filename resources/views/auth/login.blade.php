@@ -65,7 +65,7 @@
 
             <p class="mt-6 text-center text-sm text-[#77847c]">
                 Belum punya akun?
-                <a href="{{ route('register') }}" class="font-semibold text-[#176b45] hover:underline">Buat akun</a>
+                <a href="{{ route('register') }}" class="font-semibold text-[#176b45] hover:underline">Daftar akun</a>
             </p>
         </div>
 
