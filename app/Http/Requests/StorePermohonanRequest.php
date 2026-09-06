@@ -11,8 +11,8 @@ use Illuminate\Validation\Rule;
  * Aturan kunci:
  *   - `latitude_kasus`/`longitude_kasus` adalah koordinat KASUS/serangan
  *     (kontrak §10), rentang diverifikasi di sini. Form lat/long KASUS
- *     memang WAJIB? Tidak — Oracle sengaja nullable karena operator boleh
- *     melengkapi koordinat di tahap kasus; tapi jika diberikan harus valid.
+ *     wajib diisi oleh pemohon dan rentangnya diverifikasi di sini. Lokasi
+ *     kasus tidak diturunkan dari koordinat referensi kelompok tani.
  *   - `evidences` dibatasi: jumlah maksimal 5 file, ukuran tiap ≤ 5 MB,
  *     dan MIME whitelist (jpg/png/webp) — konsisten dengan
  *     EvidenceFileHandler.
@@ -39,8 +39,8 @@ class StorePermohonanRequest extends FormRequest
         return [
             'diagnosis_id' => ['required', 'integer', Rule::exists('diagnoses', 'id')],
             'kelompok_tani_id' => ['required', 'integer'],
-            'latitude_kasus' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude_kasus' => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude_kasus' => ['required', 'numeric', 'between:-90,90'],
+            'longitude_kasus' => ['required', 'numeric', 'between:-180,180'],
             'alamat_kasus' => ['nullable', 'string', 'max:500'],
             'kode_kabupaten' => ['nullable', 'string', 'max:50'],
             'kabupaten' => ['nullable', 'string', 'max:150'],

@@ -98,7 +98,7 @@
                             <div class="inline-flex items-center gap-2">
                                 @if(!$user->is_active)
                                     {{-- Approve --}}
-                                    <form method="POST" action="{{ route('knowledge.pengguna.approve', $user) }}" onsubmit="return confirm('Setujui akun {{ e($user->name) }}? Akun ini akan dapat digunakan untuk login.');">
+                                    <form method="POST" action="{{ route('knowledge.pengguna.approve', $user) }}" data-confirm-title="Setujui akun?" data-confirm-message="Akun {{ $user->name }} akan dapat digunakan untuk login." data-confirm-action="Setujui">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center gap-1 rounded-lg bg-[#176b45] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#115a39] transition">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -106,7 +106,7 @@
                                         </button>
                                     </form>
                                     {{-- Reject --}}
-                                    <form method="POST" action="{{ route('knowledge.pengguna.reject', $user) }}" onsubmit="return confirm('Tolak dan hapus akun {{ e($user->name) }}? Tindakan ini tidak dapat dibatalkan.');">
+                                    <form method="POST" action="{{ route('knowledge.pengguna.reject', $user) }}" data-confirm-title="Tolak akun?" data-confirm-message="Akun {{ $user->name }} akan ditolak dan dihapus." data-confirm-action="Tolak" data-confirm-tone="danger">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-[#e4d4d4] bg-white px-3 py-1.5 text-xs font-semibold text-[#c53030] hover:bg-[#fdeaea] transition">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -115,7 +115,7 @@
                                     </form>
                                 @else
                                     {{-- Toggle active/inactive --}}
-                                    <form method="POST" action="{{ route('knowledge.pengguna.toggle', $user) }}" onsubmit="return confirm('{{ $user->id === auth()->id() ? 'Nonaktifkan akun Anda sendiri? Anda tidak akan bisa login.' : 'Nonaktifkan akun ' . e($user->name) . '?' }}');">
+                                    <form method="POST" action="{{ route('knowledge.pengguna.toggle', $user) }}" data-confirm-title="Ubah status akun?" data-confirm-message="{{ $user->id === auth()->id() ? 'Anda tidak akan bisa login setelah akun dinonaktifkan.' : 'Status akun ' . $user->name . ' akan diubah.' }}" data-confirm-action="Lanjutkan">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center rounded-lg border border-[#e4ece7] bg-white px-3 py-1.5 text-xs font-medium text-[#8b9790] hover:bg-[#f3f8f4] transition" @disabled($user->id === auth()->id() && $user->is_active)>
                                             Nonaktifkan
@@ -125,7 +125,7 @@
 
                                 {{-- Delete (except self) --}}
                                 @if($user->id !== auth()->id())
-                                <form method="POST" action="{{ route('knowledge.pengguna.destroy', $user) }}" onsubmit="return confirm('Hapus akun {{ e($user->name) }} permanen? Tindakan ini tidak dapat dibatalkan.');">
+                                <form method="POST" action="{{ route('knowledge.pengguna.destroy', $user) }}" data-confirm-title="Hapus akun?" data-confirm-message="Akun {{ $user->name }} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan." data-confirm-action="Hapus" data-confirm-tone="danger">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-[#e4d4d4] bg-white p-1.5 text-[#c53030] hover:bg-[#fdeaea] transition" title="Hapus permanen">

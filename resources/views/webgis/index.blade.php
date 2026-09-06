@@ -76,8 +76,10 @@
 
         <div id="webgis-map" data-webgis-map
              class="relative h-[320px] w-full bg-[#eef5f0] sm:h-[500px]" aria-label="Peta lokasi penanganan kasus">
-            <p data-webgis-loading class="absolute inset-0 z-[400] flex items-center justify-center bg-[#eef5f0] px-6 text-center text-sm font-medium text-[#526159]">
-                Memuat data kasus...
+            <p data-webgis-loading class="loading-surface absolute inset-0 z-[400] flex flex-col items-center justify-center gap-3 px-6 text-center text-sm font-medium text-[#526159]" role="status" aria-live="polite">
+                <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span>Menyiapkan peta kasus</span>
+                <span class="text-xs font-normal text-[#89968e]">Memuat data terbaru...</span>
             </p>
             <p data-webgis-error hidden class="absolute inset-0 z-[400] flex items-center justify-center bg-[#eef5f0] px-6 text-center text-sm font-medium text-[#8d3d35]">
                 Data WebGIS tidak dapat dimuat.
@@ -111,6 +113,7 @@
 <div data-case-detail-backdrop hidden class="fixed inset-0 z-[1000] bg-[#173b29]/30 backdrop-blur-[1px]" aria-hidden="true"></div>
 
 <aside id="case-detail-drawer" data-case-detail-drawer
+       hidden
        class="fixed inset-y-0 right-0 z-[1100] flex w-full max-w-lg translate-x-full flex-col border-l border-[#e6eee8] bg-white shadow-2xl transition-transform duration-200 ease-out"
        aria-hidden="true" inert aria-labelledby="case-detail-heading" role="dialog">
     <header class="flex items-start justify-between gap-4 border-b border-[#eef3ef] px-5 py-4 sm:px-6">

@@ -8,7 +8,7 @@
 @endphp
 <div class="max-w-[1500px] mx-auto space-y-7">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div><div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge Management</span><span>/</span><span class="text-[#176b45]">Dashboard</span></div><h1 class="text-2xl sm:text-[28px] font-bold tracking-tight text-[#173b29]">Selamat datang, {{ auth()->user()?->name ?? 'Admin KM' }} <span class="text-xl">👋</span></h1><p class="mt-1 text-sm text-[#77847c]">Pantau dan kelola basis pengetahuan perkebunan dalam satu tempat.</p></div>
+        <div><div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge Management</span><span>/</span><span class="text-[#176b45]">Dashboard</span></div><h1 class="text-2xl sm:text-[28px] font-bold tracking-tight text-[#173b29]">Selamat datang, {{ auth()->user()?->name ?? 'Admin KM' }}</h1><p class="mt-1 text-sm text-[#77847c]">Pantau dan kelola basis pengetahuan perkebunan dalam satu tempat.</p></div>
         @if($canManageKnowledge)<a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#115a39] transition"><span class="text-lg leading-none">+</span> Tambah Penyakit</a>@endif
     </div>
 

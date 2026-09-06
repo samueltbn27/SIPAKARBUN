@@ -7,17 +7,18 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    @vite(['resources/css/app.css'])
+    @vite(['resources/css/app.css', 'resources/js/page-loader.js'])
 </head>
 <body class="h-full flex items-center justify-center bg-gradient-to-br from-[#e8f4ed] to-[#f0f7f2] p-4">
+    <x-page-loader />
     <div class="w-full max-w-lg">
         {{-- Logo --}}
         <div class="text-center mb-6">
-            <span class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#176b45] text-white mb-3 shadow-lg">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
+            <span class="brand-mark brand-mark--auth inline-flex items-center justify-center rounded-2xl bg-[#176b45] text-white mb-3 shadow-lg" style="width:3.5rem;height:3.5rem;">
+                <svg width="28" height="28" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
             </span>
             <h1 class="text-2xl font-extrabold tracking-tight text-[#173b29]">SIPAKARBUN</h1>
-            <p class="text-sm text-[#8a9990] mt-1">Daftar akun SIPAKARBUN</p>
+            <p class="text-sm text-[#8a9990] mt-1">Knowledge Management</p>
         </div>
 
         {{-- Card --}}

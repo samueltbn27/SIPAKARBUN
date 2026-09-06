@@ -55,7 +55,7 @@
                             <a href="{{ route('knowledge.gejala.edit', $g) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
                                 Edit
                             </a>
-                            <form method="POST" action="{{ route('knowledge.gejala.destroy', $g) }}" onsubmit="return confirm('Hapus gejala ini?')">
+                            <form method="POST" action="{{ route('knowledge.gejala.destroy', $g) }}" data-confirm-title="Hapus gejala?" data-confirm-message="Data yang dihapus tidak dapat dikembalikan." data-confirm-action="Hapus" data-confirm-tone="danger">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="bg-red-600 text-white hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-medium">

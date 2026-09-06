@@ -217,6 +217,7 @@ export function openCaseDetail(caseData) {
     openCaseId = caseData.case_id;
     renderCaseDetail(caseData);
 
+    drawerElements.drawer.removeAttribute('hidden');
     drawerElements.drawer.setAttribute('aria-hidden', 'false');
     drawerElements.drawer.removeAttribute('inert');
     drawerElements.drawer.classList.remove('translate-x-full');
@@ -234,6 +235,7 @@ export function closeCaseDetail() {
     drawerElements.drawer.setAttribute('aria-hidden', 'true');
     drawerElements.drawer.setAttribute('inert', '');
     drawerElements.drawer.classList.add('translate-x-full');
+    drawerElements.drawer.setAttribute('hidden', 'hidden');
     drawerElements.backdrop?.setAttribute('hidden', 'hidden');
     document.body.classList.remove('overflow-hidden');
     openCaseId = null;

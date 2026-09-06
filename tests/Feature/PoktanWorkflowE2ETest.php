@@ -195,6 +195,8 @@ class PoktanWorkflowE2ETest extends TestCase
         $this->post('/permohonan', [
             'diagnosis_id' => $orphan->id,
             'kelompok_tani_id' => 1,
+            'latitude_kasus' => -6.921,
+            'longitude_kasus' => 107.6169,
         ])->assertSessionHas('error', 'Diagnosis tidak ditemukan atau bukan milik Anda.');
 
         $this->assertDatabaseCount('permohonan_penanganan', 0);

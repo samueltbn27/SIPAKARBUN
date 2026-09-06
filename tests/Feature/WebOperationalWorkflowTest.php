@@ -67,6 +67,8 @@ class WebOperationalWorkflowTest extends TestCase
         $poktan = $this->user('poktan');
         $popt = $this->user('popt');
         $permohonan = $this->permohonan($poktan);
+        $caseLatitude = $permohonan->latitude_kasus;
+        $caseLongitude = $permohonan->longitude_kasus;
 
         $this->actingAs($operator)
             ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'Layak ditangani'])
@@ -74,12 +76,16 @@ class WebOperationalWorkflowTest extends TestCase
 
         $kasus = $permohonan->fresh('kasus')->kasus;
         $this->assertSame(KasusPenanganan::STATUS_DITERIMA, $kasus->current_status);
+        $this->assertSame($caseLatitude, $kasus->latitude_kasus);
+        $this->assertSame($caseLongitude, $kasus->longitude_kasus);
 
         $this->actingAs($operator)
             ->post(route('operator.kasus.assign', $kasus->id), ['popt_id' => $popt->id, 'catatan' => 'Mohon ditindaklanjuti'])
             ->assertRedirect(route('operator.kasus.show', $kasus->id));
 
         $this->assertDatabaseHas('penugasan_popt', ['kasus_id' => $kasus->id, 'popt_id' => $popt->id, 'status' => 'aktif']);
+        $this->assertSame($caseLatitude, $kasus->fresh()->latitude_kasus);
+        $this->assertSame($caseLongitude, $kasus->fresh()->longitude_kasus);
 
         $this->actingAs($popt)->get(route('popt.penugasan'))->assertOk()->assertSee($kasus->kasus_code);
         $this->actingAs($popt)
@@ -87,6 +93,8 @@ class WebOperationalWorkflowTest extends TestCase
             ->assertRedirect(route('popt.penugasan.show', $kasus->id));
 
         $this->assertDatabaseHas('kasus_penanganan', ['id' => $kasus->id, 'current_status' => KasusPenanganan::STATUS_SEDANG_DIREVIEW]);
+        $this->assertSame($caseLatitude, $kasus->fresh()->latitude_kasus);
+        $this->assertSame($caseLongitude, $kasus->fresh()->longitude_kasus);
     }
 
     public function test_popt_web_hanya_melihat_penugasan_miliknya(): void

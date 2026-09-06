@@ -19,9 +19,9 @@ use App\Contracts\KelompokTaniReferensiClient;
  */
 class MockKelompokTaniReferensiClient implements KelompokTaniReferensiClient
 {
-    /** @var array<int, array{id:int, kode:string, nama:string, ketua:?string, is_active:bool, kabupaten:?string, kecamatan:?string, desa:?string}> */
+    /** @var array<int, array{id:int, kode:string, nama:string, ketua:?string, is_active:bool, kabupaten:?string, kecamatan:?string, desa:?string, latitude:?float, longitude:?float}> */
     private array $data = [
-        ['id' => 1, 'kode' => 'KT-001', 'nama' => 'Poktan Kopi Sejahtera', 'ketua' => 'Bapak Amin', 'is_active' => true, 'kabupaten' => 'Kabupaten Bandung', 'kecamatan' => 'Pangalengan', 'desa' => 'Margamukti'],
+        ['id' => 1, 'kode' => 'KT-001', 'nama' => 'Poktan Kopi Sejahtera', 'ketua' => 'Bapak Amin', 'is_active' => true, 'kabupaten' => 'Kabupaten Bandung', 'kecamatan' => 'Pangalengan', 'desa' => 'Margamukti', 'latitude' => -6.90, 'longitude' => 107.80],
         ['id' => 2, 'kode' => 'KT-002', 'nama' => 'Gapoktan Tani Makmur', 'ketua' => 'Ibu Sari', 'is_active' => true, 'kabupaten' => 'Kabupaten Bogor', 'kecamatan' => 'Cibinong', 'desa' => 'Nanggewer'],
         ['id' => 3, 'kode' => 'KT-003', 'nama' => 'Poktan Karet Mandiri', 'ketua' => 'Bapak Joko', 'is_active' => true, 'kabupaten' => 'Kabupaten Sukabumi', 'kecamatan' => 'Cibadak', 'desa' => 'Karangtengah'],
         ['id' => 4, 'kode' => 'KT-004', 'nama' => 'Poktan Kakao Berkah', 'ketua' => 'Ibu Dewi', 'is_active' => true, 'kabupaten' => 'Kabupaten Cianjur', 'kecamatan' => 'Pacet', 'desa' => 'Cipendawa'],

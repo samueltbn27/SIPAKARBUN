@@ -15,6 +15,11 @@ class RegisterRequest extends FormRequest
         'pimpinan' => 'Pimpinan',
     ];
 
+    /** @var array<string, string> */
+    public const PUBLIC_ROLE_OPTIONS = [
+        'poktan' => 'Poktan / Gapoktan',
+    ];
+
     public function authorize(): bool
     {
         return true;
@@ -22,6 +27,10 @@ class RegisterRequest extends FormRequest
 
     public function rules(): array
     {
+        $roleOptions = $this->user()?->hasRole('admin')
+            ? self::ROLE_OPTIONS
+            : self::PUBLIC_ROLE_OPTIONS;
+
         return [
             'name' => ['required', 'string', 'min:3', 'max:150'],
             'email' => ['required', 'string', 'email', 'max:150', 'unique:users,email'],
@@ -31,7 +40,7 @@ class RegisterRequest extends FormRequest
                 'confirmed',
                 Password::min(8)->mixedCase()->numbers()->symbols(),
             ],
-            'role' => ['required', 'string', 'in:'.implode(',', array_keys(self::ROLE_OPTIONS))],
+            'role' => ['required', 'string', 'in:'.implode(',', array_keys($roleOptions))],
             'phone' => [
                 'required',
                 'string',

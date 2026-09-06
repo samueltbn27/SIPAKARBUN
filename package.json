@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:provider": "node --test tests/js/data-provider.test.js"
+        "test:provider": "node --test tests/js/data-provider.test.js tests/js/location-coordinates.test.js"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

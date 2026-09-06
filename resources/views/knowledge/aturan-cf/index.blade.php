@@ -78,7 +78,10 @@
                                        class="text-green-600 hover:text-green-900">Edit</a>
                                         <form method="POST" action="{{ route('knowledge.aturan-cf.destroy', $aturan) }}"
                                               class="inline"
-                                              onsubmit="return confirm('Hapus aturan CF ini?');">
+                                              data-confirm-title="Hapus aturan CF?"
+                                              data-confirm-message="Data yang dihapus tidak dapat dikembalikan."
+                                              data-confirm-action="Hapus"
+                                              data-confirm-tone="danger">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>

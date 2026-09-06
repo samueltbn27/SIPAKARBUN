@@ -68,9 +68,10 @@
         @endif
     @else
         {{-- ===== Form Permohonan (wizard: Isi → Review) ===== --}}
+        @section('subtitle', 'Lengkapi data permohonan dan tentukan lokasi kasus yang memerlukan penanganan.')
         <x-page-header
             title="Ajukan Permohonan Penanganan"
-            subtitle="Lengkapi data permohonan untuk diagnosis {{ $selectedDiagnosis->kode }}, lalu tinjau sebelum mengirim."
+            subtitle="Lengkapi data permohonan dan tentukan lokasi kasus yang memerlukan penanganan."
             :breadcrumbs="[
                 ['label' => 'Dashboard', 'url' => route('dashboard')],
                 ['label' => 'Permohonan Saya', 'url' => route('permohonan.index')],
@@ -79,13 +80,23 @@
         />
 
         <div x-data="{
-            step: {{ $initialStep }},
+            step: {{ $errors->any() ? 1 : $initialStep }},
             submitting: false,
             kelompokTaniList: {{ Js::from($kelompokTaniList) }},
             kelompokTaniId: {{ Js::from(old('kelompok_tani_id')) }},
             kelompokTaniQuery: '',
             kelompokTaniLoading: false,
             kelompokTaniSearchError: false,
+            locationError: false,
+            pilihKelompokTani(event) {
+                const selectedId = event.target.value;
+                const selected = this.kelompokTaniList.find((k) => String(k.id) === String(selectedId)) || null;
+
+                this.kelompokTaniId = selectedId;
+                this.$nextTick(() => window.dispatchEvent(new CustomEvent('poktan-location-selected', {
+                    detail: selected,
+                })));
+            },
             async cariKelompokTani() {
                 const query = this.kelompokTaniQuery.trim();
                 this.kelompokTaniLoading = true;
@@ -128,7 +139,13 @@
                 while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
                 return b.toFixed(b >= 10 || i === 0 ? 0 : 1) + ' ' + u[i];
             },
-            next() { this.step = 2; },
+            next() {
+                const hasLatitude = this.$refs.lat && this.$refs.lat.value.trim() !== '';
+                const hasLongitude = this.$refs.lng && this.$refs.lng.value.trim() !== '';
+                this.locationError = ! hasLatitude || ! hasLongitude;
+                if (this.locationError) return;
+                this.step = 2;
+            },
             prev() { this.step = 1; },
         }">
             <div class="mb-6 flex items-center gap-2">
@@ -151,9 +168,9 @@
                 <input type="hidden" name="diagnosis_id" value="{{ $selectedDiagnosis->id }}">
 
                 {{-- ===== Step 1: Isi Form ===== --}}
-                <div x-show="step === 1" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div x-show="step === 1" class="grid items-start grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
                     {{-- Data Diagnosis (readonly) --}}
-                    <x-card class="lg:row-span-2">
+                    <x-card class="lg:col-start-1 lg:row-start-1">
                         <div class="border-b border-[#eef3ef] px-5 py-4">
                             <h3 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Data Diagnosis</h3>
                         </div>
@@ -196,7 +213,7 @@
                     </x-card>
 
                     {{-- Kelompok Tani --}}
-                    <x-card class="p-5">
+                    <x-card class="p-5 lg:col-start-1 lg:row-start-2">
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Kelompok Tani</h3>
                         <p class="mb-3 text-xs text-[#8a9990]">Kelompok tani yang mengajukan permohonan ini.</p>
 
@@ -211,12 +228,12 @@
                                    @input.debounce.300ms="cariKelompokTani()"
                                    placeholder="Cari nama, kode, kabupaten, kecamatan, atau kelurahan..."
                                    class="mb-2 w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
-                            <select name="kelompok_tani_id" id="kelompok-tani" x-model="kelompokTaniId" required
+                            <select name="kelompok_tani_id" id="kelompok-tani" x-model="kelompokTaniId" @change="pilihKelompokTani($event)" required
                                     class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
                                 <option value="">Pilih Kelompok Tani</option>
                                 <option value="" disabled x-show="kelompokTaniLoading">Memuat opsi...</option>
                                 <template x-for="k in kelompokTaniHasil" :key="k.id">
-                                    <option :value="String(k.id)" x-text="[k.nama, k.jenis_komoditi, [k.kecamatan, k.kabupaten].filter(Boolean).join(' · ')].filter(Boolean).join(' — ')"></option>
+                                    <option :value="String(k.id)" :data-latitude="k.latitude ?? ''" :data-longitude="k.longitude ?? ''" x-text="[k.nama, k.jenis_komoditi, [k.kecamatan, k.kabupaten].filter(Boolean).join(' · ')].filter(Boolean).join(' — ')"></option>
                                 </template>
                             </select>
                             <p x-show="kelompokTaniLoading" class="mt-2 text-xs text-[#66746c]">Mencari data kelompok tani...</p>
@@ -238,18 +255,27 @@
                     </x-card>
 
                     {{-- Lokasi Kasus --}}
-                    <x-card class="p-5">
+                    <x-card class="p-5 lg:col-start-2 lg:row-start-1 lg:row-span-2">
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Lokasi Kasus</h3>
                         <p class="mb-3 text-xs text-[#8a9990]">
-                            Lokasi kasus adalah titik lokasi serangan OPT di lapangan, <span class="font-semibold text-[#66746c]">terpisah dari lokasi kelompok tani</span>.
-                            Koordinat kelompok tani tidak dipakai otomatis.
+                            Lokasi kasus otomatis mengikuti lokasi Kelompok Tani yang dipilih. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.
                         </p>
+                        <div class="mb-4 overflow-hidden rounded-2xl border border-[#dbe5df] bg-[#f3f8f4]">
+                            <div id="case-location-map" data-case-location-map class="h-[280px] w-full sm:h-[320px] lg:h-[380px]" aria-label="Peta untuk memilih lokasi kasus"></div>
+                            <div class="flex items-center gap-2 border-t border-[#dbe5df] bg-white px-3 py-2.5 text-xs text-[#66746c]">
+                                <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#176b45]"></span>
+                                <span data-case-location-help>Lokasi kasus otomatis mengikuti lokasi Kelompok Tani yang dipilih. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.</span>
+                            </div>
+                        </div>
+                        <p data-case-location-status class="mb-3 hidden rounded-lg bg-[#e8f4ed] px-3 py-2 text-xs font-semibold text-[#176b45]" role="status">Lokasi kasus telah dipilih.</p>
+                        <p x-show="locationError" x-cloak class="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700" role="alert">Pilih lokasi kasus pada peta sebelum melanjutkan.</p>
                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div>
                                 <label for="latitude_kasus" class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#8a9990]">Latitude</label>
                                 <input type="number" name="latitude_kasus" id="latitude_kasus"
                                        x-ref="lat"
                                        value="{{ old('latitude_kasus') }}" step="any" min="-90" max="90"
+                                       required readonly
                                        placeholder="-6.9126"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
                                 @error('latitude_kasus')
@@ -261,6 +287,7 @@
                                 <input type="number" name="longitude_kasus" id="longitude_kasus"
                                        x-ref="lng"
                                        value="{{ old('longitude_kasus') }}" step="any" min="-180" max="180"
+                                       required readonly
                                        placeholder="107.6085"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
                                 @error('longitude_kasus')
@@ -281,7 +308,7 @@
                     </x-card>
 
                     {{-- Catatan + Foto --}}
-                    <x-card class="p-5">
+                    <x-card class="p-5 lg:col-start-1 lg:row-start-3">
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Catatan Pemohon</h3>
                         <textarea name="catatan_pemohon" rows="4" maxlength="2000"
                                   x-ref="catatan"
@@ -411,19 +438,19 @@
                 </div>
 
                 {{-- Navigasi wizard --}}
-                <div class="mt-6 flex flex-wrap items-center gap-3">
+                <div class="mt-6 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
                     <button type="button" x-show="step === 2" @click="prev()"
-                            class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4] sm:w-auto">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                         Kembali
                     </button>
                     <button type="button" x-show="step === 1" @click="next()"
-                            class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] sm:w-auto">
                         Tinjau Permohonan
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
                     <button type="submit" x-show="step === 2" :disabled="submitting"
-                            class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                         <span x-show="! submitting">Kirim Permohonan</span>
                         <span x-show="submitting" class="inline-flex items-center gap-2">

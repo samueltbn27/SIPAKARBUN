@@ -71,7 +71,7 @@
                                     <a href="{{ route('knowledge.penyakit.edit', $p) }}" class="inline-flex items-center bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg px-3 py-1.5 text-xs font-medium">
                                         Edit
                                     </a>
-                                    <form method="POST" action="{{ route('knowledge.penyakit.destroy', $p) }}" onsubmit="return confirm('Yakin ingin menghapus penyakit {{ e($p->nama) }}?');" class="inline">
+                                    <form method="POST" action="{{ route('knowledge.penyakit.destroy', $p) }}" data-confirm-title="Hapus penyakit?" data-confirm-message="Anda akan menghapus {{ $p->nama }}. Data yang dihapus tidak dapat dikembalikan." data-confirm-action="Hapus" data-confirm-tone="danger" class="inline">
                                         @method('DELETE')
                                         @csrf
                                         <button type="submit" class="inline-flex items-center bg-red-600 text-white hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-medium">

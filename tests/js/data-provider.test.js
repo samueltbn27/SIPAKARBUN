@@ -38,6 +38,18 @@ test('invalid and missing coordinates are not mappable but remain in normalized 
     assert.equal(hasValidCaseCoordinates(cases[2]), false);
 });
 
+test('normalizeCase keeps explicit case latitude and longitude in Leaflet order', () => {
+    const normalized = normalizeCase({
+        kasus_id: 19,
+        latitude_kasus: '-6.850000',
+        longitude_kasus: '107.920000',
+        kelompok_tani: { latitude: -6.90, longitude: 107.80 },
+    });
+
+    assert.equal(normalized.latitude, -6.85);
+    assert.equal(normalized.longitude, 107.92);
+});
+
 test('normalizeCases rejects a non-array provider result', () => {
     assert.throws(() => normalizeCases(null), TypeError);
 });

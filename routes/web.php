@@ -17,8 +17,8 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 });
 
-// Public registration may provision only the four non-admin application
-// roles; the admin bootstrap account is never selectable here.
+// Public registration is limited to Poktan; privileged non-admin accounts
+// remain provisionable through the authenticated Admin view of this flow.
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 

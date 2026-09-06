@@ -24,7 +24,8 @@ interface KelompokTaniReferensiClient
      *
      * @return array<int, array{
      *     id:int, kode:string, nama:string, ketua:?string, is_active:bool,
-     *     kabupaten:?string, kecamatan:?string, desa:?string
+     *     kabupaten:?string, kecamatan:?string, desa:?string,
+     *     latitude:?float, longitude:?float
      * }>
      */
     public function all(): array;
@@ -35,7 +36,8 @@ interface KelompokTaniReferensiClient
      *
      * @return array{
      *     id:int, kode:string, nama:string, ketua:?string, is_active:bool,
-     *     kabupaten:?string, kecamatan:?string, desa:?string
+     *     kabupaten:?string, kecamatan:?string, desa:?string,
+     *     latitude:?float, longitude:?float
      * }|null
      */
     public function find(int $id): ?array;

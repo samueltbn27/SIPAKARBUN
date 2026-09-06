@@ -66,7 +66,9 @@ class AuthController extends Controller
 
     public function showRegister(): View
     {
-        $roles = RegisterRequest::ROLE_OPTIONS;
+        $roles = auth()->user()?->hasRole('admin')
+            ? RegisterRequest::ROLE_OPTIONS
+            : RegisterRequest::PUBLIC_ROLE_OPTIONS;
 
         return view('auth.register', compact('roles'));
     }

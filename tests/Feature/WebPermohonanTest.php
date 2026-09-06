@@ -355,6 +355,8 @@ class WebPermohonanTest extends TestCase
 
         $response->assertSee('Kode Diagnosis')
             ->assertSee($diagnosis->kode)
+            ->assertSee('Lengkapi data permohonan dan tentukan lokasi kasus yang memerlukan penanganan.')
+            ->assertDontSee('Ringkasan data knowledge management SIPAKARBUN')
             ->assertSee('Lokasi Kasus')
             ->assertSee('Kelompok Tani')
             ->assertSee('latitude_kasus')
@@ -589,7 +591,31 @@ class WebPermohonanTest extends TestCase
         ]))->assertSessionHasErrors('longitude_kasus');
     }
 
-    public function test_store_tanpa_lokasi_kasus_selaras_backend_nullable(): void
+    public function test_store_menyimpan_koordinat_kasus_eksplisit_bukan_koordinat_poktan(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user)
+            ->post('/permohonan', array_merge($this->payloadDasar($diagnosis), [
+                'latitude_kasus' => -6.85,
+                'longitude_kasus' => 107.92,
+            ]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'kelompok_tani_id' => 1,
+            'latitude_kasus' => -6.85,
+            'longitude_kasus' => 107.92,
+        ]);
+        $this->assertDatabaseMissing('permohonan_penanganan', [
+            'kelompok_tani_id' => 1,
+            'latitude_kasus' => -6.90,
+            'longitude_kasus' => 107.80,
+        ]);
+    }
+
+    public function test_store_menolak_lokasi_kasus_yang_tidak_dipilih(): void
     {
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
@@ -599,16 +625,10 @@ class WebPermohonanTest extends TestCase
         $this->post('/permohonan', [
             'diagnosis_id' => $diagnosis->id,
             'kelompok_tani_id' => 1,
-            'catatan_pemohon' => 'Tanpa koordinat — Operator dapat melengkapi di tahap kasus.',
-        ])->assertRedirect();
+            'catatan_pemohon' => 'Lokasi belum dipilih.',
+        ])->assertSessionHasErrors(['latitude_kasus', 'longitude_kasus']);
 
-        $permohonan = PermohonanPenanganan::query()
-            ->where('diagnosis_id', $diagnosis->id)
-            ->firstOrFail();
-
-        $this->assertNull($permohonan->latitude_kasus);
-        $this->assertNull($permohonan->longitude_kasus);
-        $this->assertNull($permohonan->alamat_kasus);
+        $this->assertDatabaseCount('permohonan_penanganan', 0);
     }
 
     public function test_store_menolak_catatan_berlebih(): void

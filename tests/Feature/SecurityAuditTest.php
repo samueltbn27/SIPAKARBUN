@@ -113,6 +113,8 @@ class SecurityAuditTest extends TestCase
         return [
             'diagnosis_id' => $diagnosis->id,
             'kelompok_tani_id' => 1,
+            'latitude_kasus' => -6.921,
+            'longitude_kasus' => 107.6169,
         ];
     }
 
@@ -352,6 +354,8 @@ class SecurityAuditTest extends TestCase
         $this->postJson('/api/permohonan', [
             'diagnosis_id' => $diagnosis->id,
             'kelompok_tani_id' => 1,
+            'latitude_kasus' => -6.921,
+            'longitude_kasus' => 107.6169,
             'catatan_pemohon' => $payload,
         ])->assertCreated()
             ->assertJsonPath('data.catatan_pemohon', $payload);

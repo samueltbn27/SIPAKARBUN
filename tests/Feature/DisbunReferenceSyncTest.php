@@ -274,10 +274,17 @@ class DisbunReferenceSyncTest extends TestCase
             'sync_status' => RefKelompokTani::SYNC_SYNCED,
         ]);
 
+        RefKelompokTani::where('disbun_record_id', 'selector-1')->update([
+            'latitude' => -6.9123,
+            'longitude' => 107.6123,
+        ]);
+
         $this->actingAs($user);
         $this->getJson('/internal/references/kelompok-tani?q=Bandung')
             ->assertOk()
             ->assertJsonCount(25, 'data')
+            ->assertJsonPath('data.0.latitude', -6.9123)
+            ->assertJsonPath('data.0.longitude', 107.6123)
             ->assertJsonMissingPath('data.0.ketua')
             ->assertJsonMissingPath('data.0.phone')
             ->assertJsonMissingPath('data.0.no_hp');
@@ -290,6 +297,61 @@ class DisbunReferenceSyncTest extends TestCase
             ->assertJsonPath('data.0.nama', 'Wibawa Mukti')
             ->assertJsonPath('data.0.jenis_komoditi', 'Kopi Robusta')
             ->assertJsonPath('data.0.kelurahan', 'Sukajaya');
+    }
+
+    public function test_internal_selector_menyertakan_koordinat_fixture_disbun(): void
+    {
+        Role::findOrCreate('poktan');
+        $user = User::factory()->create();
+        $user->assignRole('poktan');
+
+        RefKelompokTani::create([
+            'disbun_record_id' => '5004',
+            'kode' => '3205042005-004',
+            'kode_kelompok' => '3205042005-004',
+            'nama' => 'ANUGRAH TANI',
+            'jenis_komoditi' => 'Tembakau',
+            'kabupaten' => 'KAB GARUT',
+            'kecamatan' => 'Tarogong Kaler',
+            'latitude' => '-7.1719511',
+            'longitude' => '107.8224774',
+            'source' => RefKelompokTani::SOURCE_DISBUN,
+            'source_is_active' => true,
+            'is_verified' => true,
+            'sync_status' => RefKelompokTani::SYNC_SYNCED,
+        ]);
+        RefKelompokTani::create([
+            'disbun_record_id' => '5488',
+            'kode' => '3211012001-004',
+            'kode_kelompok' => '3211012001-004',
+            'nama' => 'AROSTA',
+            'jenis_komoditi' => 'Kopi Arabika',
+            'kabupaten' => 'KAB SUMEDANG',
+            'kecamatan' => 'Wado',
+            'latitude' => '-7.0029856',
+            'longitude' => '108.1337070',
+            'source' => RefKelompokTani::SOURCE_DISBUN,
+            'source_is_active' => true,
+            'is_verified' => true,
+            'sync_status' => RefKelompokTani::SYNC_SYNCED,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->getJson('/internal/references/kelompok-tani?q=ANUGRAH+TANI')
+            ->assertOk()
+            ->assertJsonPath('data.0.external_id', '5004')
+            ->assertJsonPath('data.0.nama', 'ANUGRAH TANI')
+            ->assertJsonPath('data.0.kode', '3205042005-004')
+            ->assertJsonPath('data.0.latitude', -7.1719511)
+            ->assertJsonPath('data.0.longitude', 107.8224774);
+
+        $this->getJson('/internal/references/kelompok-tani?q=AROSTA')
+            ->assertOk()
+            ->assertJsonPath('data.0.external_id', '5488')
+            ->assertJsonPath('data.0.kode_kelompok', '3211012001-004')
+            ->assertJsonPath('data.0.latitude', -7.0029856)
+            ->assertJsonPath('data.0.longitude', 108.133707);
     }
 
     /** @param array<int,array<string,mixed>> $rows */
