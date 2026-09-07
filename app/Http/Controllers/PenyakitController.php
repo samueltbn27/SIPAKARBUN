@@ -10,12 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * CRUD internal untuk Admin/Pakar mengelola data Penyakit.
+ * CRUD internal untuk Admin/Operator UPTD mengelola data Penyakit.
  *
  * BUKAN endpoint yang dikonsumsi Mahasiswa 2 — itu dibuat terpisah di
  * tahap #7 (API kontrak), sengaja dengan path berbeda supaya tidak
  * bentrok:
- *   - /api/admin/penyakit   -> controller ini (perlu login Admin/Pakar)
+ *   - /api/admin/penyakit   -> controller ini (perlu login Admin/Operator UPTD)
  *   - /api/penyakit         -> kontrak publik untuk Mahasiswa 2 (tahap #7)
  */
 class PenyakitController extends Controller

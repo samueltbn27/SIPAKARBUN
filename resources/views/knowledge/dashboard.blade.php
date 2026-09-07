@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt']) ?? false;
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
 @endphp
 <div class="max-w-[1500px] mx-auto space-y-7">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">

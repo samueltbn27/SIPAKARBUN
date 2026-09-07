@@ -424,7 +424,7 @@ class KnowledgeController extends Controller
 
     public function aturanCfDestroy(AturanCf $aturanCf): RedirectResponse
     {
-        if (!auth()->user()->hasAnyRole(['admin', 'popt'])) {
+        if (!auth()->user()->hasAnyRole(['admin', 'operator_uptd'])) {
             return back()->with('error', 'Anda tidak memiliki hak menghapus aturan CF.');
         }
 
@@ -528,7 +528,7 @@ class KnowledgeController extends Controller
 
     public function publikasiToggle(Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->hasAnyRole(['admin', 'popt']), 403);
+        abort_unless($request->user()?->hasAnyRole(['admin', 'operator_uptd']), 403);
 
         $request->validate([
             'model' => ['required', 'in:Penyakit,Gejala,AturanCf,Solusi'],

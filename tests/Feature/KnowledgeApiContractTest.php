@@ -25,7 +25,7 @@ class KnowledgeApiContractTest extends TestCase
     public function test_butuh_login_tapi_tidak_perlu_role_admin_popt(): void
     {
         // Sengaja pakai user TANPA role apa pun — endpoint kontrak M2
-        // hanya butuh auth:sanctum, bukan role admin/popt (beda
+        // hanya butuh auth:sanctum, bukan role knowledge manager (beda
         // dengan /api/admin/*).
         Sanctum::actingAs($this->createUserTanpaRole());
 

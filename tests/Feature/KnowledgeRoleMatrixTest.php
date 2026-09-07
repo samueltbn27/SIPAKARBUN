@@ -64,9 +64,9 @@ class KnowledgeRoleMatrixTest extends TestCase
             ->assertOk();
     }
 
-    public function test_operator_tidak_dapat_mutasi_knowledge_melalui_api(): void
+    public function test_popt_tidak_dapat_mutasi_knowledge_melalui_api(): void
     {
-        Sanctum::actingAs($this->createOperator());
+        Sanctum::actingAs($this->createPopt());
 
         $this->postJson('/api/admin/penyakit', [])->assertForbidden();
         $this->postJson('/api/admin/gejala', [])->assertForbidden();
@@ -74,16 +74,16 @@ class KnowledgeRoleMatrixTest extends TestCase
         $this->postJson('/api/admin/aturan-cf', [])->assertForbidden();
     }
 
-    public function test_operator_hanya_mendapatkan_halaman_knowledge_read_only(): void
+    public function test_popt_hanya_mendapatkan_halaman_knowledge_read_only(): void
     {
-        $operator = $this->createOperator();
+        $popt = $this->createPopt();
         $this->seedPublicationStates();
 
-        $this->actingAs($operator)->get('/knowledge/penyakit')->assertOk()->assertDontSee('Tambah Penyakit');
-        $this->actingAs($operator)->get('/knowledge/gejala')->assertOk()->assertDontSee('Tambah Gejala');
-        $this->actingAs($operator)->get('/knowledge/solusi')->assertOk()->assertDontSee('Tambah Solusi');
-        $this->actingAs($operator)->get('/knowledge/aturan-cf')->assertOk()->assertDontSee('Tambah Aturan CF');
-        $this->actingAs($operator)->get('/knowledge/penyakit/create')->assertForbidden();
+        $this->actingAs($popt)->get('/knowledge/penyakit')->assertOk()->assertDontSee('Tambah Penyakit');
+        $this->actingAs($popt)->get('/knowledge/gejala')->assertOk()->assertDontSee('Tambah Gejala');
+        $this->actingAs($popt)->get('/knowledge/solusi')->assertOk()->assertDontSee('Tambah Solusi');
+        $this->actingAs($popt)->get('/knowledge/aturan-cf')->assertOk()->assertDontSee('Tambah Aturan CF');
+        $this->actingAs($popt)->get('/knowledge/penyakit/create')->assertForbidden();
     }
 
     public function test_halaman_publikasi_merender_semua_status_dan_mengikuti_rbac(): void
@@ -97,33 +97,64 @@ class KnowledgeRoleMatrixTest extends TestCase
             ->assertSee('Publish')
             ->assertSee('Aktifkan Kembali');
 
-        $this->actingAs($this->createPopt())
+        $operator = $this->createOperator();
+        $this->actingAs($operator)
             ->get('/knowledge/publikasi')
             ->assertOk()
             ->assertSee('Penyakit Draft')
-            ->assertSee('Publish')
-            ->assertSee('Aktifkan Kembali');
+            ->assertSee('Publish');
 
-        $operator = $this->createOperator();
-        $this->actingAs($operator)
+        $popt = $this->createPopt();
+        $this->actingAs($popt)
             ->get('/knowledge/publikasi')
             ->assertOk()
             ->assertSee('Penyakit Draft')
             ->assertDontSee('Publish')
             ->assertDontSee('Aktifkan Kembali');
 
-        $this->actingAs($operator)
+        $this->actingAs($popt)
             ->post('/knowledge/publikasi/toggle', ['model' => 'Penyakit', 'id' => 1, 'status' => 'aktif'])
             ->assertForbidden();
     }
 
-    public function test_popt_mendapatkan_halaman_mutasi_knowledge(): void
+    public function test_operator_mendapatkan_halaman_mutasi_knowledge(): void
+    {
+        $operator = $this->createOperator();
+
+        $this->actingAs($operator)->get('/knowledge/penyakit/create')->assertOk();
+        $this->actingAs($operator)->get('/knowledge/gejala/create')->assertOk();
+        $this->actingAs($operator)->get('/knowledge/solusi/create')->assertOk();
+        $this->actingAs($operator)->get('/knowledge/aturan-cf/create')->assertOk();
+    }
+
+    public function test_operator_mendapatkan_tombol_mutasi_di_ui_knowledge(): void
+    {
+        $operator = $this->createOperator();
+        $this->seedPublicationStates();
+
+        $this->actingAs($operator)->get('/knowledge/penyakit')->assertOk()->assertSee('Tambah Penyakit');
+        $this->actingAs($operator)->get('/knowledge/gejala')->assertOk()->assertSee('Tambah Gejala');
+        $this->actingAs($operator)->get('/knowledge/solusi')->assertOk()->assertSee('Tambah Solusi');
+        $this->actingAs($operator)->get('/knowledge/aturan-cf')->assertOk()->assertSee('Tambah Aturan CF');
+    }
+
+    public function test_popt_tidak_dapat_mutasi_knowledge_melalui_web(): void
     {
         $popt = $this->createPopt();
+        $penyakit = Penyakit::factory()->create();
+        $gejala = Gejala::factory()->create();
+        $aturan = AturanCf::factory()->create([
+            'penyakit_id' => $penyakit->id,
+            'gejala_id' => $gejala->id,
+        ]);
+        $solusi = Solusi::factory()->create(['penyakit_id' => $penyakit->id]);
 
-        $this->actingAs($popt)->get('/knowledge/penyakit/create')->assertOk();
-        $this->actingAs($popt)->get('/knowledge/gejala/create')->assertOk();
-        $this->actingAs($popt)->get('/knowledge/solusi/create')->assertOk();
-        $this->actingAs($popt)->get('/knowledge/aturan-cf/create')->assertOk();
+        $this->actingAs($popt)->post('/knowledge/penyakit', [])->assertForbidden();
+        $this->actingAs($popt)->put('/knowledge/gejala/'.$gejala->id, [])->assertForbidden();
+        $this->actingAs($popt)->delete('/knowledge/solusi/'.$solusi->id)->assertForbidden();
+        $this->actingAs($popt)->post('/knowledge/publikasi/toggle', [
+            'model' => 'Penyakit', 'id' => $penyakit->id, 'status' => 'aktif',
+        ])->assertForbidden();
+        $this->actingAs($popt)->delete('/knowledge/aturan-cf/'.$aturan->id)->assertForbidden();
     }
 }

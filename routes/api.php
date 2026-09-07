@@ -98,8 +98,8 @@ Route::middleware(['auth:sanctum', 'role:popt'])
             ->whereNumber('id');
     });
 
-/* M1: Knowledge CRUD dimiliki Admin/POPT; OP hanya read. */
-Route::middleware(['auth:sanctum', 'role:admin|popt'])
+/* M1: Knowledge CRUD dimiliki Admin/Operator UPTD; POPT hanya read. */
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->prefix('admin')
     ->group(function (): void {
         Route::apiResource('penyakit', PenyakitController::class);
@@ -109,7 +109,7 @@ Route::middleware(['auth:sanctum', 'role:admin|popt'])
             ->except(['destroy']);
     });
 
-Route::middleware(['auth:sanctum', 'role:admin|popt'])
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->prefix('admin')
     ->group(function (): void {
         Route::delete('aturan-cf/{aturanCf}', [AturanCfController::class, 'destroy'])

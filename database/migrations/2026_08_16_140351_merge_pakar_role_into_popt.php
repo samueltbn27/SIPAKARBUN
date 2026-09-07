@@ -8,10 +8,9 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Revisi RBAC: role `pakar` DILEBUR ke `popt`.
  *
- * POPT kini = Pakar + Knowledge Manager + Pelaksana Teknis
- * (pemegang CRUD Knowledge Management). Semua user yang sebelumnya
- * ber-role pakar dipindahkan ke popt, lalu role pakar dihapus
- * bersama relasi permission-nya.
+ * Migration historis ini memindahkan user ber-role pakar ke popt lalu
+ * menghapus role pakar. Otorisasi Knowledge final ditetapkan terpisah:
+ * Operator UPTD mengelola Knowledge, sedangkan POPT read-only.
  */
 return new class extends Migration
 {

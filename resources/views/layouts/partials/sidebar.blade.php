@@ -8,7 +8,7 @@
     $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($userName), 2))));
     $pendingUsers = $userRole === 'admin' ? \App\Models\User::where('is_active', false)->count() : 0;
     $canAccessKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt', 'operator_uptd']) ?? false;
-    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt']) ?? false;
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan']) ?? false;
     $navSections = [
         [
@@ -48,7 +48,7 @@
         ];
     }
 
-    // Master Data dikelola Admin dan POPT. Operator mendapat referensi read-only.
+    // Master Data dikelola Admin dan Operator UPTD. POPT mendapat akses read-only.
     if ($canManageKnowledge) {
         $navSections[] = [
             'title' => 'Master Data',
