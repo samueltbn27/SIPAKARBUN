@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt']) ?? false;
     // Petakan tiap entity ke baris seragam: id, nama, sub.
     $mapPenyakit = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
     $mapGejala = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];

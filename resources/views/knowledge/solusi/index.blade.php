@@ -3,7 +3,7 @@
 @section('title', 'Daftar Solusi')
 
 @section('content')
-@php($canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false)
+@php($canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt']) ?? false)
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
