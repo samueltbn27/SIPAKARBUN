@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Ilustrasi karat daun kopi</title><desc id="desc">Ilustrasi orisinal untuk dataset demo SIPAKARBUN.</desc>
+  <rect width="800" height="500" fill="#edf5ed"/><circle cx="190" cy="170" r="92" fill="#d88939" opacity=".85"/><circle cx="300" cy="290" r="58" fill="#e7a44d" opacity=".8"/>
+  <path d="M395 425C315 330 340 178 565 70c-5 176-68 298-170 355Z" fill="#176b45"/><path d="M395 425C425 305 478 196 565 70M399 367l-95-57m125-35 105-72m-65 140 93-23" fill="none" stroke="#b8d8a8" stroke-width="9" stroke-linecap="round"/>
+  <text x="40" y="455" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#173e2c">Karat Daun Kopi</text>
+</svg>
