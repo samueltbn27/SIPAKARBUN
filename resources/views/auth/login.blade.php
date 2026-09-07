@@ -75,7 +75,6 @@
                         <span class="auth-muted-action">Lupa password?</span>
                     </div>
                     <button type="submit" class="auth-submit" :disabled="submitting">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0-12 4 4m-4-4L8 7M5 13v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg>
                         <span x-text="submitting ? 'Memproses...' : 'Masuk'">Masuk</span>
                     </button>
                 </form>
