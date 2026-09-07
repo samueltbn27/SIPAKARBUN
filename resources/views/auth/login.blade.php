@@ -21,7 +21,7 @@
 <body class="auth-page" x-data="{ showPassword: false, submitting: false }">
     <x-page-loader />
     <main class="auth-shell">
-        <section class="auth-hero" style="--auth-hero-image: url('{{ asset('images/login-hero.webp') }}');" aria-label="Tentang SIPAKARBUN">
+        <section class="auth-hero" aria-label="Tentang SIPAKARBUN">
             <div class="auth-hero-content">
                 <div class="auth-brand-glass">
                     <div class="auth-brand-row">
