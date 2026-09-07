@@ -61,13 +61,12 @@ class KnowledgeRoleMatrixTest extends TestCase
     {
         $this->actingAs($this->createPopt())
             ->get('/knowledge')
-            ->assertOk()
-            ->assertDontSee('Tambah Penyakit');
+            ->assertOk();
     }
 
-    public function test_popt_tidak_dapat_mutasi_knowledge_melalui_api(): void
+    public function test_operator_tidak_dapat_mutasi_knowledge_melalui_api(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
 
         $this->postJson('/api/admin/penyakit', [])->assertForbidden();
         $this->postJson('/api/admin/gejala', [])->assertForbidden();
@@ -75,16 +74,16 @@ class KnowledgeRoleMatrixTest extends TestCase
         $this->postJson('/api/admin/aturan-cf', [])->assertForbidden();
     }
 
-    public function test_popt_hanya_mendapatkan_halaman_knowledge_read_only(): void
+    public function test_operator_hanya_mendapatkan_halaman_knowledge_read_only(): void
     {
-        $popt = $this->createPopt();
+        $operator = $this->createOperator();
         $this->seedPublicationStates();
 
-        $this->actingAs($popt)->get('/knowledge/penyakit')->assertOk()->assertDontSee('Tambah Penyakit');
-        $this->actingAs($popt)->get('/knowledge/gejala')->assertOk()->assertDontSee('Tambah Gejala');
-        $this->actingAs($popt)->get('/knowledge/solusi')->assertOk()->assertDontSee('Tambah Solusi');
-        $this->actingAs($popt)->get('/knowledge/aturan-cf')->assertOk()->assertDontSee('Tambah Aturan CF');
-        $this->actingAs($popt)->get('/knowledge/penyakit/create')->assertForbidden();
+        $this->actingAs($operator)->get('/knowledge/penyakit')->assertOk()->assertDontSee('Tambah Penyakit');
+        $this->actingAs($operator)->get('/knowledge/gejala')->assertOk()->assertDontSee('Tambah Gejala');
+        $this->actingAs($operator)->get('/knowledge/solusi')->assertOk()->assertDontSee('Tambah Solusi');
+        $this->actingAs($operator)->get('/knowledge/aturan-cf')->assertOk()->assertDontSee('Tambah Aturan CF');
+        $this->actingAs($operator)->get('/knowledge/penyakit/create')->assertForbidden();
     }
 
     public function test_halaman_publikasi_merender_semua_status_dan_mengikuti_rbac(): void
@@ -98,32 +97,33 @@ class KnowledgeRoleMatrixTest extends TestCase
             ->assertSee('Publish')
             ->assertSee('Aktifkan Kembali');
 
-        $this->actingAs($this->createOperator())
+        $this->actingAs($this->createPopt())
             ->get('/knowledge/publikasi')
             ->assertOk()
+            ->assertSee('Penyakit Draft')
             ->assertSee('Publish')
             ->assertSee('Aktifkan Kembali');
 
-        $popt = $this->createPopt();
-        $this->actingAs($popt)
+        $operator = $this->createOperator();
+        $this->actingAs($operator)
             ->get('/knowledge/publikasi')
             ->assertOk()
             ->assertSee('Penyakit Draft')
             ->assertDontSee('Publish')
             ->assertDontSee('Aktifkan Kembali');
 
-        $this->actingAs($popt)
+        $this->actingAs($operator)
             ->post('/knowledge/publikasi/toggle', ['model' => 'Penyakit', 'id' => 1, 'status' => 'aktif'])
             ->assertForbidden();
     }
 
-    public function test_operator_mendapatkan_halaman_mutasi_knowledge(): void
+    public function test_popt_mendapatkan_halaman_mutasi_knowledge(): void
     {
-        $operator = $this->createOperator();
+        $popt = $this->createPopt();
 
-        $this->actingAs($operator)->get('/knowledge/penyakit/create')->assertOk();
-        $this->actingAs($operator)->get('/knowledge/gejala/create')->assertOk();
-        $this->actingAs($operator)->get('/knowledge/solusi/create')->assertOk();
-        $this->actingAs($operator)->get('/knowledge/aturan-cf/create')->assertOk();
+        $this->actingAs($popt)->get('/knowledge/penyakit/create')->assertOk();
+        $this->actingAs($popt)->get('/knowledge/gejala/create')->assertOk();
+        $this->actingAs($popt)->get('/knowledge/solusi/create')->assertOk();
+        $this->actingAs($popt)->get('/knowledge/aturan-cf/create')->assertOk();
     }
 }

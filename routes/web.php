@@ -47,7 +47,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('pengguna')->name('pengguna.')
     Route::delete('/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])->name('destroy');
 });
 
-/* M1 Knowledge — read access for Admin/POPT/Operator, mutations Admin/Operator. */
+/* M1 Knowledge — read access for Admin/POPT/Operator, mutations Admin/POPT. */
 Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge')->name('knowledge.')->group(function (): void {
     Route::get('/', [KnowledgeController::class, 'dashboard'])->name('dashboard');
     Route::get('/komoditas', [KnowledgeController::class, 'komoditasIndex'])->name('komoditas.index');
@@ -58,7 +58,7 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
     Route::get('/publikasi', [KnowledgeController::class, 'publikasiIndex'])->name('publikasi.index');
     Route::get('/riwayat', [KnowledgeController::class, 'riwayatIndex'])->name('riwayat.index');
 
-    Route::middleware(['role:admin|operator_uptd'])->group(function (): void {
+    Route::middleware(['role:admin|popt'])->group(function (): void {
         Route::get('/penyakit/create', [KnowledgeController::class, 'penyakitCreate'])->name('penyakit.create');
         Route::post('/penyakit', [KnowledgeController::class, 'penyakitStore'])->name('penyakit.store');
         Route::get('/penyakit/{penyakit}/edit', [KnowledgeController::class, 'penyakitEdit'])->name('penyakit.edit');
