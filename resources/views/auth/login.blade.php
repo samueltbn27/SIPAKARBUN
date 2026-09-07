@@ -21,22 +21,6 @@
 <body class="auth-page" x-data="{ showPassword: false, submitting: false }">
     <x-page-loader />
     <main class="auth-shell">
-        <section class="auth-hero" aria-label="Tentang SIPAKARBUN">
-            <div class="auth-hero-content">
-                <div class="auth-brand-glass">
-                    <div class="auth-brand-row">
-                        <span class="auth-brand-mark">
-                            <svg width="26" height="26" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
-                        </span>
-                        <div>
-                            <div class="auth-brand-name">SIPAKARBUN</div>
-                            <div class="auth-brand-subtitle">Sistem Pakar Perkebunan</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <section class="auth-form-panel" aria-labelledby="login-title">
             <div class="auth-form-inner">
                 <div class="auth-form-heading">
