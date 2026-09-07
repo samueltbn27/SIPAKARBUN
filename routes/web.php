@@ -57,29 +57,35 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
     Route::get('/publikasi', [KnowledgeController::class, 'publikasiIndex'])->name('publikasi.index');
     Route::get('/riwayat', [KnowledgeController::class, 'riwayatIndex'])->name('riwayat.index');
 
-    Route::middleware(['role:admin|operator_uptd'])->group(function (): void {
+    // Admin/Operator mengelola seluruh lifecycle; POPT hanya dapat
+    // membuat dan mengedit draft teknis (dibatasi lagi oleh Request).
+    Route::middleware(['role:admin|operator_uptd|popt'])->group(function (): void {
         Route::get('/penyakit/create', [KnowledgeController::class, 'penyakitCreate'])->name('penyakit.create');
         Route::post('/penyakit', [KnowledgeController::class, 'penyakitStore'])->name('penyakit.store');
         Route::get('/penyakit/{penyakit}/edit', [KnowledgeController::class, 'penyakitEdit'])->name('penyakit.edit');
         Route::put('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitUpdate'])->name('penyakit.update');
-        Route::delete('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitDestroy'])->name('penyakit.destroy');
 
         Route::get('/gejala/create', [KnowledgeController::class, 'gejalaCreate'])->name('gejala.create');
         Route::post('/gejala', [KnowledgeController::class, 'gejalaStore'])->name('gejala.store');
         Route::get('/gejala/{gejala}/edit', [KnowledgeController::class, 'gejalaEdit'])->name('gejala.edit');
         Route::put('/gejala/{gejala}', [KnowledgeController::class, 'gejalaUpdate'])->name('gejala.update');
-        Route::delete('/gejala/{gejala}', [KnowledgeController::class, 'gejalaDestroy'])->name('gejala.destroy');
 
         Route::get('/aturan-cf/create', [KnowledgeController::class, 'aturanCfCreate'])->name('aturan-cf.create');
         Route::post('/aturan-cf', [KnowledgeController::class, 'aturanCfStore'])->name('aturan-cf.store');
         Route::get('/aturan-cf/{aturanCf}/edit', [KnowledgeController::class, 'aturanCfEdit'])->name('aturan-cf.edit');
         Route::put('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfUpdate'])->name('aturan-cf.update');
-        Route::delete('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfDestroy'])->name('aturan-cf.destroy');
 
         Route::get('/solusi/create', [KnowledgeController::class, 'solusiCreate'])->name('solusi.create');
         Route::post('/solusi', [KnowledgeController::class, 'solusiStore'])->name('solusi.store');
         Route::get('/solusi/{solusi}/edit', [KnowledgeController::class, 'solusiEdit'])->name('solusi.edit');
         Route::put('/solusi/{solusi}', [KnowledgeController::class, 'solusiUpdate'])->name('solusi.update');
+    });
+
+    // Penghapusan dan publication adalah hak Admin/Operator saja.
+    Route::middleware(['role:admin|operator_uptd'])->group(function (): void {
+        Route::delete('/penyakit/{penyakit}', [KnowledgeController::class, 'penyakitDestroy'])->name('penyakit.destroy');
+        Route::delete('/gejala/{gejala}', [KnowledgeController::class, 'gejalaDestroy'])->name('gejala.destroy');
+        Route::delete('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfDestroy'])->name('aturan-cf.destroy');
         Route::delete('/solusi/{solusi}', [KnowledgeController::class, 'solusiDestroy'])->name('solusi.destroy');
 
         Route::post('/publikasi/toggle', [KnowledgeController::class, 'publikasiToggle'])->name('publikasi.toggle');

@@ -10,7 +10,8 @@ use Spatie\Permission\PermissionRegistrar;
  *
  * Migration historis ini memindahkan user ber-role pakar ke popt lalu
  * menghapus role pakar. Otorisasi Knowledge final ditetapkan terpisah:
- * Operator UPTD mengelola Knowledge, sedangkan POPT read-only.
+ * Operator UPTD mengelola Knowledge; POPT kemudian diberi kontribusi
+ * draft teknis melalui kebijakan aplikasi yang berjalan saat ini.
  */
 return new class extends Migration
 {

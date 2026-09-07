@@ -3,19 +3,25 @@
 @section('title', 'Aturan CF')
 
 @section('content')
-    @php($canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false)
+    @php
+        $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
+        $isPopt = auth()->user()?->hasRole('popt') ?? false;
+        $canCreateKnowledge = $canManageKnowledge || $isPopt;
+        $canEditRecord = fn ($record) => $canManageKnowledge || ($isPopt && $record->status === 'draft');
+        $createLabel = $isPopt ? 'Tambah Draft' : 'Tambah Aturan CF';
+    @endphp
     <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Aturan CF</h1>
                 <p class="mt-1 text-sm text-gray-500">Kelola aturan certainty factor antara penyakit dan gejala.</p>
             </div>
-            @if($canManageKnowledge)<a href="{{ route('knowledge.aturan-cf.create') }}"
+            @if($canCreateKnowledge)<a href="{{ route('knowledge.aturan-cf.create') }}"
                class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                Tambah Aturan CF
+                {{ $createLabel }}
             </a>@endif
         </div>
 
@@ -74,9 +80,9 @@
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-500">{{ $aturan->version }}</td>
                                 <td class="px-4 py-3 text-right text-sm font-medium space-x-2">
-                                    @if($canManageKnowledge)<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}"
+                                    @if($canEditRecord($aturan))<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}"
                                        class="text-green-600 hover:text-green-900">Edit</a>
-                                        <form method="POST" action="{{ route('knowledge.aturan-cf.destroy', $aturan) }}"
+                                        @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.aturan-cf.destroy', $aturan) }}"
                                               class="inline"
                                               data-confirm-title="Hapus aturan CF?"
                                               data-confirm-message="Data yang dihapus tidak dapat dikembalikan."
@@ -85,7 +91,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
-                                        </form>
+                                        </form>@endif
                                     @else
                                         <span class="text-xs text-gray-500">Read-only</span>
                                     @endif

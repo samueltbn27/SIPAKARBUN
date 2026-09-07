@@ -48,16 +48,20 @@ class KnowledgeImageTest extends TestCase
         $this->assertNotNull($gejala->fresh());
     }
 
-    public function test_popt_tidak_bisa_mutasi_foto_dan_resource_mengirim_url_foto(): void
+    public function test_popt_dapat_mengusulkan_draft_dan_resource_mengirim_url_foto(): void
     {
         $popt = $this->createPopt();
         $gejala = Gejala::factory()->create(['image_path' => 'knowledge/gejala/example.webp']);
         $penyakit = Penyakit::factory()->create(['image_path' => 'knowledge/penyakit/example.webp']);
 
         $this->actingAs($popt)->post('/knowledge/gejala', [
-            'nama' => 'Tidak boleh',
+            'nama' => 'Draft kontributor',
             'image' => UploadedFile::fake()->image('blocked.jpg'),
-        ])->assertForbidden();
+        ])->assertRedirect();
+        $this->assertDatabaseHas('gejala', [
+            'nama' => 'Draft kontributor',
+            'status' => 'draft',
+        ]);
 
         $baseUrl = rtrim((string) config('app.url'), '/');
 

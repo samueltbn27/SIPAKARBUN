@@ -41,7 +41,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <x-knowledge.status-select name="status" :value="$gejala->status" />
+                <x-knowledge.status-select name="status" :value="$gejala->status" :locked="auth()->user()?->hasRole('popt') ?? false" />
             </div>
 
             <div>

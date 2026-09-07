@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 /**
  * Seed role sesuai revisi RBAC terbaru:
  *   - admin          : Admin sistem (dashboard sendiri, manajemen user)
- *   - popt           : pelaksana teknis dan pembaca Knowledge.
+ *   - popt           : pelaksana teknis dan kontributor draft Knowledge.
  *   - operator_uptd  : validator, koordinator, dan pengelola Knowledge.
  *   - poktan         : (modul Mahasiswa 2)
  *   - pimpinan       : (modul Mahasiswa 3)
@@ -39,8 +39,9 @@ class RoleSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permissionName]);
         }
 
-        // Operator UPTD mengelola Knowledge; POPT hanya mendapat read access
-        // melalui route dan tidak memegang permission mutasi.
+        // Operator UPTD mengelola dan mempublikasikan Knowledge. POPT tidak
+        // memegang permission mutasi API admin; kontribusi draft teknisnya
+        // dibatasi oleh route, FormRequest, dan controller web.
         Role::findByName('operator_uptd')->syncPermissions($permissions);
         Role::findByName('popt')->syncPermissions([]);
 

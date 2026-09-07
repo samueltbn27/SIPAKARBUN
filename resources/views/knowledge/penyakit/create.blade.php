@@ -58,7 +58,7 @@
             </div>
 
             <div class="sm:col-span-1">
-                <x-knowledge.status-select name="status" default="draft" />
+                <x-knowledge.status-select name="status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />
             </div>
 
             <div>
