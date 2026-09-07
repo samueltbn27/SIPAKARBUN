@@ -83,6 +83,33 @@ class KasusService
     }
 
     /**
+     * Archive a completed case without touching its workflow records.
+     *
+     * The route already restricts this operation to Admin, while this
+     * service-level check keeps the business rule authoritative for callers
+     * outside HTTP as well.
+     */
+    public function deleteCompletedCase(KasusPenanganan $kasus, User $admin): void
+    {
+        abort_unless($admin->hasRole('admin'), 403, 'Hanya Admin yang dapat menghapus kasus.');
+        abort_unless(
+            $kasus->current_status === KasusPenanganan::STATUS_SELESAI,
+            403,
+            'Hanya kasus selesai yang dapat dihapus dari WebGIS.'
+        );
+
+        DB::transaction(function () use ($kasus, $admin): void {
+            $kasus->delete();
+
+            Log::info('Kasus selesai diarsipkan oleh Admin.', [
+                'kasus_id' => $kasus->id,
+                'kasus_code' => $kasus->kasus_code,
+                'deleted_by' => $admin->id,
+            ]);
+        });
+    }
+
+    /**
      * Daftar kasus untuk Operator UPTD (semua kasus, bisa difilter status).
      */
     public function kasusOperator(array $filters = []): LengthAwarePaginator

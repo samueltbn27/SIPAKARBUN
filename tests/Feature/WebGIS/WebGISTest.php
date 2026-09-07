@@ -21,8 +21,15 @@ class WebGISTest extends TestCase
         $this->actingAs($this->createAdmin())
             ->get('/webgis')
             ->assertOk()
-            ->assertSee('WebGIS Penanganan Kasus')
-            ->assertSee('Peta Persebaran Kasus');
+            ->assertSee('WebGIS & Monitoring Kasus')
+            ->assertSee('Filter Monitoring')
+            ->assertSee('Peta Persebaran Kasus')
+            ->assertSee('Status Penanganan')
+            ->assertSee('Ringkasan Kasus')
+            ->assertSee('Kasus per Status')
+            ->assertSee('Kasus per Komoditas')
+            ->assertSee('Kasus per Kabupaten/Kota')
+            ->assertSee('Kasus per Penyakit');
     }
 
     public function test_operator_uptd_pimpinan_dan_popt_dapat_membuka_webgis(): void

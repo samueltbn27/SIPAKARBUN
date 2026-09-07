@@ -5,6 +5,7 @@ let confirmCancel = null;
 let confirmAccept = null;
 let pendingForm = null;
 let pendingTrigger = null;
+let pendingResolver = null;
 const approvedForms = new WeakSet();
 const CONFIRM_DIALOG_ID = 'sipakarbun-confirm-dialog';
 
@@ -56,12 +57,14 @@ function bindDialog(dialog) {
         confirmAccept.classList.remove('ui-confirm-dialog__accept--danger');
     };
 
-    const close = ({ cancelled = false, restoreFocus = true } = {}) => {
+    const close = ({ cancelled = false, restoreFocus = true, result = null } = {}) => {
         const trigger = pendingTrigger;
         const form = pendingForm;
+        const resolver = pendingResolver;
 
         pendingForm = null;
         pendingTrigger = null;
+        pendingResolver = null;
         dialog.close();
         removeDuplicateDialogs(dialog);
         resetDialogState();
@@ -74,6 +77,10 @@ function bindDialog(dialog) {
 
         if (restoreFocus && trigger?.isConnected && typeof trigger.focus === 'function') {
             trigger.focus();
+        }
+
+        if (resolver) {
+            resolver(cancelled ? false : result === true);
         }
     };
 
@@ -96,7 +103,7 @@ function bindDialog(dialog) {
         const form = pendingForm;
 
         if (!form) {
-            close({ cancelled: true });
+            close({ restoreFocus: false, result: true });
             return;
         }
 
@@ -190,6 +197,38 @@ function showConfirmation(form) {
     confirmAccept.focus();
 
     return false;
+}
+
+/**
+ * Open the single global confirmation dialog for non-form actions such as
+ * WebGIS archive requests. This reuses the same modal and duplicate-root
+ * protection as the existing confirmation forms.
+ */
+export function requestConfirmation({
+    title = 'Konfirmasi tindakan',
+    message = 'Lanjutkan tindakan ini?',
+    action = 'Lanjutkan',
+    tone = 'default',
+} = {}) {
+    const dialog = ensureDialog();
+
+    if (!dialog || typeof dialog.showModal !== 'function') {
+        return Promise.resolve(window.confirm(message));
+    }
+
+    pendingForm = null;
+    pendingTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    confirmTitle.textContent = title;
+    confirmMessage.textContent = message;
+    confirmAccept.textContent = action;
+    confirmAccept.classList.toggle('ui-confirm-dialog__accept--danger', tone === 'danger');
+    confirmAccept.disabled = false;
+
+    return new Promise((resolve) => {
+        pendingResolver = resolve;
+        dialog.showModal();
+        confirmAccept.focus();
+    });
 }
 
 if (!window.__sipakarbunConfirmDialogInitialized) {

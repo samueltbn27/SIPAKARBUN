@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'WebGIS Penanganan Kasus')
-@section('subtitle', 'Pantau persebaran dan perkembangan penanganan kasus perkebunan.')
+@section('title', 'WebGIS & Monitoring Kasus')
+@section('subtitle', 'Pantau persebaran, status penanganan, dan perkembangan kasus perkebunan.')
 
 @section('content')
 @php
@@ -16,21 +16,22 @@
 
 @endphp
 
-<div class="max-w-[1500px] mx-auto space-y-6">
+<div class="mx-auto max-w-[1500px] space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2">
             <span>Monitoring</span>
             <span aria-hidden="true">/</span>
             <span class="text-[#176b45]">WebGIS</span>
         </div>
-        <h1 class="text-2xl sm:text-[28px] font-bold tracking-tight text-[#173b29]">WebGIS Penanganan Kasus</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Pantau persebaran dan perkembangan penanganan kasus perkebunan.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-[#173b29] sm:text-[28px]">WebGIS &amp; Monitoring Kasus</h1>
+        <p class="mt-1 text-sm text-[#77847c]">Pantau persebaran, status penanganan, dan perkembangan kasus perkebunan.</p>
+        <p data-webgis-delete-feedback hidden class="mt-3 w-fit rounded-lg border border-[#bfe2cc] bg-[#effaf2] px-3 py-2 text-sm font-medium text-[#176b45]" role="status" aria-live="polite"></p>
     </div>
 
     <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="filter-heading">
         <div class="flex flex-col gap-1 mb-5">
             <h2 id="filter-heading" class="text-base font-bold text-[#173b29]">Filter Monitoring</h2>
-            <p class="text-xs text-[#89968e]">Gunakan satu atau beberapa filter untuk mempersempit lokasi kasus tanpa memuat ulang halaman.</p>
+            <p class="text-xs text-[#89968e]">Satu filter untuk memperbarui peta, status, ringkasan, dan grafik tanpa memuat ulang halaman.</p>
             <span data-webgis-active-filter-count class="mt-2 inline-flex w-fit rounded-full bg-[#eef6f1] px-3 py-1 text-xs font-semibold text-[#2d6b4a]" aria-live="polite">Filter aktif: 0</span>
         </div>
 
@@ -75,7 +76,7 @@
         </div>
 
         <div id="webgis-map" data-webgis-map
-             class="relative h-[320px] w-full bg-[#eef5f0] sm:h-[500px]" aria-label="Peta lokasi penanganan kasus">
+             class="relative h-[320px] w-full bg-[#eef5f0] sm:h-[420px] lg:h-[500px]" aria-label="Peta lokasi penanganan kasus">
             <p data-webgis-loading class="loading-surface absolute inset-0 z-[400] flex flex-col items-center justify-center gap-3 px-6 text-center text-sm font-medium text-[#526159]" role="status" aria-live="polite">
                 <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
                 <span>Menyiapkan peta kasus</span>
@@ -108,7 +109,10 @@
                 <p class="text-sm text-[#77847c]">JavaScript diperlukan untuk menampilkan legenda status.</p>
             </noscript>
         </div>
+        <div data-webgis-status-summary class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4" aria-label="Jumlah kasus per status"></div>
     </section>
+
+    @include('monitoring._content')
 </div>
 <div data-case-detail-backdrop hidden class="fixed inset-0 z-[1000] bg-[#173b29]/30 backdrop-blur-[1px]" aria-hidden="true"></div>
 
@@ -145,6 +149,16 @@
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kecamatan</dt><dd data-case-detail="district" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3 sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">POPT</dt><dd data-case-detail="popt" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
             </dl>
+        </section>
+
+        <section data-case-detail-delete-wrap hidden class="mt-6 rounded-lg border border-[#f0c5c0] bg-[#fff8f7] p-4" aria-labelledby="case-delete-heading">
+            <h3 id="case-delete-heading" class="text-sm font-bold text-[#7f3029]">Administrasi Kasus</h3>
+            <p class="mt-1 text-xs leading-5 text-[#92534d]">Kasus selesai dapat dihapus dari WebGIS dan monitoring aktif. Riwayat workflow tetap dipertahankan.</p>
+            <button type="button" data-case-detail-delete
+                    class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#b33d34] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#972f28] disabled:cursor-wait disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-[#f0c5c0]">
+                Hapus Kasus
+            </button>
+            <p data-case-detail-delete-error hidden class="mt-2 text-xs font-medium text-[#a83d32]" role="alert"></p>
         </section>
 
         <section class="mt-6 border-t border-[#eef3ef] pt-5" aria-labelledby="case-location-heading">

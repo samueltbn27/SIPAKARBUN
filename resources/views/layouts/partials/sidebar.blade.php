@@ -10,7 +10,6 @@
     $canAccessKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt', 'operator_uptd']) ?? false;
     $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan']) ?? false;
-    $canAccessMonitoring = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'pimpinan']) ?? false;
     $navSections = [
         [
             'title' => 'Dashboard',
@@ -23,18 +22,9 @@
     if ($canAccessWebgis) {
         $navSections[0]['items'][] = [
             'route' => 'webgis.index',
-            'label' => 'WebGIS',
+            'label' => 'WebGIS & Monitoring',
             'icon' => 'M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Zm0-7a3 3 0 100-6 3 3 0 000 6Z',
             'match' => 'webgis',
-        ];
-    }
-
-    if ($canAccessMonitoring) {
-        $navSections[0]['items'][] = [
-            'route' => 'monitoring.dashboard',
-            'label' => 'Dashboard Monitoring',
-            'icon' => 'M3 13.5 8.25 8.25l3.75 3.75L21 3m0 0v6m0-6h-6M4 20h16',
-            'match' => 'monitoring.dashboard',
         ];
     }
 
@@ -126,12 +116,21 @@
     }
 @endphp
 
-<div class="fixed inset-0 z-40 bg-[#173b29]/40 lg:hidden" x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false" style="display: none;"></div>
+<div class="fixed inset-0 z-40 bg-[#173b29]/40 lg:hidden"
+     x-cloak
+     x-show="sidebarOpen"
+     x-transition.opacity
+     :class="sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'"
+     aria-hidden="true"
+     @click="sidebarOpen = false"
+     style="display: none;"></div>
 
 <!-- SIDEBAR v2.1 -->
-<aside class="sidebar-shell fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col overflow-hidden border-r border-[#e4ece7] bg-white transition-[width,transform] duration-300 ease-out -translate-x-full lg:translate-x-0"
+<aside id="app-sidebar" class="sidebar-shell fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-hidden border-r border-[#e4ece7] bg-white transition-[width,transform] duration-300 ease-out"
+       :data-sidebar-open="sidebarOpen.toString()"
+       aria-label="Navigasi utama"
        :class="[
-           sidebarOpen ? 'translate-x-0' : '',
+           sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none lg:pointer-events-auto',
            sidebarCollapsed ? 'lg:w-[4.75rem]' : 'lg:w-64'
        ]">
     {{-- Header --}}
@@ -148,7 +147,7 @@
             <svg width="16" height="16" x-show="!sidebarCollapsed" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m15 6-6 6 6 6"/></svg>
             <svg width="16" height="16" x-show="sidebarCollapsed" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m9 6 6 6-6 6"/></svg>
         </button>
-        <button @click="sidebarOpen = false" class="ml-auto inline-flex rounded-lg p-2 text-[#87958c] transition-colors hover:bg-[#eff7f1] hover:text-[#176b45] lg:hidden" aria-label="Tutup navigasi">
+        <button type="button" @click="sidebarOpen = false" class="ml-auto inline-flex rounded-lg p-2 text-[#87958c] transition-colors hover:bg-[#eff7f1] hover:text-[#176b45] lg:hidden" aria-label="Tutup navigasi">
             <svg width="20" height="20" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
     </div>

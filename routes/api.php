@@ -79,6 +79,14 @@ Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
             ->whereNumber('id');
     });
 
+/* Completed cases may only be archived by an Admin. */
+Route::middleware(['auth:sanctum', 'role:admin'])
+    ->prefix('kasus')
+    ->group(function (): void {
+        Route::delete('/{id}', [KasusController::class, 'destroy'])
+            ->whereNumber('id');
+    });
+
 /* M2: POPT assigned-case read and status update. */
 Route::middleware(['auth:sanctum', 'role:popt'])
     ->prefix('popt')

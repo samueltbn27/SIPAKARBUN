@@ -91,6 +91,10 @@ function getDashboardControls() {
 }
 
 function refreshDistrictOptions(controls, filters, cases) {
+    if (!controls.district) {
+        return;
+    }
+
     if (!filters.regency) {
         filters.district = '';
         controls.district.disabled = true;
@@ -271,24 +275,32 @@ function updateCharts(chartInstances, groupedData) {
     });
 }
 
-export function initializeMonitoringDashboard(cases) {
-    const controls = getDashboardControls();
-    const resetButton = document.querySelector('[data-dashboard-reset]');
-    const activeFilterCount = document.querySelector('[data-dashboard-active-filter-count]');
+export function initializeMonitoringDashboard(cases, {
+    controls = null,
+    filters = null,
+    manageControls = true,
+} = {}) {
+    const resolvedControls = controls ?? getDashboardControls();
+    const resetButton = manageControls ? document.querySelector('[data-dashboard-reset]') : null;
+    const activeFilterCount = manageControls
+        ? document.querySelector('[data-dashboard-active-filter-count]')
+        : null;
     const emptyState = document.querySelector('[data-dashboard-empty]');
     const datasetEmptyState = document.querySelector('[data-dashboard-dataset-empty]');
-    const filters = createFilterState();
+    const resolvedFilters = filters ?? createFilterState();
     const chartInstances = {};
 
-    setSelectOptions(controls.status, getStatusOptions(), 'Semua Status');
-    setSelectOptions(controls.commodity, getUniqueCommodities(cases), 'Semua Komoditas');
-    setSelectOptions(controls.disease, getUniqueDiseases(cases), 'Semua Penyakit');
-    setSelectOptions(controls.popt, getUniquePopts(cases), 'Semua POPT');
-    setSelectOptions(controls.regency, getUniqueRegencies(cases), 'Semua Kabupaten/Kota');
-    refreshDistrictOptions(controls, filters, cases);
+    if (manageControls) {
+        setSelectOptions(resolvedControls.status, getStatusOptions(), 'Semua Status');
+        setSelectOptions(resolvedControls.commodity, getUniqueCommodities(cases), 'Semua Komoditas');
+        setSelectOptions(resolvedControls.disease, getUniqueDiseases(cases), 'Semua Penyakit');
+        setSelectOptions(resolvedControls.popt, getUniquePopts(cases), 'Semua POPT');
+        setSelectOptions(resolvedControls.regency, getUniqueRegencies(cases), 'Semua Kabupaten/Kota');
+        refreshDistrictOptions(resolvedControls, resolvedFilters, cases);
+    }
 
     const renderDashboard = () => {
-        const filteredCases = applyFilters(cases, filters);
+        const filteredCases = applyFilters(cases, resolvedFilters);
         const summary = calculateSummary(filteredCases);
 
         updateKpis(summary);
@@ -300,7 +312,7 @@ export function initializeMonitoringDashboard(cases) {
         });
 
         if (activeFilterCount) {
-            activeFilterCount.textContent = `Filter aktif: ${countActiveFilters(filters)}`;
+            activeFilterCount.textContent = `Filter aktif: ${countActiveFilters(resolvedFilters)}`;
         }
 
         if (emptyState) {
@@ -312,33 +324,42 @@ export function initializeMonitoringDashboard(cases) {
         }
     };
 
-    Object.entries(controls).forEach(([filterName, control]) => {
-        control?.addEventListener('change', () => {
-            filters[filterName] = control.value;
+    if (manageControls) {
+        Object.entries(resolvedControls).forEach(([filterName, control]) => {
+            control?.addEventListener('change', () => {
+                resolvedFilters[filterName] = control.value;
 
-            if (filterName === 'regency') {
-                filters.district = '';
-                refreshDistrictOptions(controls, filters, cases);
-            }
+                if (filterName === 'regency') {
+                    resolvedFilters.district = '';
+                    refreshDistrictOptions(resolvedControls, resolvedFilters, cases);
+                }
 
+                renderDashboard();
+            });
+        });
+
+        resetButton?.addEventListener('click', () => {
+            Object.assign(resolvedFilters, createFilterState());
+
+            Object.entries(resolvedControls).forEach(([filterName, control]) => {
+                if (control && filterName !== 'district') {
+                    control.value = '';
+                }
+            });
+
+            refreshDistrictOptions(resolvedControls, resolvedFilters, cases);
             renderDashboard();
         });
-    });
-
-    resetButton?.addEventListener('click', () => {
-        Object.assign(filters, createFilterState());
-
-        Object.entries(controls).forEach(([filterName, control]) => {
-            if (control && filterName !== 'district') {
-                control.value = '';
-            }
-        });
-
-        refreshDistrictOptions(controls, filters, cases);
-        renderDashboard();
-    });
+    }
 
     renderDashboard();
+
+    const loadingState = document.querySelector('[data-dashboard-loading]');
+    if (loadingState) {
+        loadingState.hidden = true;
+    }
+
+    return { render: renderDashboard };
 }
 
 async function loadMonitoringDashboard() {

@@ -1,9 +1,14 @@
 import { getRequestStatusLabel, getStatusConfig } from './statuses';
+import { deleteCase } from './data-provider';
+import { requestConfirmation } from '../confirm-dialog';
 
 let drawerElements = null;
 let previousFocusedElement = null;
 let openCaseId = null;
 let isInitialized = false;
+let openCaseData = null;
+let onCaseDeleted = null;
+let deleteInProgress = false;
 
 export function formatDateTime(value) {
     if (value === null || value === undefined || String(value).trim() === '') {
@@ -55,6 +60,9 @@ function getDrawerElements() {
         updatedAt: document.querySelector('[data-case-detail="updated-at"]'),
         lastNote: document.querySelector('[data-case-detail="last-note"]'),
         timeline: document.querySelector('[data-case-detail-timeline]'),
+        deleteWrap: document.querySelector('[data-case-detail-delete-wrap]'),
+        deleteButton: document.querySelector('[data-case-detail-delete]'),
+        deleteError: document.querySelector('[data-case-detail-delete-error]'),
     };
 }
 
@@ -176,6 +184,78 @@ function renderCaseDetail(caseData) {
     setText(drawerElements.handlingStatus, config.label);
 
     renderTimeline(caseData.status_history);
+
+    if (drawerElements.deleteWrap) {
+        drawerElements.deleteWrap.hidden = caseData.can_delete_case !== true;
+    }
+
+    if (drawerElements.deleteError) {
+        drawerElements.deleteError.hidden = true;
+        drawerElements.deleteError.textContent = '';
+    }
+}
+
+function caseDeleteMessage(caseData) {
+    return [
+        'Kasus yang telah selesai ini akan dihapus dari WebGIS dan monitoring aktif. Riwayat terkait tetap dipertahankan sesuai aturan sistem.',
+        '',
+        `Kode kasus: ${displayValue(caseData.case_code)}`,
+        `Kelompok tani: ${displayValue(caseData.kelompok_tani?.nama)}`,
+        `Penyakit: ${displayValue(caseData.penyakit?.nama)}`,
+        'Status: Selesai',
+    ].join('\n');
+}
+
+async function handleDeleteCase() {
+    const caseData = openCaseData;
+
+    if (!caseData || caseData.can_delete_case !== true || deleteInProgress) {
+        return;
+    }
+
+    const confirmed = await requestConfirmation({
+        title: 'Hapus kasus selesai?',
+        message: caseDeleteMessage(caseData),
+        action: 'Hapus Kasus',
+        tone: 'danger',
+    });
+
+    if (!confirmed || openCaseData?.case_id !== caseData.case_id) {
+        return;
+    }
+
+    deleteInProgress = true;
+    if (drawerElements.deleteButton) {
+        drawerElements.deleteButton.disabled = true;
+        drawerElements.deleteButton.textContent = 'Menghapus...';
+    }
+
+    try {
+        await deleteCase(caseData.case_id);
+        closeCaseDetail();
+        try {
+            await onCaseDeleted?.(caseData);
+        } catch (refreshError) {
+            // The archive already succeeded. Keep the success path intact;
+            // the next page load will obtain the latest dataset.
+            console.error('WebGIS data could not be refreshed after archive.', refreshError);
+        }
+        window.dispatchEvent(new CustomEvent('sipakarbun:case-deleted', {
+            detail: { caseId: caseData.case_id },
+        }));
+    } catch (error) {
+        console.error('Completed case could not be archived.', error);
+        if (drawerElements.deleteError) {
+            drawerElements.deleteError.hidden = false;
+            drawerElements.deleteError.textContent = 'Kasus tidak dapat dihapus. Silakan coba lagi.';
+        }
+    } finally {
+        deleteInProgress = false;
+        if (drawerElements.deleteButton) {
+            drawerElements.deleteButton.disabled = false;
+            drawerElements.deleteButton.textContent = 'Hapus Kasus';
+        }
+    }
 }
 
 function handleKeydown(event) {
@@ -184,7 +264,11 @@ function handleKeydown(event) {
     }
 }
 
-export function initializeCaseDetailDrawer() {
+export function initializeCaseDetailDrawer({ onDeleted = null } = {}) {
+    if (onDeleted) {
+        onCaseDeleted = onDeleted;
+    }
+
     if (isInitialized) {
         return;
     }
@@ -197,6 +281,7 @@ export function initializeCaseDetailDrawer() {
 
     drawerElements.closeButton?.addEventListener('click', closeCaseDetail);
     drawerElements.backdrop?.addEventListener('click', closeCaseDetail);
+    drawerElements.deleteButton?.addEventListener('click', handleDeleteCase);
     document.addEventListener('keydown', handleKeydown);
     isInitialized = true;
 }
@@ -215,6 +300,7 @@ export function openCaseDetail(caseData) {
     }
 
     openCaseId = caseData.case_id;
+    openCaseData = caseData;
     renderCaseDetail(caseData);
 
     drawerElements.drawer.removeAttribute('hidden');
@@ -239,6 +325,7 @@ export function closeCaseDetail() {
     drawerElements.backdrop?.setAttribute('hidden', 'hidden');
     document.body.classList.remove('overflow-hidden');
     openCaseId = null;
+    openCaseData = null;
 
     if (previousFocusedElement?.focus) {
         previousFocusedElement.focus();
