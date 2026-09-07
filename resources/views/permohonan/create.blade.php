@@ -88,6 +88,10 @@
             kelompokTaniLoading: false,
             kelompokTaniSearchError: false,
             locationError: false,
+            latitudeKasus: {{ Js::from(old('latitude_kasus')) }},
+            longitudeKasus: {{ Js::from(old('longitude_kasus')) }},
+            alamatKasus: {{ Js::from(old('alamat_kasus')) }},
+            catatanPemohon: {{ Js::from(old('catatan_pemohon')) }},
             pilihKelompokTani(event) {
                 const selectedId = event.target.value;
                 const selected = this.kelompokTaniList.find((k) => String(k.id) === String(selectedId)) || null;
@@ -272,8 +276,9 @@
                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div>
                                 <label for="latitude_kasus" class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#8a9990]">Latitude</label>
-                                <input type="number" name="latitude_kasus" id="latitude_kasus"
+                            <input type="number" name="latitude_kasus" id="latitude_kasus"
                                        x-ref="lat"
+                                       x-model="latitudeKasus"
                                        value="{{ old('latitude_kasus') }}" step="any" min="-90" max="90"
                                        required readonly
                                        placeholder="-6.9126"
@@ -284,8 +289,9 @@
                             </div>
                             <div>
                                 <label for="longitude_kasus" class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#8a9990]">Longitude</label>
-                                <input type="number" name="longitude_kasus" id="longitude_kasus"
+                            <input type="number" name="longitude_kasus" id="longitude_kasus"
                                        x-ref="lng"
+                                       x-model="longitudeKasus"
                                        value="{{ old('longitude_kasus') }}" step="any" min="-180" max="180"
                                        required readonly
                                        placeholder="107.6085"
@@ -298,6 +304,7 @@
                                 <label for="alamat_kasus" class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#8a9990]">Alamat / Keterangan Lokasi</label>
                                 <textarea name="alamat_kasus" id="alamat_kasus" rows="3" maxlength="500"
                                           x-ref="alamat"
+                                          x-model="alamatKasus"
                                           placeholder="Blok/Kebun, desa, kecamatan, atau keterangan titik serangan"
                                           class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">{{ old('alamat_kasus') }}</textarea>
                                 @error('alamat_kasus')
@@ -312,6 +319,7 @@
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Catatan Pemohon</h3>
                         <textarea name="catatan_pemohon" rows="4" maxlength="2000"
                                   x-ref="catatan"
+                                  x-model="catatanPemohon"
                                   placeholder="Deskripsi kondisi tanaman, luas terdampak, atau informasi tambahan (maks. 2.000 karakter)"
                                   class="mt-3 w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">{{ old('catatan_pemohon') }}</textarea>
                         @error('catatan_pemohon')
@@ -389,16 +397,16 @@
                         <div class="mt-4 border-t border-[#eef3ef] pt-4">
                             <p class="mb-2 text-xs font-bold uppercase tracking-wide text-[#8a9990]">Lokasi Kasus</p>
                             <p class="text-sm text-[#66746c]">
-                                <span x-show="$refs.lat && $refs.lat.value" x-text="'Latitude: ' + $refs.lat.value"></span>
-                                <span x-show="$refs.lng && $refs.lng.value" x-text="' · Longitude: ' + $refs.lng.value"></span>
+                                <span x-show="latitudeKasus" x-text="'Latitude: ' + latitudeKasus"></span>
+                                <span x-show="longitudeKasus" x-text="' · Longitude: ' + longitudeKasus"></span>
                             </p>
-                            <p class="mt-1 text-sm text-[#66746c]" x-text="$refs.alamat ? $refs.alamat.value : ''"></p>
+                            <p class="mt-1 text-sm text-[#66746c]" x-text="alamatKasus"></p>
                             <p class="mt-2 text-[11px] text-[#8a9990]">Lokasi kasus = titik serangan OPT di lapangan, terpisah dari lokasi kelompok tani.</p>
                         </div>
 
                         <div class="mt-4 border-t border-[#eef3ef] pt-4">
                             <p class="mb-2 text-xs font-bold uppercase tracking-wide text-[#8a9990]">Catatan Pemohon</p>
-                            <p class="whitespace-pre-line text-sm text-[#66746c]" x-text="$refs.catatan ? ($refs.catatan.value || '—') : '—'"></p>
+                            <p class="whitespace-pre-line text-sm text-[#66746c]" x-text="catatanPemohon || '—'"></p>
                         </div>
 
                         <div class="mt-4 border-t border-[#eef3ef] pt-4">
