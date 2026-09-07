@@ -59,13 +59,15 @@ class KnowledgeImageTest extends TestCase
             'image' => UploadedFile::fake()->image('blocked.jpg'),
         ])->assertForbidden();
 
+        $baseUrl = rtrim((string) config('app.url'), '/');
+
         $this->actingAs($popt)->getJson('/api/gejala')->assertOk()
             ->assertJsonPath('data.0.image_path', 'knowledge/gejala/example.webp')
-            ->assertJsonPath('data.0.image_url', 'http://localhost/storage/knowledge/gejala/example.webp');
+            ->assertJsonPath('data.0.image_url', $baseUrl.'/storage/knowledge/gejala/example.webp');
 
         $this->actingAs($popt)->getJson('/api/penyakit')->assertOk()
             ->assertJsonFragment(['image_path' => 'knowledge/penyakit/example.webp'])
-            ->assertJsonFragment(['image_url' => 'http://localhost/storage/knowledge/penyakit/example.webp']);
+            ->assertJsonFragment(['image_url' => $baseUrl.'/storage/knowledge/penyakit/example.webp']);
 
         $this->assertNotNull($penyakit->fresh());
     }
