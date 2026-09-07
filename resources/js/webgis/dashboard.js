@@ -1,5 +1,4 @@
 import Chart from 'chart.js/auto';
-import { getCases } from './data-provider';
 import {
     applyFilters,
     countActiveFilters,
@@ -179,7 +178,7 @@ function createChartConfig(key, entries) {
                         }
 
                         const gradient = context.chart.ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-                        const color = colors[context.dataIndex];
+                        const color = colors[context.dataIndex] ?? CHART_PALETTE[0];
                         gradient.addColorStop(0, hexToRgba(color, .35));
                         gradient.addColorStop(1, hexToRgba(color, .95));
 
@@ -361,30 +360,3 @@ export function initializeMonitoringDashboard(cases, {
 
     return { render: renderDashboard };
 }
-
-async function loadMonitoringDashboard() {
-    const loadingState = document.querySelector('[data-dashboard-loading]');
-    const errorState = document.querySelector('[data-dashboard-error]');
-
-    try {
-        const cases = await getCases();
-
-        if (loadingState) {
-            loadingState.hidden = true;
-        }
-
-        initializeMonitoringDashboard(cases);
-    } catch (error) {
-        console.error('Monitoring case data could not be loaded.', error);
-
-        if (loadingState) {
-            loadingState.hidden = true;
-        }
-
-        if (errorState) {
-            errorState.hidden = false;
-        }
-    }
-}
-
-document.querySelectorAll('[data-monitoring-dashboard]').forEach(() => loadMonitoringDashboard());

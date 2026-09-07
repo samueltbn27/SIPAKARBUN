@@ -29,7 +29,15 @@ class WebGISTest extends TestCase
             ->assertSee('Kasus per Status')
             ->assertSee('Kasus per Komoditas')
             ->assertSee('Kasus per Kabupaten/Kota')
-            ->assertSee('Kasus per Penyakit');
+            ->assertSee('Kasus per Penyakit')
+            ->assertSee('id="dashboard-monitoring"', false)
+            ->assertSeeInOrder([
+                'Filter Monitoring',
+                'Peta Persebaran Kasus',
+                'Status Penanganan',
+                'Ringkasan Kasus',
+                'Kasus per Status',
+            ]);
     }
 
     public function test_operator_uptd_pimpinan_dan_popt_dapat_membuka_webgis(): void

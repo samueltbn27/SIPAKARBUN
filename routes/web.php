@@ -34,7 +34,7 @@ Route::middleware(['auth', 'role:admin|operator_uptd|popt|pimpinan'])->group(fun
 });
 
 Route::middleware(['auth', 'role:admin|operator_uptd|pimpinan'])->group(function (): void {
-    Route::get('/dashboard-monitoring', fn () => redirect()->route('webgis.index'))->name('monitoring.dashboard');
+    Route::get('/dashboard-monitoring', fn () => redirect()->to(route('webgis.index').'#dashboard-monitoring'))->name('monitoring.dashboard');
 });
 
 // Compatibility path for the existing M1 user-management screen.

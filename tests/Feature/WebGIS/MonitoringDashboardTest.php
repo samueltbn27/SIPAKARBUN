@@ -22,21 +22,21 @@ class MonitoringDashboardTest extends TestCase
     {
         $this->actingAs($this->createAdmin())
             ->get('/dashboard-monitoring')
-            ->assertRedirect(route('webgis.index'));
+            ->assertRedirect(route('webgis.index').'#dashboard-monitoring');
     }
 
     public function test_pimpinan_dapat_membuka_dashboard_monitoring(): void
     {
         $this->actingAs($this->createUserWithRole('pimpinan'))
             ->get('/dashboard-monitoring')
-            ->assertRedirect(route('webgis.index'));
+            ->assertRedirect(route('webgis.index').'#dashboard-monitoring');
     }
 
     public function test_operator_uptd_dapat_membuka_dashboard_monitoring(): void
     {
         $this->actingAs($this->createUserWithRole('operator_uptd'))
             ->get('/dashboard-monitoring')
-            ->assertRedirect(route('webgis.index'));
+            ->assertRedirect(route('webgis.index').'#dashboard-monitoring');
     }
 
     public function test_popt_tidak_dapat_membuka_dashboard_monitoring(): void
