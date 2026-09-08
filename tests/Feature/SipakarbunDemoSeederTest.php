@@ -91,6 +91,31 @@ class SipakarbunDemoSeederTest extends TestCase
         $this->actingAs($admin)->getJson('/api/kasus')->assertOk()->assertJsonCount(5, 'data');
     }
 
+    public function test_seluruh_akun_demo_dapat_login_dengan_password_bersama(): void
+    {
+        $this->seed(SipakarbunDemoSeeder::class);
+
+        foreach ([
+            'admin.tester@sipakarbun.local',
+            'operator.tester@sipakarbun.local',
+            'popt.tester@sipakarbun.local',
+            'poktan.tester@sipakarbun.local',
+            'pimpinan.tester@sipakarbun.local',
+        ] as $email) {
+            $user = User::where('email', $email)->firstOrFail();
+
+            $this->post('/login', [
+                'email' => $email,
+                'password' => 'SIPAKARBUN-Tester-2026!',
+            ])->assertRedirect();
+
+            $this->assertAuthenticatedAs($user);
+            $this->post('/logout')->assertRedirect(route('login'));
+        }
+
+        $this->assertDatabaseMissing('users', ['password' => 'SIPAKARBUN-Tester-2026!']);
+    }
+
     public function test_demo_seeder_menolak_environment_production(): void
     {
         app()->detectEnvironment(fn () => 'production');
