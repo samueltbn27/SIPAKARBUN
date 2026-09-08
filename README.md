@@ -43,35 +43,33 @@ Halaman `/register` menyediakan pilihan role berikut:
 Role `admin` dan `pakar` tidak dapat dipilih. Akun hasil pendaftaran berstatus
 menunggu persetujuan dan harus diaktifkan melalui menu Pengguna oleh Admin.
 
-## Akun UAT/Development Lokal
+## Akun Tester Demo
 
-Akun berikut hanya untuk local/UAT. Jangan gunakan untuk production.
+Jalankan `SipakarbunDemoSeeder` secara eksplisit untuk membuat akun tester
+beserta dataset demo:
+
+```bash
+php artisan db:seed --class=SipakarbunDemoSeeder
+```
 
 | Role | Email | Password |
 |---|---|---|
-| Operator UPTD | `operator@sipakarbun.local` | `Operator2026!` |
-| POPT | `popt@sipakarbun.local` | `Popt2026!` |
-| Poktan | `poktan@sipakarbun.local` | `Poktan2026!` |
-| Pimpinan | `pimpinan@sipakarbun.local` | `Pimpinan2026!` |
-| Admin | akun bootstrap existing | tidak didokumentasikan di repository |
+| Admin | `admin.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Operator UPTD | `operator.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 
-Siapkan password UAT pada `.env` yang diabaikan Git sebelum menjalankan:
+> **Peringatan:** Akun dan password ini hanya untuk local/demo/UAT dan tidak
+> boleh digunakan pada production.
 
-```dotenv
-SIPAKARBUN_UAT_OPERATOR_PASSWORD=Operator2026!
-SIPAKARBUN_UAT_POPT_PASSWORD=Popt2026!
-SIPAKARBUN_UAT_POKTAN_PASSWORD=Poktan2026!
-SIPAKARBUN_UAT_PIMPINAN_PASSWORD=Pimpinan2026!
-```
+Password disimpan sebagai hash menggunakan Laravel `Hash::make()`; plaintext
+di atas hanya dokumentasi credential demo. Seeder bersifat idempotent,
+non-destructive, dan menolak environment production.
 
-Lalu jalankan seeder secara eksplisit:
-
-```bash
-php artisan db:seed --class=UatUserSeeder
-```
-
-Seeder UAT bersifat idempotent dan tidak dipanggil otomatis oleh
-`DatabaseSeeder` pada production.
+`UatUserSeeder` adalah seeder UAT non-admin lama yang terpisah dan memakai
+environment variable sendiri. Untuk skenario demo lengkap/reproducible,
+gunakan `SipakarbunDemoSeeder` dan credential pada tabel di atas.
 
 ## Pengujian
 
