@@ -8,8 +8,7 @@ use Illuminate\Database\Seeder;
 
 /**
  * Seed ref_komoditas dari data komoditas yang sudah diterima dari
- * API Disbun (via MockKomoditasReferensiClient sebagai sumber data
- * hasil sync).
+ * API Disbun (via MockKomoditasReferensiClient sebagai fixture lokal).
  *
  * PENTING — ID di-seed EKSPLISIT mengikuti placeholder yang selama ini
  * dipakai penyakit_komoditas.komoditas_id (1..41), supaya relasi
@@ -34,7 +33,10 @@ class RefKomoditasSeeder extends Seeder
                     'kode' => $row['kode'],
                     'nama' => $row['nama'],
                     'nama_latin' => $row['nama_latin'] ?? null,
-                    'source' => 'manual',
+                    // Fixture ini mewakili referensi Disbun yang sudah
+                    // dinormalisasi. Runtime memakai scope runtimeTersedia()
+                    // yang hanya menerima source Disbun.
+                    'source' => RefKomoditas::SOURCE_DISBUN,
                     'source_is_active' => $row['is_active'] ?? true,
                     'is_verified' => true,
                     'sync_status' => RefKomoditas::SYNC_SYNCED,

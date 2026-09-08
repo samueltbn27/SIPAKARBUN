@@ -75,4 +75,18 @@ class KnowledgeImageTest extends TestCase
 
         $this->assertNotNull($penyakit->fresh());
     }
+
+    public function test_image_url_mengikuti_origin_request_dan_port_aplikasi(): void
+    {
+        $popt = $this->createPopt();
+        Gejala::factory()->create([
+            'image_path' => 'knowledge/gejala/bpkc-cengkeh.svg',
+            'nama' => 'Daun berguguran secara mendadak',
+        ]);
+
+        $this->actingAs($popt)
+            ->getJson('http://127.0.0.1:8000/api/gejala')
+            ->assertOk()
+            ->assertJsonPath('data.0.image_url', 'http://127.0.0.1:8000/storage/knowledge/gejala/bpkc-cengkeh.svg');
+    }
 }
