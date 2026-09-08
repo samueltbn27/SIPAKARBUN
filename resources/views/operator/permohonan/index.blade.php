@@ -8,12 +8,12 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div><h1 class="text-2xl font-bold text-[#173b29]">Permohonan Penanganan</h1><p class="mt-1 text-sm text-[#77847c]">Review, terima, atau tolak pengajuan Poktan.</p></div>
         <a href="{{ route('operator.kasus.index') }}" class="rounded-lg border border-[#cfe2d5] px-4 py-2 text-sm font-semibold text-[#176b45]">Monitoring Kasus</a>
     </div>
 
-    <form method="GET" class="flex flex-col gap-3 rounded-xl border border-[#e6eee8] bg-white p-4 sm:flex-row sm:items-end">
+    <form method="GET" class="flex flex-col gap-3 rounded-xl border border-[#e6eee8] bg-white p-4 sm:flex-row sm:flex-wrap sm:items-end">
         <div><label for="status" class="block text-xs font-semibold text-gray-600">Status</label><select id="status" name="status" class="mt-1 rounded-lg border-gray-300 text-sm"><option value="">Semua</option>@foreach($statusLabels as $value => $label)<option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>@endforeach</select></div>
         <button class="rounded-lg bg-[#176b45] px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
         <a href="{{ route('operator.permohonan') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-center text-sm text-gray-700">Reset</a>

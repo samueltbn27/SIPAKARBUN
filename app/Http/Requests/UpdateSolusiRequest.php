@@ -8,7 +8,15 @@ class UpdateSolusiRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
+        $user = $this->user();
+        if ($user?->hasAnyRole(['admin', 'operator_uptd'])) {
+            return true;
+        }
+
+        $solusi = $this->route('solusi');
+        return $user?->hasRole('popt') === true
+            && is_object($solusi)
+            && $solusi->status === 'draft';
     }
 
     public function rules(): array

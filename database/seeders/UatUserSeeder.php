@@ -11,9 +11,8 @@ use Spatie\Permission\Models\Role;
 /**
  * LOCAL/UAT ONLY — DO NOT USE IN PRODUCTION.
  *
- * Creates the fixed accounts used by the final browser UAT. The seeder is
- * intentionally separate from DatabaseSeeder so production seeding never
- * creates these predictable demo credentials automatically.
+ * Creates the fixed non-admin accounts used by the final browser UAT. The
+ * admin bootstrap account is deliberately not part of this seeder.
  *
  * Run with:
  *   php artisan db:seed --class=UatUserSeeder
@@ -21,21 +20,20 @@ use Spatie\Permission\Models\Role;
 class UatUserSeeder extends Seeder
 {
     private const USERS = [
-        ['name' => 'Admin UAT', 'email' => 'admin.uat@sipakarbun.local', 'role' => 'admin'],
-        ['name' => 'Operator UPTD UAT', 'email' => 'operator.uat@sipakarbun.local', 'role' => 'operator_uptd'],
-        ['name' => 'POPT UAT', 'email' => 'popt.uat@sipakarbun.local', 'role' => 'popt'],
-        ['name' => 'Poktan UAT', 'email' => 'poktan.uat@sipakarbun.local', 'role' => 'poktan'],
-        ['name' => 'Pimpinan UAT', 'email' => 'pimpinan.uat@sipakarbun.local', 'role' => 'pimpinan'],
+        ['name' => 'Operator UPTD', 'email' => 'operator@sipakarbun.local', 'role' => 'operator_uptd'],
+        ['name' => 'POPT', 'email' => 'popt@sipakarbun.local', 'role' => 'popt'],
+        ['name' => 'Poktan UAT', 'email' => 'poktan@sipakarbun.local', 'role' => 'poktan'],
+        ['name' => 'Pimpinan', 'email' => 'pimpinan@sipakarbun.local', 'role' => 'pimpinan'],
     ];
 
     public function run(): void
     {
-        $password = (string) config('services.uat.password', '');
-        if ($password === '') {
-            throw new RuntimeException('SIPAKARBUN_UAT_PASSWORD wajib diisi untuk menjalankan UatUserSeeder.');
-        }
-
         foreach (self::USERS as $data) {
+            $password = (string) config('services.uat.accounts.'.$data['role'].'.password', '');
+            if ($password === '') {
+                throw new RuntimeException('Password UAT untuk role '.$data['role'].' wajib diisi di .env.');
+            }
+
             $user = User::updateOrCreate(
                 ['email' => $data['email']],
                 [

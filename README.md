@@ -1,3 +1,88 @@
+# SIPAKARBUN
+
+SIPAKARBUN adalah aplikasi Laravel untuk diagnosis penyakit tanaman,
+permohonan penanganan, workflow Operator UPTD/POPT, Knowledge Management,
+WebGIS, dan dashboard monitoring.
+
+## Setup & Team Testing
+
+Untuk setup dari clone baru, akun tester lima role, study case, UAT end-to-end,
+dan setup database demo offline, ikuti panduan canonical:
+
+[`docs/TEAM_TESTING_SETUP.md`](docs/TEAM_TESTING_SETUP.md)
+
+## Menjalankan di Local
+
+Persyaratan: PHP 8.2+, Composer, Node.js/npm, dan database sesuai konfigurasi
+`.env`.
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+Buka [http://127.0.0.1:8000/login](http://127.0.0.1:8000/login).
+
+Untuk pengembangan frontend dengan hot reload, gunakan `npm run dev` pada
+terminal terpisah sebagai pengganti `npm run build`.
+
+## Pendaftaran Akun
+
+Halaman `/register` menyediakan pilihan role berikut:
+
+- Operator UPTD
+- POPT
+- Poktan / Gapoktan
+- Pimpinan
+
+Role `admin` dan `pakar` tidak dapat dipilih. Akun hasil pendaftaran berstatus
+menunggu persetujuan dan harus diaktifkan melalui menu Pengguna oleh Admin.
+
+## Akun Tester Demo
+
+Jalankan `SipakarbunDemoSeeder` secara eksplisit untuk membuat akun tester
+beserta dataset demo:
+
+```bash
+php artisan db:seed --class=SipakarbunDemoSeeder
+```
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Operator UPTD | `operator.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+
+> **Peringatan:** Akun dan password ini hanya untuk local/demo/UAT dan tidak
+> boleh digunakan pada production.
+
+Password disimpan sebagai hash menggunakan Laravel `Hash::make()`; plaintext
+di atas hanya dokumentasi credential demo. Seeder bersifat idempotent,
+non-destructive, dan menolak environment production.
+
+`UatUserSeeder` adalah seeder UAT non-admin lama yang terpisah dan memakai
+environment variable sendiri. Untuk skenario demo lengkap/reproducible,
+gunakan `SipakarbunDemoSeeder` dan credential pada tabel di atas.
+
+## Pengujian
+
+```bash
+php artisan test
+npm run test:provider
+npm run build
+php artisan view:clear
+php artisan view:cache
+```
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

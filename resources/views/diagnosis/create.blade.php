@@ -178,7 +178,7 @@
 
                 {{-- STEP 1: Pilih Komoditas --}}
                 <section x-show="step === 1" x-cloak>
-                    <x-card>
+                    <x-card class="p-5 sm:p-6">
                         <h2 class="text-base font-bold text-[#173b29]">Step 1 · Pilih Komoditas</h2>
                         <p class="mt-1 text-sm text-[#66746c]">Pilih komoditas yang sedang Anda amati.</p>
 
@@ -191,9 +191,9 @@
 
                             {{-- Loading state (data sedang dimuat dari sumber knowledge) --}}
                             <div x-show="filteredKomoditas().length === 0 && komoditas.length > 0"
-                                 class="mt-4 flex items-center justify-center gap-3 rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-4 py-10 text-sm text-[#8a9990]">
-                                <span class="h-5 w-5 animate-spin rounded-full border-2 border-[#d7e5dc] border-t-[#176b45]"></span>
-                                Memuat komoditas…
+                                 class="loading-surface mt-4 flex flex-col items-center justify-center gap-3 rounded-xl px-4 py-10 text-sm text-[#8a9990]" role="status">
+                                <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                                <span>Menyiapkan komoditas</span>
                             </div>
 
                             {{-- Empty state --}}
@@ -224,7 +224,7 @@
 
                 {{-- STEP 2: Pilih Gejala --}}
                 <section x-show="step === 2" x-cloak>
-                    <x-card>
+                    <x-card class="p-5 sm:p-6">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 class="text-base font-bold text-[#173b29]">Step 2 · Pilih Gejala</h2>
@@ -241,9 +241,9 @@
 
                         {{-- Loading state: gejala sedang disiapkan untuk komoditas terpilih --}}
                         <div x-show="gejalaLoading" x-cloak
-                             class="mt-4 flex items-center justify-center gap-3 rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-4 py-12 text-sm text-[#8a9990]">
-                            <span class="h-5 w-5 animate-spin rounded-full border-2 border-[#d7e5dc] border-t-[#176b45]"></span>
-                            Memuat gejala untuk komoditas ini…
+                             class="loading-surface mt-4 flex flex-col items-center justify-center gap-3 rounded-xl px-4 py-12 text-sm text-[#8a9990]" role="status">
+                            <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                            <span>Memuat gejala untuk komoditas ini…</span>
                         </div>
 
                         {{-- Empty state: komoditas tanpa gejala --}}
@@ -254,7 +254,7 @@
                             <button type="button" @click="prev()" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Kembali</button>
                         </div>
 
-                        <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" x-show="!gejalaLoading && filteredGejala().length > 0" x-cloak>
+                        <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2" x-show="!gejalaLoading && filteredGejala().length > 0" x-cloak>
                             <template x-for="g in filteredGejala()" :key="g.id">
                                 <label class="soft-card cursor-pointer rounded-xl border bg-white p-3 transition-colors"
                                        :class="isSelected(g.id) ? 'border-[#176b45] ring-2 ring-[#176b45]/15' : 'border-[#e4ece7] hover:border-[#176b45]/40'">
@@ -277,11 +277,11 @@
                             </template>
                         </div>
 
-                        <div class="mt-4 flex items-center justify-between border-t border-[#eef3ef] pt-4">
+                        <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala dipilih'"></span>
-                            <div class="flex gap-2">
-                                <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
-                                <button type="button" @click="next()" class="rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjut</button>
+                            <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                                <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
+                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjut</button>
                             </div>
                         </div>
                     </x-card>
@@ -289,7 +289,7 @@
 
                 {{-- STEP 3: Tingkat Keyakinan --}}
                 <section x-show="step === 3" x-cloak>
-                    <x-card>
+                    <x-card class="p-5 sm:p-6">
                         <h2 class="text-base font-bold text-[#173b29]">Step 3 · Tingkat Keyakinan</h2>
                         <p class="mt-1 text-sm text-[#66746c]">Seberapa yakin Anda mengamati tiap gejala? Nilai dipakai langsung oleh mesin Certainty Factor backend.</p>
 
@@ -321,11 +321,11 @@
                             </template>
                         </ul>
 
-                        <div class="mt-4 flex items-center justify-between border-t border-[#eef3ef] pt-4">
+                        <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala · keyakinan dikonversi ke skala 0–1'"></span>
-                            <div class="flex gap-2">
-                                <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
-                                <button type="button" @click="next()" class="rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjut</button>
+                            <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                                <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
+                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjut</button>
                             </div>
                         </div>
                     </x-card>
@@ -333,12 +333,12 @@
 
                 {{-- STEP 4: Proses Diagnosis --}}
                 <section x-show="step === 4" x-cloak>
-                    <x-card>
+                    <x-card class="p-5 sm:p-6">
                         <h2 class="text-base font-bold text-[#173b29]">Step 4 · Proses Diagnosis</h2>
                         <p class="mt-1 text-sm text-[#66746c]">Periksa kembali pilihan Anda sebelum menjalankan diagnosis.</p>
 
                         <div class="mt-4 overflow-hidden rounded-xl border border-[#e4ece7]">
-                            <div class="flex items-center justify-between bg-[#fafcfb] px-4 py-3">
+                            <div class="flex flex-col gap-1 bg-[#fafcfb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                                 <span class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Komoditas</span>
                                 <span class="text-sm font-bold text-[#173b29]" x-text="komoditasNama(commodityId)"></span>
                             </div>
@@ -349,7 +349,7 @@
                                 </div>
                                 <ul class="divide-y divide-[#eef3ef]">
                                     <template x-for="id in selected" :key="'sum' + id">
-                                        <li class="flex items-center justify-between gap-3 px-4 py-3">
+                                        <li class="flex items-start justify-between gap-3 px-4 py-3">
                                             <span class="flex items-center gap-2 text-sm text-[#173b29]">
                                                 <svg class="h-4 w-4 shrink-0 text-[#176b45]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                                                 <span x-text="(gejala.find(g => Number(g.id) === Number(id))?.nama) ?? 'Gejala #' + id"></span>
@@ -361,7 +361,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 flex items-center justify-between border-t border-[#eef3ef] pt-4">
+                        <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
                             <button type="submit" :disabled="submitting || selected.length === 0"
                                     class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Gejala busuk buah kakao</title><desc id="desc">Ilustrasi orisinal untuk dataset demo SIPAKARBUN.</desc>
+  <rect width="800" height="500" fill="#fbf2e8"/><ellipse cx="398" cy="252" rx="156" ry="181" fill="#986034"/><path d="M400 75v-48m0 48c-58-20-92-5-129 20" fill="none" stroke="#6b4327" stroke-width="20" stroke-linecap="round"/><path d="M293 181c61 11 125 74 165 170" fill="none" stroke="#ddb48a" stroke-width="25" stroke-linecap="round"/><circle cx="475" cy="295" r="58" fill="#453225" opacity=".7"/><path d="M435 271c20-17 48-21 76-6" fill="none" stroke="#f0e5d5" stroke-width="9"/>
+  <text x="40" y="455" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#57351f">Bercak busuk pada buah</text>
+</svg>

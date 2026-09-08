@@ -46,7 +46,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <x-knowledge.status-select name="status" :value="$solusi->status" />
+                <x-knowledge.status-select name="status" :value="$solusi->status" :locked="auth()->user()?->hasRole('popt') ?? false" />
             </div>
 
             <div class="flex items-center gap-3 border-t border-gray-100 pt-5">

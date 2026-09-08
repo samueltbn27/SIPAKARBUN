@@ -36,9 +36,9 @@
         ]"
     />
 
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" x-data="{ submitting: false }">
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between" x-data="{ submitting: false }">
         <form method="GET" action="{{ route('permohonan.index') }}" @submit="submitting = true"
-              class="flex flex-wrap items-end gap-2">
+              class="flex w-full flex-wrap items-end gap-2 lg:w-auto">
             <div>
                 <label for="filter-status" class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#8a9990]">Status</label>
                 <select name="status" id="filter-status"
@@ -66,15 +66,15 @@
         </form>
 
         <a href="{{ route('permohonan.create') }}"
-           class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+           class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] lg:w-auto">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0 0l-4-4m4 4l4-4" /></svg>
             Ajukan Permohonan
         </a>
 
         <div x-show="submitting" x-cloak
-             class="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-[#f7faf8]/60">
-            <span class="flex items-center gap-3 rounded-full bg-white px-5 py-3 shadow-lg">
-                <span class="h-5 w-5 animate-spin rounded-full border-2 border-[#e4ece7] border-t-[#176b45]"></span>
+             class="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-[#f7faf8]/70 px-4 backdrop-blur-[1px]">
+            <span class="loading-surface flex w-full max-w-xs items-center justify-center gap-3 rounded-xl px-5 py-4 shadow-lg">
+                <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
                 <span class="text-sm font-semibold text-[#66746c]">Memuat…</span>
             </span>
         </div>

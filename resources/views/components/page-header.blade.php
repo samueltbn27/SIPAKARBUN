@@ -4,9 +4,9 @@
     'breadcrumbs' => [],
 ])
 
-<div class="mb-6">
+<div class="mb-5 sm:mb-6">
     @if (count($breadcrumbs) > 0)
-        <nav class="mb-2 flex items-center gap-1.5 text-xs text-[#8a9990]" aria-label="Breadcrumb">
+        <nav class="mb-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[#8a9990]" aria-label="Breadcrumb">
             @foreach ($breadcrumbs as $crumb)
                 @if (!empty($crumb['url']))
                     <a href="{{ $crumb['url'] }}" class="font-medium hover:text-[#176b45]">{{ $crumb['label'] }}</a>
@@ -20,7 +20,7 @@
         </nav>
     @endif
 
-    <h1 class="text-2xl font-extrabold tracking-tight text-[#173b29]">{{ $title }}</h1>
+    <h1 class="break-words text-xl font-extrabold tracking-tight text-[#173b29] sm:text-2xl">{{ $title }}</h1>
 
     @if ($subtitle)
         <p class="mt-1 text-sm text-[#66746c]">{{ $subtitle }}</p>

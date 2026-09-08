@@ -3,14 +3,20 @@
 @section('title', 'Daftar Solusi')
 
 @section('content')
-@php($canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false)
+@php
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
+    $isPopt = auth()->user()?->hasRole('popt') ?? false;
+    $canCreateKnowledge = $canManageKnowledge || $isPopt;
+    $canEditRecord = fn ($record) => $canManageKnowledge || ($isPopt && $record->status === 'draft');
+    $createLabel = $isPopt ? 'Tambah Draft' : 'Tambah Solusi';
+@endphp
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Daftar Solusi</h1>
             <p class="mt-1 text-sm text-gray-600">Kelola data solusi untuk setiap penyakit.</p>
         </div>
-        @if($canManageKnowledge)<a href="{{ route('knowledge.solusi.create') }}" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">Tambah Solusi</a>@endif
+        @if($canCreateKnowledge)<a href="{{ route('knowledge.solusi.create') }}" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">{{ $createLabel }}</a>@endif
     </div>
 
     <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -59,17 +65,17 @@
                         <x-knowledge.status-badge :status="$s->status" />
                     </td>
                     <td class="px-4 py-3 text-right">
-                        @if($canManageKnowledge)<div class="inline-flex items-center gap-2">
+                        @if($canEditRecord($s))<div class="inline-flex items-center gap-2">
                             <a href="{{ route('knowledge.solusi.edit', $s) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
                                 Edit
                             </a>
-                            <form method="POST" action="{{ route('knowledge.solusi.destroy', $s) }}" onsubmit="return confirm('Hapus solusi ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="bg-red-600 text-white hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-medium">
-                                    Hapus
-                                </button>
-                            </form>
+                            @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.solusi.destroy', $s) }}" data-confirm-title="Hapus solusi?" data-confirm-message="Data yang dihapus tidak dapat dikembalikan." data-confirm-action="Hapus" data-confirm-tone="danger">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="bg-red-600 text-white hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-medium">
+                                        Hapus
+                                    </button>
+                                </form>@endif
                         </div>@else<span class="text-xs text-gray-500">Read-only</span>@endif
                     </td>
                 </tr>

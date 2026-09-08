@@ -56,10 +56,10 @@
 
         <div x-show="!ready" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($stats as $s)
-                <div class="soft-card animate-pulse rounded-2xl border border-[#e4ece7] bg-white p-6">
-                    <div class="h-10 w-10 rounded-xl bg-[#eef3ef]"></div>
-                    <div class="mt-4 h-7 w-16 rounded-md bg-[#eef3ef]"></div>
-                    <div class="mt-2 h-3 w-32 rounded-md bg-[#eef3ef]"></div>
+                <div class="soft-card rounded-2xl border border-[#e4ece7] bg-white p-6" role="status" aria-label="Menyiapkan ringkasan">
+                    <div class="loading-sheen h-10 w-10 rounded-xl"></div>
+                    <div class="loading-sheen mt-4 h-7 w-16 rounded-md"></div>
+                    <div class="loading-sheen mt-2 h-3 w-32 rounded-md"></div>
                 </div>
             @endforeach
         </div>
@@ -105,20 +105,20 @@
 
             {{-- Loading state (skeleton) --}}
             <div x-show="!ready" class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div class="soft-card rounded-2xl border border-[#e4ece7] bg-white p-5">
-                    <div class="h-4 w-32 animate-pulse rounded-md bg-[#eef3ef]"></div>
+                <div class="soft-card rounded-2xl border border-[#e4ece7] bg-white p-5" role="status" aria-label="Menyiapkan diagnosis terbaru">
+                    <div class="loading-sheen h-4 w-32 rounded-md"></div>
                     <div class="mt-4 space-y-3">
-                        <div class="h-3 w-full animate-pulse rounded-md bg-[#eef3ef]"></div>
-                        <div class="h-3 w-5/6 animate-pulse rounded-md bg-[#eef3ef]"></div>
-                        <div class="h-3 w-2/3 animate-pulse rounded-md bg-[#eef3ef]"></div>
+                        <div class="loading-sheen h-3 w-full rounded-md"></div>
+                        <div class="loading-sheen h-3 w-5/6 rounded-md"></div>
+                        <div class="loading-sheen h-3 w-2/3 rounded-md"></div>
                     </div>
                 </div>
-                <div class="soft-card rounded-2xl border border-[#e4ece7] bg-white p-5">
-                    <div class="h-4 w-32 animate-pulse rounded-md bg-[#eef3ef]"></div>
+                <div class="soft-card rounded-2xl border border-[#e4ece7] bg-white p-5" role="status" aria-label="Menyiapkan permohonan terbaru">
+                    <div class="loading-sheen h-4 w-32 rounded-md"></div>
                     <div class="mt-4 space-y-3">
-                        <div class="h-3 w-full animate-pulse rounded-md bg-[#eef3ef]"></div>
-                        <div class="h-3 w-5/6 animate-pulse rounded-md bg-[#eef3ef]"></div>
-                        <div class="h-3 w-2/3 animate-pulse rounded-md bg-[#eef3ef]"></div>
+                        <div class="loading-sheen h-3 w-full rounded-md"></div>
+                        <div class="loading-sheen h-3 w-5/6 rounded-md"></div>
+                        <div class="loading-sheen h-3 w-2/3 rounded-md"></div>
                     </div>
                 </div>
             </div>

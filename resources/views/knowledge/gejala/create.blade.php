@@ -40,7 +40,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <x-knowledge.status-select name="status" default="draft" />
+                <x-knowledge.status-select name="status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />
             </div>
 
             <div>

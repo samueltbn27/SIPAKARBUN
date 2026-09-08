@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Ilustrasi BPKC cengkeh</title><desc id="desc">Ilustrasi orisinal untuk dataset demo SIPAKARBUN.</desc>
+  <rect width="800" height="500" fill="#eef4ec"/><path d="M390 435V185" stroke="#6b4327" stroke-width="28"/><path d="M390 260C286 190 210 168 92 177M390 300c119-86 206-91 321-71M390 208C305 111 238 77 155 65M390 230c77-112 145-151 244-154" fill="none" stroke="#176b45" stroke-width="18" stroke-linecap="round"/><circle cx="92" cy="177" r="23" fill="#a63f32"/><circle cx="711" cy="229" r="23" fill="#a63f32"/><circle cx="155" cy="65" r="23" fill="#a63f32"/><circle cx="634" cy="76" r="23" fill="#a63f32"/>
+  <text x="40" y="455" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#173e2c">BPKC Cengkeh</text>
+</svg>

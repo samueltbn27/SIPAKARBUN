@@ -59,7 +59,7 @@
             </div>
 
             <div class="sm:col-span-1">
-                <x-knowledge.status-select name="status" :value="$penyakit->status" />
+                <x-knowledge.status-select name="status" :value="$penyakit->status" :locked="auth()->user()?->hasRole('popt') ?? false" />
             </div>
 
             <div>

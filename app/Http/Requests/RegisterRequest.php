@@ -7,6 +7,19 @@ use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
+    /** @var array<string, string> */
+    public const ROLE_OPTIONS = [
+        'operator_uptd' => 'Operator UPTD',
+        'popt' => 'POPT',
+        'poktan' => 'Poktan / Gapoktan',
+        'pimpinan' => 'Pimpinan',
+    ];
+
+    /** @var array<string, string> */
+    public const PUBLIC_ROLE_OPTIONS = [
+        'poktan' => 'Poktan / Gapoktan',
+    ];
+
     public function authorize(): bool
     {
         return true;
@@ -14,6 +27,10 @@ class RegisterRequest extends FormRequest
 
     public function rules(): array
     {
+        $roleOptions = $this->user()?->hasRole('admin')
+            ? self::ROLE_OPTIONS
+            : self::PUBLIC_ROLE_OPTIONS;
+
         return [
             'name' => ['required', 'string', 'min:3', 'max:150'],
             'email' => ['required', 'string', 'email', 'max:150', 'unique:users,email'],
@@ -21,9 +38,9 @@ class RegisterRequest extends FormRequest
                 'required',
                 'string',
                 'confirmed',
-                Password::min(8)->letters()->numbers(),
+                Password::min(8)->mixedCase()->numbers()->symbols(),
             ],
-            'role' => ['required', 'string', 'in:admin,popt,operator_uptd,poktan'],
+            'role' => ['required', 'string', 'in:'.implode(',', array_keys($roleOptions))],
             'phone' => [
                 'required',
                 'string',
@@ -46,6 +63,8 @@ class RegisterRequest extends FormRequest
             'password.min' => 'Password minimal 8 karakter.',
             'password.letters' => 'Password harus mengandung huruf.',
             'password.numbers' => 'Password harus mengandung angka.',
+            'password.mixed' => 'Password harus mengandung huruf besar dan huruf kecil.',
+            'password.symbols' => 'Password harus mengandung simbol.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'role.required' => 'Role wajib dipilih.',
             'role.in' => 'Role yang dipilih tidak valid.',

@@ -29,7 +29,7 @@ class PenyakitKnowledgeResource extends JsonResource
             'deskripsi' => $this->deskripsi,
             'status' => $this->status,
             'image_path' => $this->image_path,
-            'image_url' => $this->image_path ? Storage::disk('public')->url($this->image_path) : null,
+            'image_url' => $this->imageUrl($request),
 
             'komoditas_id' => $this->whenLoaded(
                 'penyakitKomoditas',
@@ -55,5 +55,21 @@ class PenyakitKnowledgeResource extends JsonResource
 
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    private function imageUrl(Request $request): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        $storageUrl = Storage::disk('public')->url($this->image_path);
+        $storagePath = parse_url($storageUrl, PHP_URL_PATH);
+
+        if (! is_string($storagePath) || $storagePath === '') {
+            return $storageUrl;
+        }
+
+        return rtrim($request->getSchemeAndHttpHost(), '/').'/'.ltrim($storagePath, '/');
     }
 }

@@ -46,6 +46,8 @@ class KasusPenangananResource extends JsonResource
             'status' => $this->current_status,
             'current_status' => $this->current_status,
             'handling_status' => $this->current_status,
+            'can_delete_case' => $request->user()?->hasRole('admin') === true
+                && $this->current_status === \App\Models\KasusPenanganan::STATUS_SELESAI,
             'request_status' => $permohonan?->status,
             'kelompok_tani' => $permohonan === null ? null : [
                 'id' => $permohonan->kelompok_tani_id,

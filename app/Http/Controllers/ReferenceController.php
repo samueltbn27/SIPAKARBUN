@@ -13,6 +13,8 @@ class ReferenceController extends Controller
         $query = trim((string) $request->query('q', ''));
         $selected = $request->integer('selected');
 
+        $fields = ['id', 'disbun_record_id', 'kode', 'kode_kelompok', 'nama', 'jenis_komoditi', 'kabupaten', 'kecamatan', 'desa', 'kelurahan', 'latitude', 'longitude', 'source_is_active'];
+
         $rows = RefKelompokTani::query()
             ->tersedia()
             ->when($query !== '', function ($builder) use ($query): void {
@@ -28,16 +30,17 @@ class ReferenceController extends Controller
             })
             ->orderBy('nama')
             ->limit(25)
-            ->get(['id', 'kode', 'kode_kelompok', 'nama', 'jenis_komoditi', 'kabupaten', 'kecamatan', 'desa', 'kelurahan', 'source_is_active']);
+            ->get($fields);
 
         if ($selected > 0 && ! $rows->contains('id', $selected)) {
-            $chosen = RefKelompokTani::query()->tersedia()->whereKey($selected)->first(['id', 'kode', 'kode_kelompok', 'nama', 'jenis_komoditi', 'kabupaten', 'kecamatan', 'desa', 'kelurahan', 'source_is_active']);
+            $chosen = RefKelompokTani::query()->tersedia()->whereKey($selected)->first($fields);
             if ($chosen !== null) $rows->push($chosen);
         }
 
         return response()->json([
             'data' => $rows->map(fn (RefKelompokTani $row): array => [
                 'id' => (int) $row->id,
+                'external_id' => $row->disbun_record_id,
                 'kode' => (string) ($row->kode ?? ''),
                 'kode_kelompok' => (string) ($row->kode_kelompok ?? ''),
                 'nama' => (string) $row->nama,
@@ -46,6 +49,8 @@ class ReferenceController extends Controller
                 'kecamatan' => $row->kecamatan,
                 'desa' => $row->desa,
                 'kelurahan' => $row->kelurahan,
+                'latitude' => $row->latitude !== null ? (float) $row->latitude : null,
+                'longitude' => $row->longitude !== null ? (float) $row->longitude : null,
                 'is_active' => (bool) $row->source_is_active,
             ])->values(),
         ]);

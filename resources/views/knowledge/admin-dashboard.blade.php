@@ -23,7 +23,7 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Admin Panel</span><span>/</span><span class="text-[#176b45]">Dashboard</span></div>
-            <h1 class="text-2xl sm:text-[28px] font-bold tracking-tight text-[#173b29]">Selamat datang, {{ auth()->user()?->name }} <span class="text-xl">👋</span></h1>
+            <h1 class="text-2xl sm:text-[28px] font-bold tracking-tight text-[#173b29]">Selamat datang, {{ auth()->user()?->name }}</h1>
             <p class="mt-1 text-sm text-[#77847c]">Kelola pengguna, persetujuan akun, dan pantau aktivitas sistem.</p>
         </div>
         @if($userStats['pending'] > 0)
@@ -86,7 +86,7 @@
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('knowledge.pengguna.reject', $user) }}" onsubmit="return confirm('Tolak dan hapus akun {{ e($user->name) }}?');">
+                        <form method="POST" action="{{ route('knowledge.pengguna.reject', $user) }}" data-confirm-title="Tolak akun?" data-confirm-message="Akun {{ $user->name }} akan ditolak dan dihapus." data-confirm-action="Tolak" data-confirm-tone="danger">
                             @csrf
                             <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-[#e4d4d4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#c53030] hover:bg-[#fdeaea] transition" title="Tolak & Hapus">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -175,7 +175,7 @@
                                 </button>
                             </form>
                             {{-- Delete --}}
-                            <form method="POST" action="{{ route('knowledge.pengguna.destroy', $user) }}" onsubmit="return confirm('Hapus akun {{ e($user->name) }} permanen? Tindakan ini tidak dapat dibatalkan.');">
+                            <form method="POST" action="{{ route('knowledge.pengguna.destroy', $user) }}" data-confirm-title="Hapus akun?" data-confirm-message="Akun {{ $user->name }} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan." data-confirm-action="Hapus" data-confirm-tone="danger">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-[#e4d4d4] bg-white p-1.5 text-[#c53030] hover:bg-[#fdeaea] transition" title="Hapus permanen">

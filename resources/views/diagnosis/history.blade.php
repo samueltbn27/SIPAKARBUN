@@ -83,9 +83,9 @@
 
         {{-- Loading state: tampil saat form filter dikirim --}}
         <div x-show="submitting" x-cloak
-             class="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-[#f7faf8]/60">
-            <span class="flex items-center gap-3 rounded-full bg-white px-5 py-3 shadow-lg">
-                <span class="h-5 w-5 animate-spin rounded-full border-2 border-[#e4ece7] border-t-[#176b45]"></span>
+             class="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-[#f7faf8]/70 px-4 backdrop-blur-[1px]">
+            <span class="loading-surface flex w-full max-w-xs items-center justify-center gap-3 rounded-xl px-5 py-4 shadow-lg">
+                <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
                 <span class="text-sm font-semibold text-[#66746c]">Memuat…</span>
             </span>
         </div>

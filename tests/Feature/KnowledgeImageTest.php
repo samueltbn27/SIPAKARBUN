@@ -48,25 +48,45 @@ class KnowledgeImageTest extends TestCase
         $this->assertNotNull($gejala->fresh());
     }
 
-    public function test_popt_tidak_bisa_mutasi_foto_dan_resource_mengirim_url_foto(): void
+    public function test_popt_dapat_mengusulkan_draft_dan_resource_mengirim_url_foto(): void
     {
         $popt = $this->createPopt();
         $gejala = Gejala::factory()->create(['image_path' => 'knowledge/gejala/example.webp']);
         $penyakit = Penyakit::factory()->create(['image_path' => 'knowledge/penyakit/example.webp']);
 
         $this->actingAs($popt)->post('/knowledge/gejala', [
-            'nama' => 'Tidak boleh',
+            'nama' => 'Draft kontributor',
             'image' => UploadedFile::fake()->image('blocked.jpg'),
-        ])->assertForbidden();
+        ])->assertRedirect();
+        $this->assertDatabaseHas('gejala', [
+            'nama' => 'Draft kontributor',
+            'status' => 'draft',
+        ]);
+
+        $baseUrl = rtrim((string) config('app.url'), '/');
 
         $this->actingAs($popt)->getJson('/api/gejala')->assertOk()
             ->assertJsonPath('data.0.image_path', 'knowledge/gejala/example.webp')
-            ->assertJsonPath('data.0.image_url', 'http://localhost/storage/knowledge/gejala/example.webp');
+            ->assertJsonPath('data.0.image_url', $baseUrl.'/storage/knowledge/gejala/example.webp');
 
         $this->actingAs($popt)->getJson('/api/penyakit')->assertOk()
             ->assertJsonFragment(['image_path' => 'knowledge/penyakit/example.webp'])
-            ->assertJsonFragment(['image_url' => 'http://localhost/storage/knowledge/penyakit/example.webp']);
+            ->assertJsonFragment(['image_url' => $baseUrl.'/storage/knowledge/penyakit/example.webp']);
 
         $this->assertNotNull($penyakit->fresh());
+    }
+
+    public function test_image_url_mengikuti_origin_request_dan_port_aplikasi(): void
+    {
+        $popt = $this->createPopt();
+        Gejala::factory()->create([
+            'image_path' => 'knowledge/gejala/bpkc-cengkeh.svg',
+            'nama' => 'Daun berguguran secara mendadak',
+        ]);
+
+        $this->actingAs($popt)
+            ->getJson('http://127.0.0.1:8000/api/gejala')
+            ->assertOk()
+            ->assertJsonPath('data.0.image_url', 'http://127.0.0.1:8000/storage/knowledge/gejala/bpkc-cengkeh.svg');
     }
 }
