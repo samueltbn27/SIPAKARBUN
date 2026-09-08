@@ -26,6 +26,11 @@ class DisbunReferenceSyncTest extends TestCase
             'services.shared_referensi.page_delay_ms' => 0,
             'services.shared_referensi.rate_limit_backoff_ms' => 0,
         ]);
+
+        // RefreshDatabase may run the base reference fixture during the
+        // migration. Each sync test needs an explicitly empty local source
+        // so its fetched dataset is the only Disbun dataset being asserted.
+        RefKomoditas::query()->delete();
     }
 
     public function test_sync_mengambil_semua_halaman_dan_idempotent(): void
