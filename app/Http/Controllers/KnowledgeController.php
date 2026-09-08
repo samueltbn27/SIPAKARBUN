@@ -20,6 +20,7 @@ use App\Models\PermohonanPenanganan;
 use App\Models\RefKomoditas;
 use App\Models\Solusi;
 use App\Services\KnowledgeImageService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -197,7 +198,7 @@ class KnowledgeController extends Controller
 
     public function penyakitStore(StorePenyakitRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $komoditasIds = $data['komoditas_id'] ?? [];
         $image = $request->file('image');
         unset($data['komoditas_id']);
@@ -227,6 +228,7 @@ class KnowledgeController extends Controller
 
     public function penyakitEdit(Penyakit $penyakit): View
     {
+        $this->ensureCanEditKnowledge($penyakit);
         $komoditas = RefKomoditas::runtimeTersedia()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $selectedKomoditas = $penyakit->penyakitKomoditas->pluck('komoditas_id')->toArray();
         return view('knowledge.penyakit.edit', compact('penyakit', 'komoditas', 'selectedKomoditas'));
@@ -234,7 +236,7 @@ class KnowledgeController extends Controller
 
     public function penyakitUpdate(UpdatePenyakitRequest $request, Penyakit $penyakit): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $hasKomoditas = array_key_exists('komoditas_id', $data);
         $komoditasIds = $data['komoditas_id'] ?? [];
         $image = $request->file('image');
@@ -296,7 +298,7 @@ class KnowledgeController extends Controller
 
     public function gejalaStore(StoreGejalaRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $image = $request->file('image');
         unset($data['image']);
         $data['status'] = $data['status'] ?? Gejala::STATUS_DRAFT;
@@ -314,12 +316,13 @@ class KnowledgeController extends Controller
 
     public function gejalaEdit(Gejala $gejala): View
     {
+        $this->ensureCanEditKnowledge($gejala);
         return view('knowledge.gejala.edit', compact('gejala'));
     }
 
     public function gejalaUpdate(UpdateGejalaRequest $request, Gejala $gejala): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $image = $request->file('image');
         unset($data['image']);
 
@@ -370,7 +373,7 @@ class KnowledgeController extends Controller
 
     public function aturanCfStore(StoreAturanCfRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
         $data['status'] = $data['status'] ?? AturanCf::STATUS_DRAFT;
@@ -390,6 +393,7 @@ class KnowledgeController extends Controller
 
     public function aturanCfEdit(AturanCf $aturanCf): View
     {
+        $this->ensureCanEditKnowledge($aturanCf);
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
         $gejalaList = Gejala::aktifSaja()->orderBy('nama')->pluck('nama', 'id');
 
@@ -398,7 +402,7 @@ class KnowledgeController extends Controller
 
     public function aturanCfUpdate(UpdateAturanCfRequest $request, AturanCf $aturanCf): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $data['updated_by'] = auth()->id();
 
         $oldCf = $aturanCf->cf_pakar;
@@ -424,7 +428,7 @@ class KnowledgeController extends Controller
 
     public function aturanCfDestroy(AturanCf $aturanCf): RedirectResponse
     {
-        if (!auth()->user()->hasAnyRole(['admin', 'popt'])) {
+        if (!auth()->user()->hasAnyRole(['admin', 'operator_uptd'])) {
             return back()->with('error', 'Anda tidak memiliki hak menghapus aturan CF.');
         }
 
@@ -462,7 +466,7 @@ class KnowledgeController extends Controller
 
     public function solusiStore(StoreSolusiRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->forceDraftForPopt($request->validated());
         $data['status'] = $data['status'] ?? Solusi::STATUS_DRAFT;
 
         $solusi = Solusi::create($data);
@@ -474,13 +478,14 @@ class KnowledgeController extends Controller
 
     public function solusiEdit(Solusi $solusi): View
     {
+        $this->ensureCanEditKnowledge($solusi);
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
         return view('knowledge.solusi.edit', compact('solusi', 'penyakitList'));
     }
 
     public function solusiUpdate(UpdateSolusiRequest $request, Solusi $solusi): RedirectResponse
     {
-        $solusi->update($request->validated());
+        $solusi->update($this->forceDraftForPopt($request->validated()));
 
         ActivityLog::record('Solusi', 'updated', $solusi->judul, $solusi->id, "Mengubah Solusi \"{$solusi->judul}\"");
 
@@ -528,7 +533,7 @@ class KnowledgeController extends Controller
 
     public function publikasiToggle(Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->hasAnyRole(['admin', 'popt']), 403);
+        abort_unless($request->user()?->hasAnyRole(['admin', 'operator_uptd']), 403);
 
         $request->validate([
             'model' => ['required', 'in:Penyakit,Gejala,AturanCf,Solusi'],
@@ -566,6 +571,29 @@ class KnowledgeController extends Controller
         $riwayat = ActivityLog::latest('created_at')->paginate(20);
 
         return view('knowledge.riwayat.index', compact('riwayat'));
+    }
+
+    private function canManageKnowledge(): bool
+    {
+        return auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
+    }
+
+    private function forceDraftForPopt(array $data): array
+    {
+        if (auth()->user()?->hasRole('popt')) {
+            $data['status'] = 'draft';
+        }
+
+        return $data;
+    }
+
+    private function ensureCanEditKnowledge(Model $record): void
+    {
+        abort_unless(
+            $this->canManageKnowledge()
+                || (auth()->user()?->hasRole('popt') && $record->getAttribute('status') === 'draft'),
+            403,
+        );
     }
 
 }

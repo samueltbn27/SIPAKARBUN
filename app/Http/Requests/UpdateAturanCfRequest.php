@@ -10,7 +10,15 @@ class UpdateAturanCfRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'popt']) ?? false;
+        $user = $this->user();
+        if ($user?->hasAnyRole(['admin', 'operator_uptd'])) {
+            return true;
+        }
+
+        $aturanCf = $this->route('aturanCf') ?? $this->route('aturan_cf');
+        return $user?->hasRole('popt') === true
+            && is_object($aturanCf)
+            && $aturanCf->status === 'draft';
     }
 
     public function rules(): array

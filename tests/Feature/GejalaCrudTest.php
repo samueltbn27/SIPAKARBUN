@@ -32,7 +32,7 @@ class GejalaCrudTest extends TestCase
 
     public function test_nama_wajib_diisi(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
 
         $this->postJson('/api/admin/gejala', [])
             ->assertUnprocessable()
@@ -41,7 +41,7 @@ class GejalaCrudTest extends TestCase
 
     public function test_kode_harus_unik(): void
     {
-        Sanctum::actingAs($this->createPopt());
+        Sanctum::actingAs($this->createOperator());
         Gejala::factory()->create(['kode' => 'GJ-001']);
 
         $this->postJson('/api/admin/gejala', [

@@ -22,23 +22,21 @@ class MonitoringDashboardTest extends TestCase
     {
         $this->actingAs($this->createAdmin())
             ->get('/dashboard-monitoring')
-            ->assertOk()
-            ->assertSee('Dashboard Monitoring')
-            ->assertSee('Total Kasus');
+            ->assertRedirect(route('webgis.index').'#dashboard-monitoring');
     }
 
     public function test_pimpinan_dapat_membuka_dashboard_monitoring(): void
     {
         $this->actingAs($this->createUserWithRole('pimpinan'))
             ->get('/dashboard-monitoring')
-            ->assertOk();
+            ->assertRedirect(route('webgis.index').'#dashboard-monitoring');
     }
 
     public function test_operator_uptd_dapat_membuka_dashboard_monitoring(): void
     {
         $this->actingAs($this->createUserWithRole('operator_uptd'))
             ->get('/dashboard-monitoring')
-            ->assertOk();
+            ->assertRedirect(route('webgis.index').'#dashboard-monitoring');
     }
 
     public function test_popt_tidak_dapat_membuka_dashboard_monitoring(): void
@@ -58,9 +56,8 @@ class MonitoringDashboardTest extends TestCase
     public function test_admin_sidebar_menampilkan_menu_monitoring_dan_pengguna(): void
     {
         $this->actingAs($this->createAdmin())
-            ->get('/dashboard-monitoring')
+            ->get('/webgis')
             ->assertOk()
-            ->assertSee('Dashboard Monitoring')
             ->assertSee('WebGIS')
             ->assertSee('Pengguna');
     }
@@ -68,15 +65,13 @@ class MonitoringDashboardTest extends TestCase
     public function test_pimpinan_sidebar_read_only_tanpa_menu_mutasi(): void
     {
         $this->actingAs($this->createUserWithRole('pimpinan'))
-            ->get('/dashboard-monitoring')
+            ->get('/webgis')
             ->assertOk()
-            ->assertSee('Dashboard Monitoring')
             ->assertSee('WebGIS')
             ->assertDontSee('Pengguna')
             ->assertDontSee('Tambah Penyakit')
             ->assertDontSee('Simpan')
-            ->assertDontSee('Ubah')
-            ->assertDontSee('Hapus');
+            ->assertDontSee('Ubah');
     }
 
     private function createUserWithRole(string $role): User

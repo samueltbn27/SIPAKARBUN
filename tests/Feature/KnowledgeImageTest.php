@@ -32,7 +32,7 @@ class KnowledgeImageTest extends TestCase
         Storage::disk('public')->assertExists($created->image_path);
         $oldPath = $created->image_path;
 
-        $this->actingAs($this->createPopt())->put('/knowledge/gejala/'.$created->id, [
+        $this->actingAs($this->createOperator())->put('/knowledge/gejala/'.$created->id, [
             'nama' => 'Gejala dengan foto baru',
             'status' => 'aktif',
             'image' => UploadedFile::fake()->image('gejala-b.png'),
@@ -48,24 +48,28 @@ class KnowledgeImageTest extends TestCase
         $this->assertNotNull($gejala->fresh());
     }
 
-    public function test_operator_tidak_bisa_mutasi_foto_dan_resource_mengirim_url_foto(): void
+    public function test_popt_dapat_mengusulkan_draft_dan_resource_mengirim_url_foto(): void
     {
-        $operator = $this->createOperator();
+        $popt = $this->createPopt();
         $gejala = Gejala::factory()->create(['image_path' => 'knowledge/gejala/example.webp']);
         $penyakit = Penyakit::factory()->create(['image_path' => 'knowledge/penyakit/example.webp']);
 
-        $this->actingAs($operator)->post('/knowledge/gejala', [
-            'nama' => 'Tidak boleh',
+        $this->actingAs($popt)->post('/knowledge/gejala', [
+            'nama' => 'Draft kontributor',
             'image' => UploadedFile::fake()->image('blocked.jpg'),
-        ])->assertForbidden();
+        ])->assertRedirect();
+        $this->assertDatabaseHas('gejala', [
+            'nama' => 'Draft kontributor',
+            'status' => 'draft',
+        ]);
 
         $baseUrl = rtrim((string) config('app.url'), '/');
 
-        $this->actingAs($operator)->getJson('/api/gejala')->assertOk()
+        $this->actingAs($popt)->getJson('/api/gejala')->assertOk()
             ->assertJsonPath('data.0.image_path', 'knowledge/gejala/example.webp')
             ->assertJsonPath('data.0.image_url', $baseUrl.'/storage/knowledge/gejala/example.webp');
 
-        $this->actingAs($operator)->getJson('/api/penyakit')->assertOk()
+        $this->actingAs($popt)->getJson('/api/penyakit')->assertOk()
             ->assertJsonFragment(['image_path' => 'knowledge/penyakit/example.webp'])
             ->assertJsonFragment(['image_url' => $baseUrl.'/storage/knowledge/penyakit/example.webp']);
 

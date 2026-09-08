@@ -11,7 +11,15 @@ class UpdatePenyakitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'popt']) ?? false;
+        $user = $this->user();
+        if ($user?->hasAnyRole(['admin', 'operator_uptd'])) {
+            return true;
+        }
+
+        $penyakit = $this->route('penyakit');
+        return $user?->hasRole('popt') === true
+            && is_object($penyakit)
+            && $penyakit->status === 'draft';
     }
 
     public function rules(): array

@@ -79,6 +79,14 @@ Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
             ->whereNumber('id');
     });
 
+/* Completed cases may only be archived by an Admin. */
+Route::middleware(['auth:sanctum', 'role:admin'])
+    ->prefix('kasus')
+    ->group(function (): void {
+        Route::delete('/{id}', [KasusController::class, 'destroy'])
+            ->whereNumber('id');
+    });
+
 /* M2: POPT assigned-case read and status update. */
 Route::middleware(['auth:sanctum', 'role:popt'])
     ->prefix('popt')
@@ -90,8 +98,8 @@ Route::middleware(['auth:sanctum', 'role:popt'])
             ->whereNumber('id');
     });
 
-/* M1: Knowledge CRUD dimiliki Admin/POPT; OP hanya read. */
-Route::middleware(['auth:sanctum', 'role:admin|popt'])
+/* M1: Knowledge CRUD dimiliki Admin/Operator UPTD; POPT hanya read. */
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->prefix('admin')
     ->group(function (): void {
         Route::apiResource('penyakit', PenyakitController::class);
@@ -101,7 +109,7 @@ Route::middleware(['auth:sanctum', 'role:admin|popt'])
             ->except(['destroy']);
     });
 
-Route::middleware(['auth:sanctum', 'role:admin|popt'])
+Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->prefix('admin')
     ->group(function (): void {
         Route::delete('aturan-cf/{aturanCf}', [AturanCfController::class, 'destroy'])

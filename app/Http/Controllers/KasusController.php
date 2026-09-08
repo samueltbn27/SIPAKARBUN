@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
  *   GET   /api/kasus/{id}              — detail kasus lengkap.
  *   GET   /api/kasus/{id}/history      — riwayat status (append-only).
  *   POST  /api/kasus/{id}/assign-popt  — tetapkan POPT ke kasus.
+ *   DELETE /api/kasus/{id}             — arsipkan kasus selesai (Admin).
  *
  * GET read contract dibuka untuk admin/operator/pimpinan secara global dan
  * untuk POPT dengan scope penugasan aktifnya. Mutation tetap hanya milik
@@ -85,5 +86,19 @@ class KasusController extends Controller
         return (new KasusPenangananResource(
             $kasus->load(['permohonan.diagnosis', 'penugasanAktif.popt', 'riwayatStatus.actor'])
         ))->response($request);
+    }
+
+    public function destroy(Request $request, int $id)
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->service->deleteCompletedCase($kasus, $request->user());
+
+        return response()->json([
+            'message' => 'Kasus selesai berhasil dihapus dari WebGIS.',
+            'data' => [
+                'kasus_id' => $id,
+            ],
+        ]);
     }
 }

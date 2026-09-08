@@ -462,7 +462,11 @@ class WebPermohonanTest extends TestCase
             ->assertSee('latitude_kasus')
             ->assertSee('longitude_kasus')
             ->assertSee('alamat_kasus')
-            ->assertSee('terpisah dari lokasi kelompok tani');
+            ->assertSee('terpisah dari lokasi kelompok tani')
+            ->assertSee('x-model="latitudeKasus"', false)
+            ->assertSee('x-model="longitudeKasus"', false)
+            ->assertSee('x-model="alamatKasus"', false)
+            ->assertSee('x-model="catatanPemohon"', false);
     }
 
     public function test_create_menampilkan_aturan_validasi_bukti(): void

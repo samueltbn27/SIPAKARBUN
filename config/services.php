@@ -78,6 +78,8 @@ return [
 
     // Local/UAT only. Keep the actual values in the ignored .env file.
     'uat' => [
+        // Explicit local/demo-only credential. Never set this on production.
+        'demo_password' => env('SIPAKARBUN_DEMO_PASSWORD'),
         'accounts' => [
             'operator_uptd' => [
                 'password' => env('SIPAKARBUN_UAT_OPERATOR_PASSWORD'),

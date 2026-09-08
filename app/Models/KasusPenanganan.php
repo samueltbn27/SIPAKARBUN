@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Model KasusPenanganan — entitas kasus yang lahir ketika permohonan
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class KasusPenanganan extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const STATUS_DITERIMA = 'diterima';
 

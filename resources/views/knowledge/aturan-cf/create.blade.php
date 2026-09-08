@@ -53,7 +53,7 @@
                     @enderror
                 </div>
 
-                <x-knowledge.status-select name="status" default="draft" />
+                <x-knowledge.status-select name="status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />
 
                 <div class="flex items-center gap-3 pt-2">
                     <button type="submit"

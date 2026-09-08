@@ -22,6 +22,8 @@ import {
     getUniqueRegencies,
 } from './filters';
 import { getStatusConfig, getStatusOptions } from './statuses';
+import { groupByStatus } from './statistics';
+import { initializeMonitoringDashboard } from './dashboard';
 
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: markerIconRetina,
@@ -209,6 +211,42 @@ function renderStatusLegend() {
     });
 }
 
+function renderStatusSummary(cases, filters) {
+    const summary = document.querySelector('[data-webgis-status-summary]');
+
+    if (!summary) {
+        return;
+    }
+
+    summary.replaceChildren();
+
+    groupByStatus(applyFilters(cases, filters)).forEach(({ key, label, count }) => {
+        const config = getStatusConfig(key);
+        const card = document.createElement('article');
+        card.className = 'rounded-xl border border-[#e6eee8] bg-[#f7faf8] p-3';
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between gap-2';
+
+        const marker = document.createElement('span');
+        marker.className = `flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ring-2 ring-white ${config.markerClass}`;
+        marker.textContent = config.markerSymbol;
+        marker.setAttribute('aria-hidden', 'true');
+
+        const countElement = document.createElement('strong');
+        countElement.className = 'text-lg font-bold text-[#173b29]';
+        countElement.textContent = String(count);
+
+        const labelElement = document.createElement('p');
+        labelElement.className = 'mt-2 text-xs font-semibold leading-4 text-[#526159]';
+        labelElement.textContent = label;
+
+        header.append(marker, countElement);
+        card.append(header, labelElement);
+        summary.append(card);
+    });
+}
+
 function getFilterControls() {
     return {
         status: document.querySelector('[data-webgis-filter="status"]'),
@@ -252,22 +290,19 @@ function updateActiveFilterSummary(activeFilterCount) {
 
 export function initializeWebGIS(container, cases) {
     const { map, caseLayer } = initializeMap(container);
-    initializeCaseDetailDrawer();
     const controls = getFilterControls();
     const resetButton = document.querySelector('[data-webgis-reset]');
     const caseCount = document.querySelector('[data-webgis-case-count]');
     const emptyMessage = document.querySelector('[data-webgis-empty]');
     const datasetEmptyMessage = document.querySelector('[data-webgis-dataset-empty]');
     const filterState = createFilterState();
-    const mappableCases = cases.filter(hasValidCaseCoordinates);
-
-    setSelectOptions(controls.status, getStatusOptions(), 'Semua Status');
-    setSelectOptions(controls.commodity, getUniqueCommodities(mappableCases), 'Semua Komoditas');
-    setSelectOptions(controls.disease, getUniqueDiseases(mappableCases), 'Semua Penyakit');
-    setSelectOptions(controls.popt, getUniquePopts(mappableCases), 'Semua POPT');
-    setSelectOptions(controls.regency, getUniqueRegencies(mappableCases), 'Semua Kabupaten/Kota');
-    refreshDistrictOptions(controls, filterState, mappableCases);
-    renderStatusLegend();
+    let monitoringCases = [...cases];
+    let mappableCases = cases.filter(hasValidCaseCoordinates);
+    const monitoringDashboard = initializeMonitoringDashboard(monitoringCases, {
+        controls,
+        filters: filterState,
+        manageControls: false,
+    });
 
     const renderFilteredCases = () => {
         const filteredCases = applyFilters(mappableCases, filterState);
@@ -294,7 +329,37 @@ export function initializeWebGIS(container, cases) {
         }
 
         updateActiveFilterSummary(countActiveFilters(filterState));
+        renderStatusSummary(monitoringCases, filterState);
+        monitoringDashboard.render();
     };
+
+    const updateFilterOptions = () => {
+        setSelectOptions(controls.status, getStatusOptions(), 'Semua Status');
+        setSelectOptions(controls.commodity, getUniqueCommodities(monitoringCases), 'Semua Komoditas');
+        setSelectOptions(controls.disease, getUniqueDiseases(monitoringCases), 'Semua Penyakit');
+        setSelectOptions(controls.popt, getUniquePopts(monitoringCases), 'Semua POPT');
+        setSelectOptions(controls.regency, getUniqueRegencies(monitoringCases), 'Semua Kabupaten/Kota');
+        refreshDistrictOptions(controls, filterState, monitoringCases);
+    };
+
+    const refreshCasesAfterDelete = async () => {
+        const refreshedCases = await getCases();
+        monitoringCases.splice(0, monitoringCases.length, ...refreshedCases);
+        mappableCases = refreshedCases.filter(hasValidCaseCoordinates);
+        updateFilterOptions();
+        renderFilteredCases();
+
+        const feedback = document.querySelector('[data-webgis-delete-feedback]');
+        if (feedback) {
+            feedback.hidden = false;
+            feedback.textContent = 'Kasus selesai berhasil dihapus dari WebGIS.';
+        }
+    };
+
+    initializeCaseDetailDrawer({ onDeleted: refreshCasesAfterDelete });
+
+    updateFilterOptions();
+    renderStatusLegend();
 
     Object.entries(controls).forEach(([filterName, control]) => {
         control?.addEventListener('change', () => {
@@ -302,7 +367,7 @@ export function initializeWebGIS(container, cases) {
 
             if (filterName === 'regency') {
                 filterState.district = '';
-                refreshDistrictOptions(controls, filterState, mappableCases);
+                refreshDistrictOptions(controls, filterState, monitoringCases);
             }
 
             renderFilteredCases();
@@ -318,7 +383,7 @@ export function initializeWebGIS(container, cases) {
             }
         });
 
-        refreshDistrictOptions(controls, filterState, mappableCases);
+        refreshDistrictOptions(controls, filterState, monitoringCases);
         renderFilteredCases();
     });
 
@@ -349,6 +414,17 @@ async function loadWebGIS(container) {
 
         if (errorState) {
             errorState.hidden = false;
+        }
+
+        const dashboardLoadingState = document.querySelector('[data-dashboard-loading]');
+        const dashboardErrorState = document.querySelector('[data-dashboard-error]');
+
+        if (dashboardLoadingState) {
+            dashboardLoadingState.hidden = true;
+        }
+
+        if (dashboardErrorState) {
+            dashboardErrorState.hidden = false;
         }
     }
 }

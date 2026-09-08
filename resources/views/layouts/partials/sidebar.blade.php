@@ -8,9 +8,8 @@
     $initials = strtoupper(implode('', array_map(fn($w) => substr($w, 0, 1), explode(' ', trim($userName), 2))));
     $pendingUsers = $userRole === 'admin' ? \App\Models\User::where('is_active', false)->count() : 0;
     $canAccessKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt', 'operator_uptd']) ?? false;
-    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt']) ?? false;
+    $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan']) ?? false;
-    $canAccessMonitoring = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'pimpinan']) ?? false;
     $navSections = [
         [
             'title' => 'Dashboard',
@@ -23,18 +22,9 @@
     if ($canAccessWebgis) {
         $navSections[0]['items'][] = [
             'route' => 'webgis.index',
-            'label' => 'WebGIS',
+            'label' => 'WebGIS & Monitoring',
             'icon' => 'M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Zm0-7a3 3 0 100-6 3 3 0 000 6Z',
             'match' => 'webgis',
-        ];
-    }
-
-    if ($canAccessMonitoring) {
-        $navSections[0]['items'][] = [
-            'route' => 'monitoring.dashboard',
-            'label' => 'Dashboard Monitoring',
-            'icon' => 'M3 13.5 8.25 8.25l3.75 3.75L21 3m0 0v6m0-6h-6M4 20h16',
-            'match' => 'monitoring.dashboard',
         ];
     }
 
@@ -58,7 +48,8 @@
         ];
     }
 
-    // Master Data dikelola Admin dan POPT. Operator mendapat referensi read-only.
+    // Master Data dikelola Admin dan Operator UPTD. POPT berkontribusi pada
+    // knowledge teknis melalui draft, bukan pada reference/master data.
     if ($canManageKnowledge) {
         $navSections[] = [
             'title' => 'Master Data',
@@ -93,12 +84,23 @@
     }
 
     if ($canAccessKnowledge) {
+        $knowledgeItems = [
+            ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
+            ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
+        ];
+
+        if ($userRole === 'popt') {
+            array_unshift($knowledgeItems,
+                ['route' => 'knowledge.penyakit.index', 'label' => 'Penyakit', 'icon' => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 01-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', 'match' => 'knowledge.penyakit'],
+                ['route' => 'knowledge.gejala.index', 'label' => 'Gejala', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', 'match' => 'knowledge.gejala'],
+                ['route' => 'knowledge.solusi.index', 'label' => 'Solusi / Rekomendasi', 'icon' => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', 'match' => 'knowledge.solusi'],
+                ['route' => 'knowledge.aturan-cf.index', 'label' => 'Aturan Penyakit-Gejala (CF)', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'match' => 'knowledge.aturan-cf'],
+            );
+        }
+
         $navSections[] = [
             'title' => 'Knowledge',
-            'items' => [
-                ['route' => 'knowledge.publikasi.index', 'label' => 'Publikasi Knowledge', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'match' => 'knowledge.publikasi'],
-                ['route' => 'knowledge.riwayat.index', 'label' => 'Riwayat Perubahan', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', 'match' => 'knowledge.riwayat'],
-            ],
+            'items' => $knowledgeItems,
         ];
     }
 
@@ -126,12 +128,21 @@
     }
 @endphp
 
-<div class="fixed inset-0 z-40 bg-[#173b29]/40 lg:hidden" x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false" style="display: none;"></div>
+<div class="fixed inset-0 z-40 bg-[#173b29]/40 lg:hidden"
+     x-cloak
+     x-show="sidebarOpen"
+     x-transition.opacity
+     :class="sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'"
+     aria-hidden="true"
+     @click="sidebarOpen = false"
+     style="display: none;"></div>
 
 <!-- SIDEBAR v2.1 -->
-<aside class="sidebar-shell fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col overflow-hidden border-r border-[#e4ece7] bg-white transition-[width,transform] duration-300 ease-out -translate-x-full lg:translate-x-0"
+<aside id="app-sidebar" class="sidebar-shell fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-hidden border-r border-[#e4ece7] bg-white transition-[width,transform] duration-300 ease-out"
+       :data-sidebar-open="sidebarOpen.toString()"
+       aria-label="Navigasi utama"
        :class="[
-           sidebarOpen ? 'translate-x-0' : '',
+           sidebarOpen ? 'pointer-events-auto' : 'pointer-events-none lg:pointer-events-auto',
            sidebarCollapsed ? 'lg:w-[4.75rem]' : 'lg:w-64'
        ]">
     {{-- Header --}}
@@ -148,7 +159,7 @@
             <svg width="16" height="16" x-show="!sidebarCollapsed" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m15 6-6 6 6 6"/></svg>
             <svg width="16" height="16" x-show="sidebarCollapsed" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m9 6 6 6-6 6"/></svg>
         </button>
-        <button @click="sidebarOpen = false" class="ml-auto inline-flex rounded-lg p-2 text-[#87958c] transition-colors hover:bg-[#eff7f1] hover:text-[#176b45] lg:hidden" aria-label="Tutup navigasi">
+        <button type="button" @click="sidebarOpen = false" class="ml-auto inline-flex rounded-lg p-2 text-[#87958c] transition-colors hover:bg-[#eff7f1] hover:text-[#176b45] lg:hidden" aria-label="Tutup navigasi">
             <svg width="20" height="20" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
     </div>

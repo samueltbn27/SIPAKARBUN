@@ -54,7 +54,7 @@
                     @enderror
                 </div>
 
-                <x-knowledge.status-select name="status" :value="$aturanCf->status" />
+                <x-knowledge.status-select name="status" :value="$aturanCf->status" :locked="auth()->user()?->hasRole('popt') ?? false" />
 
                 <div class="flex items-center gap-3 pt-2">
                     <button type="submit"

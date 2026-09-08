@@ -29,6 +29,10 @@
         #page-loader.is-active { display: flex; }
         .page-loader__spinner { width: 2.5rem; height: 2.5rem; border: 4px solid #dce9df; border-top-color: #176b45; border-radius: 9999px; animation: sipakarbun-spin .8s linear infinite; }
         @keyframes sipakarbun-spin { to { transform: rotate(360deg); } }
+        @media (max-width: 1023px) {
+            .sidebar-shell[data-sidebar-open="false"] { transform: translateX(-100%); }
+            .sidebar-shell[data-sidebar-open="true"] { transform: translateX(0); }
+        }
         @media (min-width: 1024px) {
             .sidebar-shell { transform: translateX(0); }
             .sidebar-collapse-toggle { display: inline-flex; }
@@ -60,7 +64,22 @@
     <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
     <x-page-loader />
 
-    <div class="min-h-full flex" x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('sipakarbun.sidebar-collapsed') === 'true' }" x-init="document.documentElement.classList.toggle('sidebar-precollapsed', sidebarCollapsed); $watch('sidebarCollapsed', value => { localStorage.setItem('sipakarbun.sidebar-collapsed', value); document.documentElement.classList.toggle('sidebar-precollapsed', value); })">
+    <div class="min-h-full flex"
+         x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('sipakarbun.sidebar-collapsed') === 'true' }"
+         x-init="
+             document.documentElement.classList.toggle('sidebar-precollapsed', sidebarCollapsed);
+             $watch('sidebarCollapsed', value => {
+                 localStorage.setItem('sipakarbun.sidebar-collapsed', value);
+                 document.documentElement.classList.toggle('sidebar-precollapsed', value);
+             });
+             $watch('sidebarOpen', value => document.body.classList.toggle('overflow-hidden', value && window.innerWidth < 1024));
+             const syncSidebarViewport = () => {
+                 if (window.innerWidth >= 1024) sidebarOpen = false;
+                 document.body.classList.toggle('overflow-hidden', sidebarOpen && window.innerWidth < 1024);
+             };
+             window.addEventListener('resize', syncSidebarViewport);
+         "
+         @keydown.escape.window="sidebarOpen = false">
         @include('layouts.partials.sidebar')
 
         <div class="app-main-shell flex-1 flex flex-col min-w-0 transition-[padding] duration-300 ease-out"

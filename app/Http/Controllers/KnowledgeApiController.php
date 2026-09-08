@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
  * s.d M1-FR-013.
  *
  * BEDA dengan PenyakitController/GejalaController di tahap #5:
- * - Controller itu (/api/admin/...) untuk CRUD internal Admin/Pakar,
+ * - Controller itu (/api/admin/...) untuk CRUD internal Admin/Operator UPTD,
  *   mengembalikan SEMUA data (termasuk draft/nonaktif) ke user yang
  *   sudah login dengan role tertentu.
  * - Controller ini (/api/penyakit, /api/gejala) untuk DIKONSUMSI

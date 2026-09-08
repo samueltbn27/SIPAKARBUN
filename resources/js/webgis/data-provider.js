@@ -153,6 +153,7 @@ export function normalizeCase(rawCase) {
         popt: normalizePopt(source),
         status: normalizeHandlingStatus(source.handling_status ?? source.current_status ?? source.status),
         request_status: source.request_status ?? request.status ?? null,
+        can_delete_case: source.can_delete_case === true,
         last_note: source.last_note ?? latestHistory?.note ?? null,
         last_status_at: source.last_status_at ?? latestHistory?.changed_at ?? null,
         status_history: normalizedHistory,
@@ -268,4 +269,19 @@ export const activeCaseProvider = new ApiCaseProvider({
 
 export async function getCases() {
     return activeCaseProvider.getCases();
+}
+
+export async function deleteCase(caseId) {
+    if (!caseId) {
+        throw new Error('Case ID is not configured.');
+    }
+
+    const response = await getRuntimeHttpClient().delete(`/api/kasus/${encodeURIComponent(caseId)}`, {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    });
+
+    return response?.data;
 }

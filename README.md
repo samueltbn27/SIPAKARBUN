@@ -4,6 +4,13 @@ SIPAKARBUN adalah aplikasi Laravel untuk diagnosis penyakit tanaman,
 permohonan penanganan, workflow Operator UPTD/POPT, Knowledge Management,
 WebGIS, dan dashboard monitoring.
 
+## Setup & Team Testing
+
+Untuk setup dari clone baru, akun tester lima role, study case, UAT end-to-end,
+dan setup database demo offline, ikuti panduan canonical:
+
+[`docs/TEAM_TESTING_SETUP.md`](docs/TEAM_TESTING_SETUP.md)
+
 ## Menjalankan di Local
 
 Persyaratan: PHP 8.2+, Composer, Node.js/npm, dan database sesuai konfigurasi
