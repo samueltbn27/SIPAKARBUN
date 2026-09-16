@@ -73,6 +73,9 @@ php artisan db:seed --class=SipakarbunDemoSeeder
 | Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 | Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 
+Skenario Pimpinan mencakup menu **WebGIS & Monitoring Kasus** dan
+**Laporan Monitoring**. Keduanya bersifat read-only.
+
 > **Peringatan:** Akun dan password ini hanya untuk local/demo/UAT dan tidak
 > boleh digunakan pada production.
 

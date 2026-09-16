@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KnowledgeController;
+use App\Http\Controllers\MonitoringReportController;
 use App\Http\Controllers\OperatorWorkflowController;
 use App\Http\Controllers\PoptWorkflowController;
 use App\Http\Controllers\WebGISController;
@@ -41,6 +42,10 @@ Route::middleware(['auth', 'role:admin|operator_uptd|popt|pimpinan'])->group(fun
 
 Route::middleware(['auth', 'role:admin|operator_uptd|pimpinan'])->group(function (): void {
     Route::get('/dashboard-monitoring', fn () => redirect()->to(route('webgis.index').'#dashboard-monitoring'))->name('monitoring.dashboard');
+});
+
+Route::middleware(['auth', 'role:admin|pimpinan'])->group(function (): void {
+    Route::get('/laporan-monitoring', [MonitoringReportController::class, 'index'])->name('monitoring.report.index');
 });
 
 // Compatibility path for the existing M1 user-management screen.
