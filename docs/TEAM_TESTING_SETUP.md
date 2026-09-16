@@ -79,7 +79,7 @@ terminal kedua. Jika port 8000 terpakai, gunakan `php artisan serve --port=8001`
 | Operator UPTD | `operator.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Review, terima/tolak, assign POPT, publish |
 | POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Penugasan, status teknis, Draft Knowledge |
 | Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Diagnosis dan permohonan |
-| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | WebGIS dan monitoring read-only |
+| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | WebGIS & Monitoring dan Laporan Monitoring read-only |
 
 Tidak ada role `pakar`. Admin demo dibuat hanya oleh demo seeder; role admin
 tetap tidak tersedia pada form register/user provisioning biasa.
@@ -129,7 +129,10 @@ Reference penting:
 7. Login Pimpinan atau Admin, buka `/webgis`, lalu periksa filter, marker,
    popup, drawer, KPI, dan grafik. Pastikan marker memakai koordinat kasus,
    bukan koordinat Poktan, serta tidak ada marker `[0,0]`.
-8. Sebagai Admin, uji pembatalan modal Hapus Kasus lalu, bila diperlukan,
+8. Sebagai Pimpinan, buka **Laporan Monitoring**, uji filter periode,
+   kabupaten/kota, komoditas, penyakit, dan status. Pastikan ringkasan serta
+   tabel berubah mengikuti filter dan tidak menyediakan aksi perubahan data.
+9. Sebagai Admin, uji pembatalan modal Hapus Kasus lalu, bila diperlukan,
    hapus kasus selesai yang ditandai di atas.
 
 ### POPT sebagai kontributor Knowledge

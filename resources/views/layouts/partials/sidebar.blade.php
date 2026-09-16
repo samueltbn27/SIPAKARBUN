@@ -10,6 +10,7 @@
     $canAccessKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt', 'operator_uptd']) ?? false;
     $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
     $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan']) ?? false;
+    $canAccessMonitoringReport = auth()->user()?->hasAnyRole(['admin', 'pimpinan']) ?? false;
     $navSections = [
         [
             'title' => 'Dashboard',
@@ -25,6 +26,15 @@
             'label' => 'WebGIS & Monitoring',
             'icon' => 'M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Zm0-7a3 3 0 100-6 3 3 0 000 6Z',
             'match' => 'webgis',
+        ];
+    }
+
+    if ($canAccessMonitoringReport) {
+        $navSections[0]['items'][] = [
+            'route' => 'monitoring.report.index',
+            'label' => 'Laporan Monitoring',
+            'icon' => 'M4 19V5m0 14h16M8 16v-5m4 5V7m4 9V3',
+            'match' => 'monitoring.report',
         ];
     }
 

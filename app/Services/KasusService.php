@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\KasusPenanganan;
 use App\Models\PenugasanPopt;
+use App\Models\PermohonanPenanganan;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -125,6 +127,66 @@ class KasusService
     }
 
     /**
+     * Read-only, server-side report query for leadership monitoring.
+     * The model's SoftDeletes scope keeps archived cases out automatically.
+     */
+    public function monitoringReport(array $filters = []): LengthAwarePaginator
+    {
+        return $this->monitoringQuery($filters)
+            ->with(['permohonan', 'penugasanAktif.popt', 'penugasanTerakhir.popt'])
+            ->latest('kasus_penanganan.created_at')
+            ->latest('kasus_penanganan.id')
+            ->paginate(15)
+            ->withQueryString();
+    }
+
+    /** @return array{total: int, active: int, completed: int, postponed: int} */
+    public function monitoringSummary(array $filters = []): array
+    {
+        $query = $this->monitoringQuery($filters);
+
+        $total = (clone $query)->count();
+        $completed = (clone $query)
+            ->where('current_status', KasusPenanganan::STATUS_SELESAI)
+            ->count();
+
+        return [
+            'total' => $total,
+            'active' => $total - $completed,
+            'completed' => $completed,
+            'postponed' => (clone $query)
+                ->where('current_status', KasusPenanganan::STATUS_DITUNDA)
+                ->count(),
+        ];
+    }
+
+    /** @return array{regencies: \Illuminate\Support\Collection, commodities: \Illuminate\Support\Collection, diseases: \Illuminate\Support\Collection} */
+    public function monitoringFilterOptions(): array
+    {
+        return [
+            'regencies' => PermohonanPenanganan::query()
+                ->whereHas('kasus')
+                ->whereNotNull('kabupaten')
+                ->where('kabupaten', '!=', '')
+                ->distinct()
+                ->orderBy('kabupaten')
+                ->pluck('kabupaten'),
+            'commodities' => KasusPenanganan::query()
+                ->whereNotNull('komoditas_name_snapshot')
+                ->where('komoditas_name_snapshot', '!=', '')
+                ->distinct()
+                ->orderBy('komoditas_name_snapshot')
+                ->pluck('komoditas_name_snapshot'),
+            'diseases' => KasusPenanganan::query()
+                ->whereNotNull('penyakit_name_snapshot')
+                ->where('penyakit_name_snapshot', '!=', '')
+                ->distinct()
+                ->orderBy('penyakit_name_snapshot')
+                ->pluck('penyakit_name_snapshot'),
+        ];
+    }
+
+    /**
      * Daftar kasus yang pernah ditugaskan kepada seorang POPT.
      *
      * Assignment yang sudah selesai tetap menjadi bagian dari riwayat baca;
@@ -201,5 +263,36 @@ class KasusService
     private function perPage(array $filters): int
     {
         return max(1, min((int) ($filters['per_page'] ?? 15), 100));
+    }
+
+    private function monitoringQuery(array $filters = []): Builder
+    {
+        $query = KasusPenanganan::query();
+
+        if (! empty($filters['date_from'])) {
+            $query->whereDate('kasus_penanganan.created_at', '>=', $filters['date_from']);
+        }
+
+        if (! empty($filters['date_to'])) {
+            $query->whereDate('kasus_penanganan.created_at', '<=', $filters['date_to']);
+        }
+
+        if (! empty($filters['regency'])) {
+            $query->whereHas('permohonan', fn (Builder $relation) => $relation->where('kabupaten', $filters['regency']));
+        }
+
+        if (! empty($filters['commodity'])) {
+            $query->where('komoditas_name_snapshot', $filters['commodity']);
+        }
+
+        if (! empty($filters['disease'])) {
+            $query->where('penyakit_name_snapshot', $filters['disease']);
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('current_status', $filters['status']);
+        }
+
+        return $query;
     }
 }
