@@ -7,6 +7,7 @@ use App\Http\Controllers\OperatorWorkflowController;
 use App\Http\Controllers\PoptWorkflowController;
 use App\Http\Controllers\WebGISController;
 use App\Http\Controllers\Web\DiagnosisController as WebDiagnosisController;
+use App\Http\Controllers\Web\LaporanGejalaController as WebLaporanGejalaController;
 use App\Http\Controllers\Web\PermohonanController as WebPermohonanController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,11 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::get('/laporan-gejala/{laporanGejala}/foto', \App\Http\Controllers\LaporanGejalaImageController::class)
+    ->whereNumber('laporanGejala')
+    ->middleware('auth')
+    ->name('laporan-gejala.image');
 
 /* Dashboard umum untuk Poktan/M2. */
 Route::middleware('auth')->group(function (): void {
@@ -112,6 +118,10 @@ Route::middleware(['auth', 'role:poktan'])->prefix('diagnosis')->name('diagnosis
     Route::get('/', [WebDiagnosisController::class, 'create'])->name('index');
     Route::post('/', [WebDiagnosisController::class, 'store'])->name('store')->middleware('throttle:diagnosis');
     Route::get('/history', [WebDiagnosisController::class, 'history'])->name('history');
+    Route::get('/laporan-gejala', [WebLaporanGejalaController::class, 'index'])->name('reports.index');
+    Route::post('/laporan-gejala', [WebLaporanGejalaController::class, 'store'])->name('reports.store')->middleware('throttle:permohonan');
+    Route::get('/laporan-gejala/{laporanGejala}', [WebLaporanGejalaController::class, 'show'])->whereNumber('laporanGejala')->name('reports.show');
+    Route::post('/laporan-gejala/{laporanGejala}/informasi', [WebLaporanGejalaController::class, 'respond'])->whereNumber('laporanGejala')->name('reports.respond');
     Route::get('/{id}', [WebDiagnosisController::class, 'show'])->name('show')->whereNumber('id');
 });
 
@@ -143,6 +153,9 @@ Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])
     ->name('kasus.index');
 
 Route::middleware(['auth', 'role:popt'])->prefix('popt')->name('popt.')->group(function (): void {
+    Route::get('/laporan-gejala', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'index'])->name('laporan-gejala.index');
+    Route::get('/laporan-gejala/{laporanGejala}', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'show'])->whereNumber('laporanGejala')->name('laporan-gejala.show');
+    Route::post('/laporan-gejala/{laporanGejala}/review', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'review'])->whereNumber('laporanGejala')->name('laporan-gejala.review');
     Route::get('/penugasan', [PoptWorkflowController::class, 'index'])->name('penugasan');
     Route::get('/penugasan/{id}', [PoptWorkflowController::class, 'show'])->whereNumber('id')->name('penugasan.show');
     Route::post('/penugasan/{id}/status', [PoptWorkflowController::class, 'updateStatus'])->whereNumber('id')->name('penugasan.status');

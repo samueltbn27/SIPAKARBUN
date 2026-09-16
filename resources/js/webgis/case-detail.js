@@ -1,4 +1,5 @@
 import { getRequestStatusLabel, getStatusConfig } from './statuses';
+import { createStatusSymbol } from './status-icon';
 import { deleteCase } from './data-provider';
 import { requestConfirmation } from '../confirm-dialog';
 
@@ -108,12 +109,10 @@ function renderTimeline(history) {
         timelineItem.className = 'relative flex gap-3 pb-6 last:pb-0';
 
         const markerColumn = document.createElement('div');
-        markerColumn.className = 'relative flex w-8 flex-shrink-0 justify-center';
+        markerColumn.className = 'relative flex w-10 flex-shrink-0 justify-center';
 
-        const marker = document.createElement('span');
-        marker.className = `z-10 flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold shadow-sm ring-2 ring-white ${config.markerClass}`;
-        marker.textContent = config.markerSymbol;
-        marker.setAttribute('aria-label', config.label);
+        const marker = createStatusSymbol(entry.status);
+        marker.classList.add('z-10');
 
         if (index < sortedHistory.length - 1) {
             const connector = document.createElement('span');
