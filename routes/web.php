@@ -151,6 +151,8 @@ Route::middleware(['auth', 'role:admin|operator_uptd'])->prefix('operator')->nam
     Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])->name('kasus.index');
     Route::get('/kasus/{id}', [OperatorWorkflowController::class, 'kasusShow'])->whereNumber('id')->name('kasus.show');
     Route::post('/kasus/{id}/assign', [OperatorWorkflowController::class, 'assignPopt'])->whereNumber('id')->name('kasus.assign');
+    Route::post('/kasus/{id}/perpanjangan/{extensionId}/approve', [OperatorWorkflowController::class, 'approveExtension'])->whereNumber(['id', 'extensionId'])->name('kasus.extension.approve');
+    Route::post('/kasus/{id}/perpanjangan/{extensionId}/reject', [OperatorWorkflowController::class, 'rejectExtension'])->whereNumber(['id', 'extensionId'])->name('kasus.extension.reject');
 });
 
 Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])

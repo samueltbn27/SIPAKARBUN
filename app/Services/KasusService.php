@@ -6,8 +6,10 @@ use App\Models\KasusPenanganan;
 use App\Models\PenugasanPopt;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -27,17 +29,30 @@ class KasusService
 {
     public function __construct(
         private readonly StatusTransitionService $transitionService,
+        private readonly PerpanjanganPenugasanService $extensionService,
     ) {}
 
     /**
      * Tetapkan POPT ke kasus. Kembalikan kasus (fresh) setelah penugasan.
      */
-    public function assignPopt(KasusPenanganan $kasus, User $popt, User $operator, ?string $catatan): KasusPenanganan
-    {
+    public function assignPopt(
+        KasusPenanganan $kasus,
+        User $popt,
+        User $operator,
+        ?string $catatan,
+        string $deadlineAt,
+    ): KasusPenanganan {
         $valid = $popt->hasRole('popt') && $popt->is_active === true;
         if (! $valid) {
             throw ValidationException::withMessages([
                 'popt_id' => 'POPT yang dipilih tidak valid: harus ber-role popt dan berstatus aktif.',
+            ]);
+        }
+
+        $deadline = Carbon::parse($deadlineAt);
+        if (! $deadline->isAfter(now())) {
+            throw ValidationException::withMessages([
+                'deadline_at' => 'Target penyelesaian harus berada di masa depan.',
             ]);
         }
 
@@ -47,12 +62,17 @@ class KasusService
             ]);
         }
 
-        return DB::transaction(function () use ($kasus, $popt, $operator, $catatan): KasusPenanganan {
-            // Tutup penugasan aktif lama jika ada (reassignment).
-            PenugasanPopt::query()
+        return DB::transaction(function () use ($kasus, $popt, $operator, $catatan, $deadline): KasusPenanganan {
+            $activeAssignment = PenugasanPopt::query()
                 ->where('kasus_id', $kasus->id)
                 ->where('status', PenugasanPopt::STATUS_AKTIF)
-                ->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+                ->lockForUpdate()
+                ->first();
+
+            if ($activeAssignment !== null) {
+                $this->extensionService->cancelPendingForAssignment($activeAssignment, $operator);
+                $activeAssignment->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+            }
 
             PenugasanPopt::create([
                 'kasus_id' => $kasus->id,
@@ -61,6 +81,8 @@ class KasusService
                 'status' => PenugasanPopt::STATUS_AKTIF,
                 'catatan' => $catatan,
                 'assigned_at' => now(),
+                'accepted_at' => null,
+                'deadline_at' => $deadline,
             ]);
 
             // Kasus yang masih menunggu penugasan pertama berpindah ke
@@ -78,6 +100,7 @@ class KasusService
                 'kasus_id' => $kasus->id,
                 'popt_id' => $popt->id,
                 'assigned_by' => $operator->id,
+                'deadline_at' => $deadline->toIso8601String(),
             ]);
 
             return $kasus->fresh();
@@ -160,7 +183,7 @@ class KasusService
         ];
     }
 
-    /** @return array{regencies: \Illuminate\Support\Collection, commodities: \Illuminate\Support\Collection, diseases: \Illuminate\Support\Collection} */
+    /** @return array{regencies: Collection, commodities: Collection, diseases: Collection} */
     public function monitoringFilterOptions(): array
     {
         return [
@@ -211,7 +234,13 @@ class KasusService
     public function detailKasus(int $id): KasusPenanganan
     {
         return KasusPenanganan::query()
-            ->with([...$this->readContractRelations(), 'creator'])
+            ->with([
+                ...$this->readContractRelations(),
+                'creator',
+                'extensionRequests.requester',
+                'extensionRequests.reviewer',
+                'extensionRequests.penugasanPopt.popt',
+            ])
             ->findOrFail($id);
     }
 

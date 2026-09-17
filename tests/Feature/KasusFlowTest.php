@@ -85,6 +85,7 @@ class KasusFlowTest extends TestCase
 
         return $this->postJson("/api/kasus/{$kasus->id}/assign-popt", [
             'popt_id' => $popt->id,
+            'deadline_at' => now()->addDays(7)->toDateTimeString(),
             'catatan' => $catatan,
         ]);
     }
@@ -241,7 +242,7 @@ class KasusFlowTest extends TestCase
         $kasus = $this->buatKasusDiterima($pemohon, $operator);
 
         Sanctum::actingAs($operator);
-        $this->postJson("/api/kasus/{$kasus->id}/assign-popt", ['popt_id' => $popt->id])->assertOk();
+        $this->postJson("/api/kasus/{$kasus->id}/assign-popt", ['popt_id' => $popt->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()])->assertOk();
 
         $this->getJson("/api/kasus/{$kasus->id}/history")
             ->assertOk()
