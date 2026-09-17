@@ -21,12 +21,25 @@ composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
+php artisan storage:link
 npm install
 npm run build
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
 Buka [http://127.0.0.1:8000/login](http://127.0.0.1:8000/login).
+
+Untuk menjalankan Knowledge dan Diagnosis dalam aplikasi lokal yang sama,
+gunakan `APP_ENV=local` dan biarkan `KNOWLEDGE_API_BASE_URL` serta
+`KNOWLEDGE_API_TOKEN` kosong seperti `.env.example`. Diagnosis memakai
+adapter Knowledge lokal dengan data penyakit, gejala, dan relasi komoditas
+yang sama dengan modul Knowledge. Jangan arahkan URL Knowledge ke server
+`php artisan serve` yang sedang melayani aplikasi itu sendiri.
+
+Jika halaman Diagnosis menampilkan “Data knowledge tidak dapat dimuat”,
+periksa kedua nilai tersebut lalu jalankan `php artisan config:clear`.
+Untuk layanan Knowledge terpisah atau production/staging, isi URL layanan
+dan token Sanctum yang valid; adapter lokal tidak digunakan di production/staging.
 
 Untuk pengembangan frontend dengan hot reload, gunakan `npm run dev` pada
 terminal terpisah sebagai pengganti `npm run build`.
@@ -59,6 +72,9 @@ php artisan db:seed --class=SipakarbunDemoSeeder
 | POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 | Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 | Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+
+Skenario Pimpinan mencakup menu **WebGIS & Monitoring Kasus** dan
+**Laporan Monitoring**. Keduanya bersifat read-only.
 
 > **Peringatan:** Akun dan password ini hanya untuk local/demo/UAT dan tidak
 > boleh digunakan pada production.

@@ -138,6 +138,8 @@ class WebDiagnosisTest extends TestCase
         $response->assertSee('Kopi Arabika')
             ->assertSee('Bercak jingga')
             ->assertSee('Batang layu')
+            ->assertSee('Gejala saya belum ada? Laporkan')
+            ->assertSee(route('diagnosis.reports.index'))
             ->assertSee('Foto belum tersedia')
             ->assertSee('Tidak Yakin')
             ->assertSee('Sangat Yakin');

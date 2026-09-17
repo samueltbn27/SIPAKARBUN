@@ -67,12 +67,8 @@
         <div class="flex items-center justify-between gap-3 border-b border-[#eef3ef] px-5 py-4 sm:px-6">
             <div>
                 <h2 id="map-heading" class="text-base font-bold text-[#173b29]">Peta Persebaran Kasus</h2>
-            <p class="mt-1 text-xs text-[#89968e]" data-webgis-case-count>Menyiapkan data kasus...</p>
+                <p class="mt-1 text-xs text-[#89968e]" data-webgis-case-count role="status" aria-live="polite">Menyiapkan data kasus...</p>
             </div>
-            <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#eef6f1] px-3 py-1 text-xs font-medium text-[#2d6b4a]">
-                <span class="h-1.5 w-1.5 rounded-full bg-[#176b45]" aria-hidden="true"></span>
-                API aktif
-            </span>
         </div>
 
         <div id="webgis-map" data-webgis-map
@@ -102,7 +98,7 @@
     <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="legend-heading">
         <div class="flex flex-col gap-1 mb-5">
             <h2 id="legend-heading" class="text-base font-bold text-[#173b29]">Status Penanganan</h2>
-            <p class="text-xs text-[#89968e]">Simbol marker menunjukkan status terakhir setiap kasus.</p>
+            <p class="text-sm leading-6 text-[#66746c]">Kenali status terakhir melalui ikon dan warna pin. Pilih pin di peta untuk melihat informasi kasus dan riwayat penanganannya.</p>
         </div>
         <div data-webgis-status-legend class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <noscript>

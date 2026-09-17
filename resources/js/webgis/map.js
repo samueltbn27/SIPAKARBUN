@@ -22,6 +22,7 @@ import {
     getUniqueRegencies,
 } from './filters';
 import { getStatusConfig, getStatusOptions } from './statuses';
+import { createStatusSymbol } from './status-icon';
 import { groupByStatus } from './statistics';
 import { initializeMonitoringDashboard } from './dashboard';
 
@@ -64,15 +65,21 @@ function createCasePopup(caseData) {
     farmerGroup.textContent = caseData.kelompok_tani?.nama || '-';
 
     const statusBadge = document.createElement('span');
-    statusBadge.className = `mt-2 inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-bold ${statusConfig.badgeClass}`;
+    statusBadge.className = `inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-bold ${statusConfig.badgeClass}`;
     statusBadge.textContent = statusConfig.label;
+
+    const statusRow = document.createElement('div');
+    statusRow.className = 'mt-3 flex items-center gap-2';
+    statusRow.append(createStatusSymbol(caseData.status), statusBadge);
+    const statusDescription = document.createElement('p');
+    statusDescription.className = 'text-xs leading-5 text-[#66746c]';
+    statusDescription.textContent = statusConfig.description;
 
     const fields = document.createElement('dl');
     fields.className = 'mt-3 space-y-2';
     appendPopupField(fields, 'Komoditas', caseData.komoditas?.nama);
     appendPopupField(fields, 'Penyakit', caseData.penyakit?.nama);
     appendPopupField(fields, 'POPT', caseData.popt?.nama);
-    appendPopupField(fields, 'Status', statusConfig.label);
     appendPopupField(fields, 'Update terakhir', formatDateTime(caseData.last_status_at));
 
     const detailButton = document.createElement('button');
@@ -81,20 +88,19 @@ function createCasePopup(caseData) {
     detailButton.textContent = 'Lihat Detail';
     detailButton.addEventListener('click', () => openCaseDetail(caseData));
 
-    popup.append(title, farmerGroup, statusBadge, fields, detailButton);
+    popup.append(title, farmerGroup, statusRow, statusDescription, fields, detailButton);
 
     return popup;
 }
 
 function createStatusIcon(status) {
-    const config = getStatusConfig(status);
-
     return L.divIcon({
         className: 'webgis-status-marker',
-        html: `<span class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold shadow-md ring-2 ring-white ${config.markerClass}" aria-hidden="true">${config.markerSymbol}</span>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -14],
+        html: createStatusSymbol(status, { pin: true }),
+        iconSize: [44, 50],
+        iconAnchor: [22, 49],
+        popupAnchor: [0, -44],
+        tooltipAnchor: [0, -44],
     });
 }
 
@@ -103,13 +109,29 @@ function renderCaseMarker(caseLayer, caseData) {
         return null;
     }
 
-    return L.marker([caseData.latitude, caseData.longitude], {
-        alt: caseData.case_code || 'Lokasi kasus',
+    const config = getStatusConfig(caseData.status);
+    const markerLabel = `${caseData.case_code || 'Lokasi kasus'} — ${config.label}`;
+    const tooltip = document.createElement('div');
+    tooltip.className = 'webgis-case-tooltip';
+    const tooltipTitle = document.createElement('strong');
+    tooltipTitle.textContent = caseData.case_code || 'Lokasi kasus';
+    const tooltipStatus = document.createElement('span');
+    tooltipStatus.textContent = config.label;
+    const tooltipGroup = document.createElement('span');
+    tooltipGroup.textContent = caseData.kelompok_tani?.nama || 'Kelompok tani belum tersedia';
+    tooltip.append(tooltipTitle, tooltipStatus, tooltipGroup);
+
+    const marker = L.marker([caseData.latitude, caseData.longitude], {
+        alt: markerLabel,
         icon: createStatusIcon(caseData.status),
-        title: caseData.case_code || 'Lokasi kasus',
+        title: markerLabel,
+        riseOnHover: true,
     })
         .addTo(caseLayer)
+        .bindTooltip(tooltip, { direction: 'top', opacity: 1 })
         .bindPopup(createCasePopup(caseData));
+    marker.getElement()?.setAttribute('aria-label', markerLabel);
+    return marker;
 }
 
 function clearMarkers(caseLayer) {
@@ -195,18 +217,20 @@ function renderStatusLegend() {
     getStatusOptions().forEach(({ value, label }) => {
         const config = getStatusConfig(value);
         const item = document.createElement('div');
-        item.className = 'flex items-center gap-3 rounded-lg border border-[#eef3ef] bg-[#f7faf8] px-3 py-2.5';
+        item.className = 'webgis-legend-item';
 
-        const marker = document.createElement('span');
-        marker.className = `flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ring-2 ring-white ${config.markerClass}`;
-        marker.textContent = config.markerSymbol;
-        marker.setAttribute('aria-hidden', 'true');
+        const marker = createStatusSymbol(value);
 
-        const labelElement = document.createElement('span');
-        labelElement.className = 'text-sm font-medium text-[#526159]';
+        const copy = document.createElement('div');
+        const labelElement = document.createElement('h3');
+        labelElement.className = 'text-sm font-bold leading-5 text-[#173b29]';
         labelElement.textContent = label;
+        const description = document.createElement('p');
+        description.className = 'mt-1 text-xs leading-5 text-[#66746c]';
+        description.textContent = config.description;
+        copy.append(labelElement, description);
 
-        item.append(marker, labelElement);
+        item.append(marker, copy);
         legend.append(item);
     });
 }
@@ -221,17 +245,13 @@ function renderStatusSummary(cases, filters) {
     summary.replaceChildren();
 
     groupByStatus(applyFilters(cases, filters)).forEach(({ key, label, count }) => {
-        const config = getStatusConfig(key);
         const card = document.createElement('article');
         card.className = 'rounded-xl border border-[#e6eee8] bg-[#f7faf8] p-3';
 
         const header = document.createElement('div');
         header.className = 'flex items-center justify-between gap-2';
 
-        const marker = document.createElement('span');
-        marker.className = `flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ring-2 ring-white ${config.markerClass}`;
-        marker.textContent = config.markerSymbol;
-        marker.setAttribute('aria-hidden', 'true');
+        const marker = createStatusSymbol(key);
 
         const countElement = document.createElement('strong');
         countElement.className = 'text-lg font-bold text-[#173b29]';
