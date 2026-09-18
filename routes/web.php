@@ -165,6 +165,10 @@ Route::middleware(['auth', 'role:popt'])->prefix('popt')->name('popt.')->group(f
     Route::post('/laporan-gejala/{laporanGejala}/review', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'review'])->whereNumber('laporanGejala')->name('laporan-gejala.review');
     Route::get('/penugasan', [PoptWorkflowController::class, 'index'])->name('penugasan');
     Route::get('/penugasan/{id}', [PoptWorkflowController::class, 'show'])->whereNumber('id')->name('penugasan.show');
+    Route::post('/penugasan/{id}/accept', [PoptWorkflowController::class, 'accept'])->whereNumber('id')->name('penugasan.accept');
+    Route::post('/penugasan/{id}/progress', [PoptWorkflowController::class, 'storeProgress'])->whereNumber('id')->name('penugasan.progress');
+    Route::post('/penugasan/{id}/perpanjangan', [PoptWorkflowController::class, 'requestExtension'])->whereNumber('id')->name('penugasan.extension');
+    Route::post('/penugasan/{id}/selesaikan', [PoptWorkflowController::class, 'complete'])->whereNumber('id')->name('penugasan.complete');
     Route::post('/penugasan/{id}/status', [PoptWorkflowController::class, 'updateStatus'])->whereNumber('id')->name('penugasan.status');
 });
 
