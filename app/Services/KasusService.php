@@ -30,6 +30,7 @@ class KasusService
     public function __construct(
         private readonly StatusTransitionService $transitionService,
         private readonly PerpanjanganPenugasanService $extensionService,
+        private readonly MonitoringStatusService $monitoringStatusService,
     ) {}
 
     /**
@@ -163,23 +164,24 @@ class KasusService
             ->withQueryString();
     }
 
-    /** @return array{total: int, active: int, completed: int, postponed: int} */
+    /** @return array{total: int, active: int, completed: int, overdue: int} */
     public function monitoringSummary(array $filters = []): array
     {
         $query = $this->monitoringQuery($filters);
 
         $total = (clone $query)->count();
-        $completed = (clone $query)
-            ->where('current_status', KasusPenanganan::STATUS_SELESAI)
-            ->count();
+        $completedQuery = clone $query;
+        $this->monitoringStatusService->applyFilter($completedQuery, MonitoringStatusService::STATUS_SELESAI);
+        $completed = $completedQuery->count();
+        $overdueQuery = clone $query;
+        $this->monitoringStatusService->applyFilter($overdueQuery, MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU);
+        $overdue = $overdueQuery->count();
 
         return [
             'total' => $total,
             'active' => $total - $completed,
             'completed' => $completed,
-            'postponed' => (clone $query)
-                ->where('current_status', KasusPenanganan::STATUS_DITUNDA)
-                ->count(),
+            'overdue' => $overdue,
         ];
     }
 
@@ -284,8 +286,11 @@ class KasusService
         return [
             'permohonan',
             'penugasanAktif.popt',
+            'penugasanTerakhir.popt',
             'penugasanPopt.popt',
             'riwayatStatus',
+            'progressTerakhir',
+            'finalReport',
         ];
     }
 
@@ -318,9 +323,7 @@ class KasusService
             $query->where('penyakit_name_snapshot', $filters['disease']);
         }
 
-        if (! empty($filters['status'])) {
-            $query->where('current_status', $filters['status']);
-        }
+        $this->monitoringStatusService->applyFilter($query, $filters['status'] ?? null);
 
         return $query;
     }

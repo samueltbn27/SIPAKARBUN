@@ -144,6 +144,8 @@
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kabupaten/Kota</dt><dd data-case-detail="regency" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kecamatan</dt><dd data-case-detail="district" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3 sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">POPT</dt><dd data-case-detail="popt" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
+                <div class="rounded-lg bg-[#fffaf0] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Target penyelesaian</dt><dd data-case-detail="deadline" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
+                <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Laporan akhir</dt><dd data-case-detail="final-report" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
             </dl>
         </section>
 
@@ -169,7 +171,7 @@
         <section class="mt-6 border-t border-[#eef3ef] pt-5" aria-labelledby="case-update-heading">
             <h3 id="case-update-heading" class="text-sm font-bold text-[#173b29]">Pembaruan Terakhir</h3>
             <p data-case-detail="updated-at" class="mt-2 text-sm text-[#526159]">-</p>
-            <div class="mt-3 rounded-lg border border-[#eef3ef] bg-[#f7faf8] p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Catatan terakhir</p><p data-case-detail="last-note" class="mt-1 text-sm leading-6 text-[#526159]">-</p></div>
+            <div class="mt-3 rounded-lg border border-[#eef3ef] bg-[#f7faf8] p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Progress terakhir</p><p data-case-detail="latest-progress" class="mt-1 text-sm leading-6 text-[#526159]">-</p><p class="mt-3 text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Catatan status terakhir</p><p data-case-detail="last-note" class="mt-1 text-sm leading-6 text-[#526159]">-</p></div>
         </section>
 
         <section class="mt-6 border-t border-[#eef3ef] pt-5" aria-labelledby="case-timeline-heading">

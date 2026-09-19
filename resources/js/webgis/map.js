@@ -55,6 +55,7 @@ function createCasePopup(caseData) {
     const popup = document.createElement('div');
     popup.className = 'min-w-[210px] text-[#173b29]';
     const statusConfig = getStatusConfig(caseData.status);
+    const statusLabel = caseData.monitoring_status_label || statusConfig.label;
 
     const title = document.createElement('h3');
     title.className = 'text-sm font-bold text-[#173b29]';
@@ -66,7 +67,7 @@ function createCasePopup(caseData) {
 
     const statusBadge = document.createElement('span');
     statusBadge.className = `inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-bold ${statusConfig.badgeClass}`;
-    statusBadge.textContent = statusConfig.label;
+    statusBadge.textContent = statusLabel;
 
     const statusRow = document.createElement('div');
     statusRow.className = 'mt-3 flex items-center gap-2';
@@ -79,8 +80,16 @@ function createCasePopup(caseData) {
     fields.className = 'mt-3 space-y-2';
     appendPopupField(fields, 'Komoditas', caseData.komoditas?.nama);
     appendPopupField(fields, 'Penyakit', caseData.penyakit?.nama);
-    appendPopupField(fields, 'POPT', caseData.popt?.nama);
-    appendPopupField(fields, 'Update terakhir', formatDateTime(caseData.last_status_at));
+    appendPopupField(fields, 'POPT', caseData.popt?.nama || 'Belum ditugaskan');
+    appendPopupField(fields, 'Target penyelesaian', formatDateTime(caseData.effective_deadline_at));
+    appendPopupField(fields, 'Progress terakhir', caseData.latest_progress?.note || 'Belum ada progress');
+    if (caseData.is_overdue) {
+        appendPopupField(fields, 'Melewati target sejak', formatDateTime(caseData.overdue_since));
+    }
+    if (caseData.status === 'selesai') {
+        appendPopupField(fields, 'Laporan akhir', caseData.final_report_exists ? 'Tersedia' : 'Belum tersedia');
+        appendPopupField(fields, 'Tanggal selesai', formatDateTime(caseData.completed_at));
+    }
 
     const detailButton = document.createElement('button');
     detailButton.type = 'button';

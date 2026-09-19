@@ -114,6 +114,11 @@ class KasusPenanganan extends Model
             ->orderByDesc('id');
     }
 
+    public function progressTerakhir(): HasOne
+    {
+        return $this->hasOne(ProgresPenanganan::class, 'kasus_id')->latestOfMany();
+    }
+
     public function extensionRequests(): HasMany
     {
         return $this->hasMany(PerpanjanganPenugasan::class, 'kasus_id')

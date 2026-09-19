@@ -15,13 +15,13 @@ class RbacAccessContractTest extends TestCase
         $this->assertContains('role:admin|operator_uptd|pimpinan', $middleware);
     }
 
-    public function test_webgis_route_preserves_existing_role_guard(): void
+    public function test_webgis_route_is_global_monitoring_for_admin_operator_and_pimpinan(): void
     {
         $route = app('router')->getRoutes()->getByName('webgis.index');
         $middleware = $route->gatherMiddleware();
 
         $this->assertContains('auth', $middleware);
-        $this->assertContains('role:admin|operator_uptd|popt|pimpinan', $middleware);
+        $this->assertContains('role:admin|operator_uptd|pimpinan', $middleware);
     }
 
     public function test_access_contract_documents_pending_case_modules(): void

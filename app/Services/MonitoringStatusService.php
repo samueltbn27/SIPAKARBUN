@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KasusPenanganan;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Canonical backend mapping from technical case state to monitoring state.
@@ -43,7 +44,14 @@ class MonitoringStatusService
      */
     public function resolve(KasusPenanganan $kasus, ?CarbonInterface $now = null): array
     {
-        $assignment = $kasus->penugasanAktif;
+        $assignment = $kasus->relationLoaded('penugasanAktif')
+            ? $kasus->penugasanAktif
+            : $kasus->penugasanAktif()->first();
+        if ($assignment === null && $kasus->current_status === KasusPenanganan::STATUS_SELESAI) {
+            $assignment = $kasus->relationLoaded('penugasanTerakhir')
+                ? $kasus->penugasanTerakhir
+                : $kasus->penugasanTerakhir()->first();
+        }
         $deadline = $assignment?->deadline_at;
         $currentTime = $now ?? now();
         $isOverdue = $kasus->current_status !== KasusPenanganan::STATUS_SELESAI
@@ -84,5 +92,48 @@ class MonitoringStatusService
     public function labels(): array
     {
         return self::LABELS;
+    }
+
+    /** Apply the canonical monitoring semantics to a server-side query. */
+    public function applyFilter(Builder $query, ?string $key, ?CarbonInterface $now = null): Builder
+    {
+        if ($key === null || $key === '') {
+            return $query;
+        }
+
+        $now = $now ?? now();
+        $withoutOverdue = function (Builder $builder) use ($now): void {
+            $builder->whereDoesntHave(
+                'penugasanAktif',
+                fn (Builder $assignment) => $assignment->whereNotNull('deadline_at')->where('deadline_at', '<', $now)
+            );
+        };
+        $withOverdue = function (Builder $builder) use ($now): void {
+            $builder->whereHas(
+                'penugasanAktif',
+                fn (Builder $assignment) => $assignment->whereNotNull('deadline_at')->where('deadline_at', '<', $now)
+            );
+        };
+
+        return match ($key) {
+            self::STATUS_SELESAI => $query->where('current_status', KasusPenanganan::STATUS_SELESAI),
+            self::STATUS_MELEWATI_BATAS_WAKTU => $query
+                ->where('current_status', '!=', KasusPenanganan::STATUS_SELESAI)
+                ->tap($withOverdue),
+            self::STATUS_DITUNDA => $query
+                ->where('current_status', KasusPenanganan::STATUS_DITUNDA)
+                ->tap($withoutOverdue),
+            self::STATUS_MENUNGGU_PENANGANAN => $query
+                ->whereIn('current_status', [KasusPenanganan::STATUS_DITERIMA, KasusPenanganan::STATUS_DITUGASKAN])
+                ->tap($withoutOverdue),
+            self::STATUS_DALAM_PENANGANAN => $query
+                ->whereIn('current_status', [
+                    KasusPenanganan::STATUS_SEDANG_DIREVIEW,
+                    KasusPenanganan::STATUS_SIAP_DIEKSEKUSI,
+                    KasusPenanganan::STATUS_DALAM_PELAKSANAAN,
+                ])
+                ->tap($withoutOverdue),
+            default => $query->whereRaw('1 = 0'),
+        };
     }
 }

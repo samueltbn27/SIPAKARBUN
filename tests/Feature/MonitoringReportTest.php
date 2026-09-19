@@ -129,6 +129,27 @@ class MonitoringReportTest extends TestCase
             ->assertDontSee('KS-REPORT-PAGE-OTHER');
     }
 
+    public function test_overdue_monitoring_status_dapat_difilter_dan_deadline_ditampilkan(): void
+    {
+        $popt = $this->makeUser('popt', 'POPT Overdue');
+        $case = $this->makeCase([
+            'case_code' => 'KS-REPORT-OVERDUE',
+            'status' => KasusPenanganan::STATUS_DALAM_PELAKSANAAN,
+            'popt' => $popt,
+        ]);
+        $assignment = PenugasanPopt::query()->where('kasus_id', $case->id)->firstOrFail();
+        $assignment->update(['deadline_at' => now()->subDay()]);
+
+        $this->actingAs($this->makeUser('pimpinan'));
+
+        $this->get('/laporan-monitoring?status=melewati_batas_waktu')
+            ->assertOk()
+            ->assertSee('KS-REPORT-OVERDUE')
+            ->assertSee('Melewati Batas Waktu')
+            ->assertSee('Target Penyelesaian')
+            ->assertSee('>1<', false);
+    }
+
     private function makeUser(string $role, string $name = 'Report User'): User
     {
         $user = User::factory()->create(['name' => $name, 'is_active' => true]);

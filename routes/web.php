@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function (): void {
 });
 
 /* M3 global read-only monitoring surfaces. */
-Route::middleware(['auth', 'role:admin|operator_uptd|popt|pimpinan'])->group(function (): void {
+Route::middleware(['auth', 'role:admin|operator_uptd|pimpinan'])->group(function (): void {
     Route::get('/webgis', [WebGISController::class, 'index'])->name('webgis.index');
 });
 

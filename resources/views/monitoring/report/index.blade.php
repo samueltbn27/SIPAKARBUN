@@ -108,9 +108,9 @@
                 <p class="mt-1 text-xs text-[#77847c]">Status selesai</p>
             </article>
             <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Ditunda</p>
-                <p class="mt-3 text-3xl font-bold text-[#80610a]">{{ $summary['postponed'] }}</p>
-                <p class="mt-1 text-xs text-[#77847c]">Status ditunda</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Melewati Batas Waktu</p>
+                <p class="mt-3 text-3xl font-bold text-[#a83d32]">{{ $summary['overdue'] }}</p>
+                <p class="mt-1 text-xs text-[#77847c]">Status melewati target</p>
             </article>
         </div>
     </section>
@@ -133,12 +133,13 @@
                         <th scope="col" class="whitespace-nowrap px-4 py-3 text-left">Komoditas</th>
                         <th scope="col" class="whitespace-nowrap px-4 py-3 text-left">Penyakit</th>
                         <th scope="col" class="whitespace-nowrap px-4 py-3 text-left">POPT</th>
-                        <th scope="col" class="whitespace-nowrap px-4 py-3 text-left">Status</th>
+                        <th scope="col" class="whitespace-nowrap px-4 py-3 text-left">Target Penyelesaian</th>
+                        <th scope="col" class="whitespace-nowrap px-4 py-3 text-left">Status Penanganan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#f0f4f1] text-[#526159]">
                     @forelse ($kasus as $item)
-                        @php($status = $item->current_status)
+                        @php($monitoring = $monitoringStatuses[$item->id])
                         <tr class="align-top transition-colors hover:bg-[#fbfdfb]">
                             <td class="whitespace-nowrap px-4 py-4 font-mono text-xs font-semibold text-[#173b29]">{{ $item->kasus_code }}</td>
                             <td class="whitespace-nowrap px-4 py-4 font-mono text-xs">{{ $item->permohonan?->permohonan_code ?? 'Belum tersedia' }}</td>
@@ -148,15 +149,16 @@
                             <td class="max-w-[180px] px-4 py-4">{{ $item->komoditas_name_snapshot ?? 'Belum tersedia' }}</td>
                             <td class="max-w-[200px] px-4 py-4">{{ $item->penyakit_name_snapshot ?? 'Belum tersedia' }}</td>
                             <td class="whitespace-nowrap px-4 py-4">{{ $item->penugasanAktif?->popt?->name ?? $item->penugasanTerakhir?->popt?->name ?? 'Belum ditugaskan' }}</td>
+                            <td class="whitespace-nowrap px-4 py-4 text-xs">{{ $monitoring['effective_deadline_at']?->format('d M Y H:i') ?? 'Belum tersedia' }}</td>
                             <td class="px-4 py-4">
-                                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses[$status] ?? 'bg-[#edf1ee] text-[#526159]' }}">
-                                    {{ $statusLabels[$status] ?? 'Status tidak diketahui' }}
+                                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses[$monitoring['key']] ?? 'bg-[#edf1ee] text-[#526159]' }}">
+                                    {{ $monitoring['label'] }}
                                 </span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-5 py-14 text-center text-sm text-[#77847c]">Tidak ada data monitoring yang sesuai dengan filter.</td>
+                            <td colspan="10" class="px-5 py-14 text-center text-sm text-[#77847c]">Tidak ada data monitoring yang sesuai dengan filter.</td>
                         </tr>
                     @endforelse
                 </tbody>

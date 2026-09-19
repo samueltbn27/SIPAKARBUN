@@ -32,9 +32,9 @@
                 <p class="mt-1 text-xs text-[#77847c]">Status selesai</p>
             </article>
             <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Ditunda</p>
-                <p data-dashboard-kpi="postponed" class="mt-3 text-3xl font-bold text-[#80610a]">0</p>
-                <p class="mt-1 text-xs text-[#77847c]">Status ditunda</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Melewati Batas Waktu</p>
+                <p data-dashboard-kpi="overdue" class="mt-3 text-3xl font-bold text-[#a83d32]">0</p>
+                <p class="mt-1 text-xs text-[#77847c]">Target penyelesaian terlewati</p>
             </article>
         </div>
     </section>

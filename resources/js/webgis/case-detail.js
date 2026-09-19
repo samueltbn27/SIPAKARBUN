@@ -56,10 +56,13 @@ function getDrawerElements() {
         regency: document.querySelector('[data-case-detail="regency"]'),
         district: document.querySelector('[data-case-detail="district"]'),
         popt: document.querySelector('[data-case-detail="popt"]'),
+        deadline: document.querySelector('[data-case-detail="deadline"]'),
+        finalReport: document.querySelector('[data-case-detail="final-report"]'),
         latitude: document.querySelector('[data-case-detail="latitude"]'),
         longitude: document.querySelector('[data-case-detail="longitude"]'),
         updatedAt: document.querySelector('[data-case-detail="updated-at"]'),
         lastNote: document.querySelector('[data-case-detail="last-note"]'),
+        latestProgress: document.querySelector('[data-case-detail="latest-progress"]'),
         timeline: document.querySelector('[data-case-detail-timeline]'),
         deleteWrap: document.querySelector('[data-case-detail-delete-wrap]'),
         deleteButton: document.querySelector('[data-case-detail-delete]'),
@@ -169,18 +172,23 @@ function renderCaseDetail(caseData) {
     setText(drawerElements.regency, caseData.wilayah?.kabupaten);
     setText(drawerElements.district, caseData.wilayah?.kecamatan);
     setText(drawerElements.popt, caseData.popt?.nama ?? 'Belum ditugaskan');
+    setText(drawerElements.deadline, formatDateTime(caseData.effective_deadline_at));
+    setText(drawerElements.finalReport, caseData.status === 'selesai'
+        ? (caseData.final_report_exists ? 'Tersedia' : 'Belum tersedia')
+        : 'Belum relevan');
     setText(drawerElements.latitude, caseData.latitude);
     setText(drawerElements.longitude, caseData.longitude);
     setText(drawerElements.updatedAt, formatDateTime(caseData.last_status_at));
     setText(drawerElements.lastNote, caseData.last_note);
+    setText(drawerElements.latestProgress, caseData.latest_progress?.note ?? 'Belum ada progress');
 
     if (drawerElements.statusBadge) {
         drawerElements.statusBadge.className = `inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ${config.badgeClass}`;
-        drawerElements.statusBadge.textContent = config.label;
+        drawerElements.statusBadge.textContent = caseData.monitoring_status_label || config.label;
     }
 
     setText(drawerElements.requestStatus, getRequestStatusLabel(caseData.request_status));
-    setText(drawerElements.handlingStatus, config.label);
+    setText(drawerElements.handlingStatus, caseData.monitoring_status_label || config.label);
 
     renderTimeline(caseData.status_history);
 

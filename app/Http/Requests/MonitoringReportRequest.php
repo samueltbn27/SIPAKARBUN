@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\MonitoringStatusService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,7 @@ class MonitoringReportRequest extends FormRequest
             'regency' => ['nullable', 'string', 'max:150'],
             'commodity' => ['nullable', 'string', 'max:150'],
             'disease' => ['nullable', 'string', 'max:150'],
-            'status' => ['nullable', Rule::in(config('kasus.statuses', []))],
+            'status' => ['nullable', Rule::in(array_keys(app(MonitoringStatusService::class)->labels()))],
             'page' => ['nullable', 'integer', 'min:1'],
         ];
     }
