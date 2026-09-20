@@ -20,9 +20,8 @@
         </nav>
     @endif
 
-    <h1 class="break-words text-xl font-extrabold tracking-tight text-[#173b29] sm:text-2xl">{{ $title }}</h1>
-
+    <h1 class="sr-only">{{ $title }}</h1>
     @if ($subtitle)
-        <p class="mt-1 text-sm text-[#66746c]">{{ $subtitle }}</p>
+        <p class="sr-only">{{ $subtitle }}</p>
     @endif
 </div>

@@ -1,16 +1,10 @@
 @extends('layouts.app')
 
 @section('title', 'Edit Solusi')
+@section('subtitle', 'Perbarui data solusi yang tersimpan.')
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Edit Solusi</h1>
-            <p class="mt-1 text-sm text-gray-600">Perbarui data solusi <span class="font-medium">{{ $solusi->judul }}</span>.</p>
-        </div>
-    </div>
-
     <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <form method="POST" action="{{ route('knowledge.solusi.update', $solusi) }}" class="space-y-5">
             @csrf

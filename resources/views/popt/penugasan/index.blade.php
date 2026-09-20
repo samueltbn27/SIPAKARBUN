@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Penugasan Saya')
+@section('subtitle', 'Kasus yang sedang dan pernah Anda tangani.')
 
 @php
     $statusLabels = [
@@ -16,11 +17,6 @@
 
 @section('content')
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-bold text-[#173b29]">Penugasan Saya</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Kasus yang sedang dan pernah Anda tangani.</p>
-    </div>
-
     <form method="GET" class="flex flex-col gap-3 rounded-xl border border-[#e6eee8] bg-white p-4 sm:flex-row sm:items-end">
         <label class="w-full text-xs font-semibold text-[#66746c] sm:w-auto">Status
             <select name="status" class="mt-1 w-full rounded-lg border-gray-300 text-sm sm:w-auto">

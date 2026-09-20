@@ -18,8 +18,6 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="min-w-0">
             <p class="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#8a9990]">Basis Pengetahuan</p>
-            <h1 class="break-words text-2xl font-extrabold tracking-tight text-[#173b29]">Daftar Penyakit</h1>
-            <p class="mt-1 max-w-2xl text-sm leading-6 text-[#66746c]">Kelola data penyakit yang menjadi rujukan diagnosis SIPAKARBUN.</p>
         </div>
         @if($canCreateKnowledge)
             <a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex items-center justify-center rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_16px_rgba(23,107,69,.16)] transition-colors hover:bg-[#115a39] focus-visible:outline-[#176b45]">{{ $createLabel }}</a>

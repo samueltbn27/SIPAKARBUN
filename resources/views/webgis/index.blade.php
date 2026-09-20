@@ -23,8 +23,6 @@
             <span aria-hidden="true">/</span>
             <span class="text-[#176b45]">WebGIS</span>
         </div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29] sm:text-[28px]">WebGIS &amp; Monitoring Kasus</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Pantau persebaran, status penanganan, dan perkembangan kasus perkebunan.</p>
         <p data-webgis-delete-feedback hidden class="mt-3 w-fit rounded-lg border border-[#bfe2cc] bg-[#effaf2] px-3 py-2 text-sm font-medium text-[#176b45]" role="status" aria-live="polite"></p>
     </div>
 

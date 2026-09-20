@@ -1,14 +1,10 @@
 @extends('layouts.app')
 
 @section('title', 'Tambah Aturan CF')
+@section('subtitle', 'Tambahkan aturan certainty factor baru.')
 
 @section('content')
     <div class="space-y-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Tambah Aturan CF</h1>
-            <p class="mt-1 text-sm text-gray-500">Tambahkan aturan certainty factor baru.</p>
-        </div>
-
         <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl">
             <form method="POST" action="{{ route('knowledge.aturan-cf.store') }}" class="space-y-5">
                 @csrf
