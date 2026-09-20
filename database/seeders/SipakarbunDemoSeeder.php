@@ -9,9 +9,13 @@ use App\Models\DiagnosisSymptom;
 use App\Models\Gejala;
 use App\Models\KasusPenanganan;
 use App\Models\KeputusanPermohonan;
+use App\Models\LaporanAkhirEvidence;
+use App\Models\LaporanAkhirPenanganan;
 use App\Models\PenugasanPopt;
-use App\Models\PermohonanPenanganan;
 use App\Models\Penyakit;
+use App\Models\PermohonanPenanganan;
+use App\Models\PerpanjanganPenugasan;
+use App\Models\ProgresPenanganan;
 use App\Models\RefKelompokTani;
 use App\Models\RefKomoditas;
 use App\Models\RiwayatStatusPenanganan;
@@ -115,7 +119,7 @@ class SipakarbunDemoSeeder extends Seeder
     }
 
     /** @param array<string, int> $commodities
-     *  @return array<string, RefKelompokTani>
+     * @return array<string, RefKelompokTani>
      */
     private function seedGroups(array $commodities): array
     {
@@ -218,8 +222,8 @@ class SipakarbunDemoSeeder extends Seeder
     }
 
     /** @param array<string, User> $accounts
-     *  @param array<string, int> $commodities
-     *  @param array<string, RefKelompokTani> $groups
+     * @param  array<string, int>  $commodities
+     * @param  array<string, RefKelompokTani>  $groups
      */
     private function seedStudyCases(array $accounts, array $commodities, array $groups): void
     {
@@ -234,19 +238,19 @@ class SipakarbunDemoSeeder extends Seeder
                 'key' => 'assigned', 'diagnosis_code' => 'DG-20260101-9002', 'request_code' => 'PM-20260101-9002', 'case_code' => 'KS-20260101-9002',
                 'disease' => 'PNY-UAT-002', 'symptom' => 'G-UAT-007', 'commodity' => 'KP-017', 'group' => 'kakao',
                 'request_status' => 'diterima', 'case_status' => 'ditugaskan', 'assigned' => true,
-                'lat' => -7.0150000, 'lng' => 107.5050000,
+                'accepted' => false, 'deadline_days' => 7, 'lat' => -7.0150000, 'lng' => 107.5050000,
             ],
             [
                 'key' => 'in-progress', 'diagnosis_code' => 'DG-20260101-9003', 'request_code' => 'PM-20260101-9003', 'case_code' => 'KS-20260101-9003',
                 'disease' => 'PNY-UAT-003', 'symptom' => 'G-UAT-013', 'commodity' => 'KP-016', 'group' => 'cengkeh',
                 'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
-                'lat' => -6.8350000, 'lng' => 107.1550000,
+                'accepted' => true, 'deadline_days' => 7, 'lat' => -6.8350000, 'lng' => 107.1550000,
             ],
             [
-                'key' => 'completed', 'diagnosis_code' => 'DG-20260101-9004', 'request_code' => 'PM-20260101-9004', 'case_code' => 'KS-20260101-9004',
+                'key' => 'completed-final-report', 'diagnosis_code' => 'DG-20260101-9004', 'request_code' => 'PM-20260101-9004', 'case_code' => 'KS-20260101-9004',
                 'disease' => 'PNY-UAT-004', 'symptom' => 'G-UAT-019', 'commodity' => 'KP-056', 'group' => 'kelapa',
                 'request_status' => 'diterima', 'case_status' => 'selesai', 'assigned' => true,
-                'lat' => -6.5950000, 'lng' => 106.8150000,
+                'accepted' => true, 'deadline_days' => 3, 'final_report' => true, 'lat' => -6.5950000, 'lng' => 106.8150000,
             ],
             [
                 'key' => 'rejected', 'diagnosis_code' => 'DG-20260101-9005', 'request_code' => 'PM-20260101-9005', 'case_code' => null,
@@ -258,7 +262,35 @@ class SipakarbunDemoSeeder extends Seeder
                 'key' => 'deferred', 'diagnosis_code' => 'DG-20260101-9006', 'request_code' => 'PM-20260101-9006', 'case_code' => 'KS-20260101-9006',
                 'disease' => 'PNY-UAT-001', 'symptom' => 'G-UAT-003', 'commodity' => 'KP-079', 'group' => 'arosta',
                 'request_status' => 'diterima', 'case_status' => 'ditunda', 'assigned' => true,
-                'lat' => -7.0400000, 'lng' => 108.1500000,
+                'accepted' => true, 'deadline_days' => 14, 'lat' => -7.0400000, 'lng' => 108.1500000,
+            ],
+            [
+                'key' => 'overdue-with-progress', 'diagnosis_code' => 'DG-20260101-9007', 'request_code' => 'PM-20260101-9007', 'case_code' => 'KS-20260101-9007',
+                'disease' => 'PNY-UAT-002', 'symptom' => 'G-UAT-009', 'commodity' => 'KP-017', 'group' => 'kakao',
+                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
+                'accepted' => true, 'deadline_days' => -7, 'progress' => 'Pengendalian lapangan sudah dilakukan; pemantauan ulang diperlukan.',
+                'lat' => -7.0350000, 'lng' => 107.5250000,
+            ],
+            [
+                'key' => 'pending-extension', 'diagnosis_code' => 'DG-20260101-9008', 'request_code' => 'PM-20260101-9008', 'case_code' => 'KS-20260101-9008',
+                'disease' => 'PNY-UAT-001', 'symptom' => 'G-UAT-004', 'commodity' => 'KP-079', 'group' => 'arosta',
+                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
+                'accepted' => true, 'deadline_days' => 2, 'extension' => 'pending', 'extension_proposed_days' => 9,
+                'lat' => -7.0550000, 'lng' => 108.1650000,
+            ],
+            [
+                'key' => 'approved-extension', 'diagnosis_code' => 'DG-20260101-9009', 'request_code' => 'PM-20260101-9009', 'case_code' => 'KS-20260101-9009',
+                'disease' => 'PNY-UAT-003', 'symptom' => 'G-UAT-016', 'commodity' => 'KP-016', 'group' => 'cengkeh',
+                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
+                'accepted' => true, 'deadline_days' => 12, 'assignment_deadline_days' => 3, 'extension' => 'approved',
+                'lat' => -6.8450000, 'lng' => 107.1650000,
+            ],
+            [
+                'key' => 'completed-legacy', 'diagnosis_code' => 'DG-20260101-9010', 'request_code' => 'PM-20260101-9010', 'case_code' => 'KS-20260101-9010',
+                'disease' => 'PNY-UAT-004', 'symptom' => 'G-UAT-023', 'commodity' => 'KP-056', 'group' => 'kelapa',
+                'request_status' => 'diterima', 'case_status' => 'selesai', 'assigned' => true,
+                'accepted' => true, 'deadline_days' => -20, 'legacy_completed' => true,
+                'lat' => -6.6050000, 'lng' => 106.8250000,
             ],
         ];
 
@@ -268,9 +300,9 @@ class SipakarbunDemoSeeder extends Seeder
     }
 
     /** @param array<string, mixed> $definition
-     *  @param array<string, User> $accounts
-     *  @param array<string, int> $commodities
-     *  @param array<string, RefKelompokTani> $groups
+     * @param  array<string, User>  $accounts
+     * @param  array<string, int>  $commodities
+     * @param  array<string, RefKelompokTani>  $groups
      */
     private function seedCase(array $definition, array $accounts, array $commodities, array $groups): void
     {
@@ -338,6 +370,7 @@ class SipakarbunDemoSeeder extends Seeder
             'penyakit_name_snapshot' => $disease->nama,
             'latitude_kasus' => $definition['lat'], 'longitude_kasus' => $definition['lng'],
             'created_by' => $accounts['operator_uptd']->id,
+            'completed_at' => $definition['case_status'] === KasusPenanganan::STATUS_SELESAI ? now()->copy()->subDays(2) : null,
         ]);
         $case->save();
         if ($case->trashed()) {
@@ -381,10 +414,72 @@ class SipakarbunDemoSeeder extends Seeder
         }
 
         if ($definition['assigned']) {
-            PenugasanPopt::updateOrCreate(
+            $assignment = PenugasanPopt::updateOrCreate(
                 ['kasus_id' => $case->id, 'popt_id' => $accounts['popt']->id],
-                ['assigned_by' => $accounts['operator_uptd']->id, 'status' => $definition['case_status'] === 'selesai' ? 'selesai' : 'aktif', 'catatan' => self::CASE_MARKER, 'assigned_at' => now()],
+                [
+                    'assigned_by' => $accounts['operator_uptd']->id,
+                    'status' => $definition['case_status'] === 'selesai' ? PenugasanPopt::STATUS_SELESAI : PenugasanPopt::STATUS_AKTIF,
+                    'catatan' => self::CASE_MARKER,
+                    'assigned_at' => now()->copy()->subDays(5),
+                    'accepted_at' => ($definition['accepted'] ?? false) ? now()->copy()->subDays(4) : null,
+                    'deadline_at' => now()->copy()->addDays((int) ($definition['assignment_deadline_days'] ?? $definition['deadline_days'] ?? 7)),
+                ],
             );
+
+            if (! empty($definition['progress'])) {
+                ProgresPenanganan::updateOrCreate(
+                    ['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id, 'catatan' => $definition['progress']],
+                    ['actor_id' => $accounts['popt']->id],
+                );
+            }
+
+            if (! empty($definition['extension'])) {
+                $currentDeadline = $assignment->deadline_at;
+                $proposedDeadline = now()->copy()->addDays((int) ($definition['extension_proposed_days'] ?? $definition['deadline_days'] ?? 7));
+                $extension = PerpanjanganPenugasan::updateOrCreate(
+                    ['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id, 'reason' => self::CASE_MARKER.' Perpanjangan '.$definition['extension'].'.'],
+                    [
+                        'requested_by' => $accounts['popt']->id,
+                        'current_deadline_at' => $currentDeadline,
+                        'proposed_deadline_at' => $proposedDeadline,
+                        'status' => $definition['extension'] === 'approved' ? PerpanjanganPenugasan::STATUS_APPROVED : PerpanjanganPenugasan::STATUS_PENDING,
+                        'reviewed_by' => $definition['extension'] === 'approved' ? $accounts['operator_uptd']->id : null,
+                        'reviewed_at' => $definition['extension'] === 'approved' ? now()->copy()->subDays(1) : null,
+                        'review_note' => $definition['extension'] === 'approved' ? 'Perpanjangan demo disetujui untuk UAT.' : null,
+                    ],
+                );
+                if ($definition['extension'] === 'approved') {
+                    $assignment->update(['deadline_at' => $extension->proposed_deadline_at]);
+                }
+            }
+
+            if (! empty($definition['final_report'])) {
+                $this->seedFinalReport($case, $assignment, $accounts['popt']);
+            }
         }
+    }
+
+    private function seedFinalReport(KasusPenanganan $case, PenugasanPopt $assignment, User $popt): void
+    {
+        $report = $case->finalReport()->first();
+        if ($report === null) {
+            $report = LaporanAkhirPenanganan::create([
+                'kasus_id' => $case->id,
+                'penugasan_popt_id' => $assignment->id,
+                'submitted_by' => $popt->id,
+                'ringkasan_tindakan' => self::CASE_MARKER.' Tindakan pengendalian dan sanitasi dilakukan.',
+                'hasil_penanganan' => 'Intensitas gejala menurun pada pemeriksaan tindak lanjut demo.',
+                'rekomendasi' => 'Lanjutkan pemantauan kebun dan konsultasikan bila gejala muncul kembali.',
+                'catatan_tambahan' => 'Laporan akhir demo dengan evidence lokal.',
+                'submitted_at' => now()->copy()->subDays(2),
+            ]);
+        }
+
+        $path = 'laporan-akhir/demo-final-report.png';
+        $this->copyAsset($path);
+        LaporanAkhirEvidence::updateOrCreate(
+            ['laporan_akhir_id' => $report->id, 'file_path' => $path],
+            ['file_name' => 'demo-final-report.png', 'mime_type' => 'image/png', 'uploaded_by' => $popt->id],
+        );
     }
 }

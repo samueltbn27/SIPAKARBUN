@@ -10,7 +10,6 @@ final class LocalKelompokTaniReferensiClient implements KelompokTaniReferensiCli
     public function all(): array
     {
         return RefKelompokTani::query()->tersedia()->orderBy('nama')
-            ->limit(25)
             ->get(['id', 'kode', 'kode_kelompok', 'nama', 'ketua', 'jenis_komoditi', 'kabupaten', 'kecamatan', 'desa', 'kelurahan', 'latitude', 'longitude', 'source_is_active'])
             ->map(fn (RefKelompokTani $row): array => $this->toReference($row))->all();
     }

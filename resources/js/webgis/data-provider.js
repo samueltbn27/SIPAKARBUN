@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { mockCases } from './mock-cases.js';
-import { normalizeHandlingStatus } from './statuses.js';
 
 function normalizeNumber(value) {
     if (value === null || value === undefined || value === '') {
@@ -87,7 +86,7 @@ function normalizeStatusHistory(history) {
 
     return history.map((entry) => {
         const source = entry && typeof entry === 'object' ? entry : {};
-        const status = normalizeHandlingStatus(source.status ?? source.handling_status);
+        const status = source.monitoring_status ?? source.status ?? null;
         const note = source.note ?? source.catatan ?? null;
         const changedAt = source.changed_at ?? source.created_at ?? null;
 
@@ -151,7 +150,23 @@ export function normalizeCase(rawCase) {
             'kecamatan',
         ]),
         popt: normalizePopt(source),
-        status: normalizeHandlingStatus(source.handling_status ?? source.current_status ?? source.status),
+        // Monitoring state is computed by MonitoringStatusService and is the
+        // only state used by WebGIS filters, markers, KPIs, and charts.
+        status: source.monitoring_status ?? null,
+        monitoring_status: source.monitoring_status ?? null,
+        monitoring_status_label: source.monitoring_status_label ?? null,
+        technical_status: source.current_status ?? source.handling_status ?? source.status ?? null,
+        is_overdue: source.is_overdue === true,
+        effective_deadline_at: source.effective_deadline_at ?? null,
+        overdue_since: source.overdue_since ?? null,
+        latest_progress: source.latest_progress && typeof source.latest_progress === 'object'
+            ? {
+                note: source.latest_progress.note ?? source.latest_progress.catatan ?? null,
+                timestamp: source.latest_progress.timestamp ?? source.latest_progress.created_at ?? null,
+            }
+            : null,
+        final_report_exists: source.final_report_exists === true,
+        completed_at: source.completed_at ?? null,
         request_status: source.request_status ?? request.status ?? null,
         can_delete_case: source.can_delete_case === true,
         last_note: source.last_note ?? latestHistory?.note ?? null,
@@ -263,7 +278,7 @@ function getRuntimeHttpClient() {
 }
 
 export const activeCaseProvider = new ApiCaseProvider({
-    endpoint: '/api/kasus',
+    endpoint: '/api/kasus?per_page=100',
     httpClient: getRuntimeHttpClient(),
 });
 

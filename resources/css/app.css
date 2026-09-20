@@ -14,13 +14,21 @@
 
 html { scroll-behavior: smooth; }
 body {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-sans);
     color: #17211b;
     background: #f5f7f3;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
 }
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+/* Shared page typography keeps legacy and component-based headings consistent. */
+#main-content h1 { font-family: var(--font-sans); font-size: 1.25rem; line-height: 1.3; font-weight: 800; letter-spacing: -.025em; color: #173b29; overflow-wrap: break-word; }
+#main-content h1 + p { margin-top: .35rem; font-family: var(--font-sans); font-size: .875rem; line-height: 1.7; font-weight: 400; color: #66746c; }
+@media (min-width: 640px) {
+    #main-content h1 { font-size: 1.5rem; }
+}
+/* Contain Leaflet's panes (z-index 200–1000) below the app header and sidebar. */
+.app-main-shell .leaflet-container { isolation: isolate; z-index: 0; font-family: var(--font-sans); }
 :focus-visible { outline: 3px solid rgba(23, 107, 69, .35); outline-offset: 2px; }
 .brand-mark {
     width: 2.25rem;
@@ -48,9 +56,50 @@ a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .sidebar-scroll::-webkit-scrollbar-thumb { background: #d7e5dc; border-radius: 999px; }
 .donut-chart { background: conic-gradient(#176b45 0 71%, #d7a735 71% 92%, #dce4df 92% 100%); }
 .soft-card { box-shadow: 0 1px 2px rgba(16, 42, 28, .03), 0 8px 24px rgba(16, 42, 28, .035); }
+.app-toolbar,
+.app-table-shell { border: 1px solid #e1eae3; border-radius: 1rem; background: #fff; box-shadow: 0 1px 2px rgba(16, 42, 28, .03), 0 8px 24px rgba(16, 42, 28, .035); }
+.app-toolbar { padding: 1rem; }
+.app-toolbar__eyebrow { color: #173b29; font-size: .8rem; font-weight: 800; letter-spacing: -.01em; }
+.app-toolbar__meta { color: #849189; font-size: .72rem; }
+.app-toolbar__input,
+.app-toolbar__select { width: 100%; border: 1px solid #d4e0d7; border-radius: .7rem; background: #fff; color: #173b29; outline: none; transition: border-color .2s, box-shadow .2s; }
+.app-toolbar__input:focus,
+.app-toolbar__select:focus { border-color: #176b45; box-shadow: 0 0 0 4px rgba(23, 107, 69, .11); }
+.app-toolbar__input::placeholder { color: #9aa69e; }
+.app-table-scroll { overflow-x: auto; scrollbar-color: #c9dacf transparent; scrollbar-width: thin; }
+.app-table-scroll::-webkit-scrollbar { height: 7px; }
+.app-table-scroll::-webkit-scrollbar-thumb { border-radius: 999px; background: #c9dacf; }
+.app-table { min-width: 780px; width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
+.app-table thead { background: #f4f8f5; }
+.app-table th { border-bottom: 1px solid #e1eae3; color: #6d7d73; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.app-table th, .app-table td { padding: .85rem 1rem; }
+.app-table tbody tr { transition: background-color .18s ease; }
+.app-table tbody tr:hover { background: #f8fbf9; }
+.app-table tbody td { border-bottom: 1px solid #edf2ee; color: #66746c; font-size: .82rem; vertical-align: middle; }
+.app-table tbody tr:last-child td { border-bottom: 0; }
+.app-table__primary { color: #173b29; font-weight: 700; }
+.app-table__code { color: #176b45; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .76rem; font-weight: 700; }
+.app-table__action { display: inline-flex; align-items: center; justify-content: center; min-height: 2.1rem; border-radius: .6rem; padding: .45rem .75rem; font-size: .72rem; font-weight: 700; transition: border-color .2s, background-color .2s, color .2s; }
+.app-table__action--edit { border: 1px solid #d4e0d7; color: #526159; }
+.app-table__action--edit:hover { border-color: #a8c9b2; background: #f2f9f4; color: #176b45; }
+.app-table__action--danger { background: #b33d34; color: #fff; }
+.app-table__action--danger:hover { background: #972f28; }
+.app-table__empty { color: #849189; }
+.app-table__footer { border-top: 1px solid #edf2ee; background: #fbfdfb; padding: .85rem 1rem; }
 .monitoring-chart-card { transition: transform .2s ease, box-shadow .2s ease; }
 .monitoring-chart-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(16, 42, 28, .04), 0 14px 30px rgba(16, 42, 28, .07); }
 .monitoring-chart-stage { background: linear-gradient(180deg, #fbfdfb, #f7faf8); }
+.webgis-status-symbol { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 38px; height: 38px; border: 2px solid #fff; border-radius: 50%; background: var(--status-color, #526159); color: #fff; box-shadow: 0 0 0 1px rgba(23, 59, 41, .12), 0 3px 8px rgba(23, 59, 41, .12); }
+.webgis-status-symbol > svg { position: relative; z-index: 1; display: block; width: 22px; height: 22px; }
+.webgis-status-symbol--pin { width: 44px; height: 44px; border-width: 3px; box-shadow: 0 2px 8px rgba(23, 59, 41, .3); }
+.webgis-status-symbol--pin::after { position: absolute; bottom: -7px; left: 50%; width: 12px; height: 12px; content: ''; transform: translateX(-50%) rotate(45deg); border-right: 3px solid #fff; border-bottom: 3px solid #fff; background: var(--status-color, #526159); border-radius: 0 0 3px 0; }
+.webgis-status-marker { background: transparent; border: 0; }
+.webgis-status-marker:focus-visible { outline: 3px solid #173b29; outline-offset: 4px; border-radius: 50%; }
+.webgis-status-card { display: flex; min-width: 0; min-height: 148px; flex-direction: column; }
+.webgis-status-card .webgis-status-symbol { width: 36px; height: 36px; border-width: 1px; box-shadow: 0 0 0 1px rgba(23, 59, 41, .1); }
+.webgis-status-card .webgis-status-symbol > svg { width: 18px; height: 18px; }
+.webgis-case-tooltip { display: grid; gap: .2rem; padding: .2rem .35rem; color: #173b29; font-family: var(--font-sans); font-size: .75rem; line-height: 1.5; }
+.webgis-case-tooltip > span:last-child { color: #66746c; }
 .loading-sheen {
     position: relative;
     overflow: hidden;
@@ -156,6 +205,10 @@ a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
     .app-main-shell button,
     .app-main-shell a.inline-flex { min-height: 2.75rem; }
     .app-main-shell .leaflet-container { width: 100%; }
+    .app-toolbar { padding: .9rem; }
+    .app-toolbar__actions { width: 100%; }
+    .app-table-shell { border-radius: .9rem; }
+    .app-table-scroll { margin-inline: .15rem; }
     .ui-confirm-dialog { padding: .75rem; }
     .ui-confirm-dialog__header { grid-template-columns: 2.5rem minmax(0, 1fr) 2.25rem; gap: .65rem; padding: 1.15rem 1rem .9rem; }
     .ui-confirm-dialog__icon { width: 2.4rem; height: 2.4rem; }

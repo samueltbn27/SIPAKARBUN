@@ -2,14 +2,16 @@
 
 namespace Tests\Feature\WebGIS;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 use Tests\Traits\CreatesUsersWithRoles;
 
 class WebGISTest extends TestCase
 {
-    use RefreshDatabase;
     use CreatesUsersWithRoles;
+    use RefreshDatabase;
 
     public function test_guest_diarahkan_ke_login(): void
     {
@@ -40,13 +42,20 @@ class WebGISTest extends TestCase
             ]);
     }
 
-    public function test_operator_uptd_pimpinan_dan_popt_dapat_membuka_webgis(): void
+    public function test_operator_uptd_dan_pimpinan_dapat_membuka_webgis(): void
     {
-        foreach (['operator_uptd', 'pimpinan', 'popt'] as $role) {
+        foreach (['operator_uptd', 'pimpinan'] as $role) {
             $this->actingAs($this->createUserWithRole($role))
                 ->get('/webgis')
                 ->assertOk();
         }
+    }
+
+    public function test_popt_menggunakan_penugasan_saya_dan_tidak_membuka_webgis_global(): void
+    {
+        $this->actingAs($this->createUserWithRole('popt'))
+            ->get('/webgis')
+            ->assertForbidden();
     }
 
     public function test_poktan_tidak_dapat_membuka_webgis(): void
@@ -56,11 +65,11 @@ class WebGISTest extends TestCase
             ->assertForbidden();
     }
 
-    private function createUserWithRole(string $role): \App\Models\User
+    private function createUserWithRole(string $role): User
     {
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role]);
+        Role::firstOrCreate(['name' => $role]);
 
-        $user = \App\Models\User::factory()->create(['is_active' => true]);
+        $user = User::factory()->create(['is_active' => true]);
         $user->assignRole($role);
 
         return $user;

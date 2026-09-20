@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Model PenugasanPopt — penugasan seorang POPT ke sebuah kasus.
@@ -34,6 +36,8 @@ class PenugasanPopt extends Model
         'status',
         'catatan',
         'assigned_at',
+        'accepted_at',
+        'deadline_at',
     ];
 
     protected $casts = [
@@ -41,6 +45,8 @@ class PenugasanPopt extends Model
         'popt_id' => 'integer',
         'assigned_by' => 'integer',
         'assigned_at' => 'datetime',
+        'accepted_at' => 'datetime',
+        'deadline_at' => 'datetime',
     ];
 
     public function kasus(): BelongsTo
@@ -56,5 +62,24 @@ class PenugasanPopt extends Model
     public function assignor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function progress(): HasMany
+    {
+        return $this->hasMany(ProgresPenanganan::class, 'penugasan_popt_id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
+
+    public function extensionRequests(): HasMany
+    {
+        return $this->hasMany(PerpanjanganPenugasan::class, 'penugasan_popt_id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
+
+    public function finalReport(): HasOne
+    {
+        return $this->hasOne(LaporanAkhirPenanganan::class, 'penugasan_popt_id');
     }
 }

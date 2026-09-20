@@ -7,8 +7,6 @@
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Monitoring</span><span>/</span><span class="text-[#176b45]">Status Kasus</span></div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Status Kasus</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Pantau perkembangan kasus yang telah diteruskan ke POPT: pemeriksaan, diagnosis, dan tindak lanjut.</p>
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">

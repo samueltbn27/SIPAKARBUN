@@ -38,20 +38,20 @@ export const providerFixtures = [
     },
     {
         name: 'postponed handling status',
-        raw: { case_id: 'postponed', status: 'postponed' },
-        assertCase: (testCase, assert) => assert.equal(testCase.status, 'postponed'),
+        raw: { case_id: 'postponed', monitoring_status: 'ditunda' },
+        assertCase: (testCase, assert) => assert.equal(testCase.status, 'ditunda'),
     },
     {
         name: 'completed handling status',
-        raw: { case_id: 'completed', status: 'completed' },
-        assertCase: (testCase, assert) => assert.equal(testCase.status, 'completed'),
+        raw: { case_id: 'completed', monitoring_status: 'selesai' },
+        assertCase: (testCase, assert) => assert.equal(testCase.status, 'selesai'),
     },
     {
         name: 'request status remains separate',
-        raw: { case_id: 'request-status', request_status: 'approved', status: 'under_review' },
+        raw: { case_id: 'request-status', request_status: 'approved', monitoring_status: 'dalam_penanganan' },
         assertCase: (testCase, assert) => {
             assert.equal(testCase.request_status, 'approved');
-            assert.equal(testCase.status, 'under_review');
+            assert.equal(testCase.status, 'dalam_penanganan');
         },
     },
     {

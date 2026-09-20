@@ -290,6 +290,32 @@ class SharedReferensiClientResolutionTest extends TestCase
         $this->assertNull($client->find(1));
     }
 
+    public function test_403_melaporkan_diagnostic_response_tanpa_mencatat_body_challenge(): void
+    {
+        $challengeBody = '<html><title>Just a moment...</title><body>cloudflare secret challenge marker</body></html>';
+        Http::fake([
+            '*/api/kelompok-tani*' => Http::response($challengeBody, 403, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+            ]),
+        ]);
+
+        $this->expectException(DisbunReferenceSyncException::class);
+        try {
+            (new HttpKelompokTaniReferensiClient('https://disbun.test'))
+                ->fetchAllWithReport();
+        } catch (DisbunReferenceSyncException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('HTTP 403', $message);
+            $this->assertStringContainsString('content_type=text/html; charset=UTF-8', $message);
+            $this->assertStringContainsString('response_format=html', $message);
+            $this->assertStringContainsString('cloudflare_challenge=yes', $message);
+            $this->assertStringContainsString('response_bytes='.strlen($challengeBody), $message);
+            $this->assertStringNotContainsString($challengeBody, $message);
+
+            throw $exception;
+        }
+    }
+
     public function test_kelompok_tani_menunggu_dan_mencoba_ulang_saat_rate_limited(): void
     {
         $attempt = 0;

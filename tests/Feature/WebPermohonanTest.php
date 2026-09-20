@@ -227,7 +227,7 @@ class WebPermohonanTest extends TestCase
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
 
-        // Permohonan tanpa kasus -> status penanganan "Belum Ditugaskan".
+        // Permohonan tanpa kasus -> status penanganan belum tersedia.
         $permohonan = PermohonanPenanganan::factory()->create([
             'diagnosis_id' => $diagnosis->id,
             'kelompok_tani_id' => 1,
@@ -242,9 +242,9 @@ class WebPermohonanTest extends TestCase
             ->assertSee($permohonan->permohonan_code)
             ->assertSee('Permohonan: Diajukan')
             ->assertSee('Diajukan')
-            ->assertSee('Belum Ditugaskan');
+            ->assertSee('Belum tersedia');
 
-        // Permohonan diterima + kasus ditugaskan -> status penanganan "Ditugaskan".
+        // Permohonan diterima + kasus ditugaskan -> status sederhana menunggu penanganan.
         $kasusPermohonan = PermohonanPenanganan::factory()->create([
             'diagnosis_id' => $this->buatDiagnosis($user)->id,
             'status' => PermohonanPenanganan::STATUS_DITERIMA,
@@ -261,7 +261,7 @@ class WebPermohonanTest extends TestCase
             ->assertSee($kasusPermohonan->permohonan_code)
             ->assertSee('KS-20260819-0007')
             ->assertSee('Diterima')
-            ->assertSee('Ditugaskan');
+            ->assertSee('Menunggu Penanganan');
     }
 
     public function test_index_filter_tanggal(): void
@@ -904,7 +904,7 @@ class WebPermohonanTest extends TestCase
             ->assertSee('Status Permohonan')
             ->assertSee('Status Penanganan')
             ->assertSee('Diterima')
-            ->assertSee('Dalam Pelaksanaan')
+            ->assertSee('Dalam Penanganan')
             ->assertSee($kasus->kasus_code);
     }
 
@@ -944,7 +944,7 @@ class WebPermohonanTest extends TestCase
 
         $this->get('/permohonan/'.$permohonan->id)
             ->assertOk()
-            ->assertSee('Belum ada petugas yang ditugaskan.');
+            ->assertSee('Belum ditugaskan');
     }
 
     public function test_show_menampilkan_petugas_popt_yang_ditugaskan(): void
@@ -977,14 +977,12 @@ class WebPermohonanTest extends TestCase
 
         $response = $this->get('/permohonan/'.$permohonan->id)->assertOk();
 
-        $response->assertSee('Timeline')
+        $response->assertSee('Riwayat Permohonan')
             ->assertSee('Permohonan Diajukan')
             ->assertSee('Permohonan Diterima')
-            ->assertSee('POPT Ditugaskan')
-            ->assertSee('Dalam Pelaksanaan')
+            ->assertSee('Perkembangan Penanganan')
+            ->assertSee('Informasi Penanganan')
             ->assertSee('Layak ditindaklanjuti.')
-            ->assertSee('Mulai pelaksanaan di lapangan.')
-            ->assertSee('oleh '.$popt->name)
             ->assertSee($pemohon->name);
     }
 
@@ -1002,10 +1000,9 @@ class WebPermohonanTest extends TestCase
             ->assertOk()
             ->assertSee('Permohonan Diajukan')
             ->assertSee('Permohonan Diterima')
-            ->assertSee('POPT Ditugaskan')
-            ->assertSee('Dalam Pelaksanaan')
             ->assertSee('Selesai')
-            ->assertSee('Penanganan selesai.')
+            ->assertSee('Hasil Penanganan')
+            ->assertSee('Laporan akhir belum tersedia untuk kasus historis ini.')
             ->assertSee($popt->name)
             ->assertSee('Penugasan Selesai')
             ->assertDontSee('Belum ada petugas yang ditugaskan.');
