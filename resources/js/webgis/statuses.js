@@ -9,19 +9,19 @@ export const STATUS_ORDER = [
 export const STATUS_CONFIG = {
     menunggu_penanganan: {
         label: 'Menunggu Penanganan',
-        description: 'Kasus menunggu penugasan atau penerimaan POPT.',
+        description: 'Menunggu penugasan atau penerimaan POPT.',
         iconPath: 'M12 8v4l3 2 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
         markerClass: 'bg-[#c47a16] text-white', badgeClass: 'bg-[#fff3df] text-[#8a560d]', chartColor: '#c47a16',
     },
     dalam_penanganan: {
         label: 'Dalam Penanganan',
-        description: 'Kasus sedang ditinjau atau ditangani oleh petugas.',
+        description: 'Sedang ditinjau atau ditangani petugas.',
         iconPath: 'M14.7 6.3a5 5 0 0 0-6.4 6.4l-5 5a2.1 2.1 0 0 0 3 3l5-5a5 5 0 0 0 6.4-6.4l-3 3-3-3z',
         markerClass: 'bg-[#176b45] text-white', badgeClass: 'bg-[#e2f0e8] text-[#176b45]', chartColor: '#176b45',
     },
     ditunda: {
         label: 'Ditunda',
-        description: 'Penanganan dijeda dan dapat dilanjutkan oleh petugas.',
+        description: 'Penanganan sementara dijeda.',
         iconPath: 'M7 5h3v14H7z M14 5h3v14h-3z',
         markerClass: 'bg-[#b8860b] text-white', badgeClass: 'bg-[#fbf4df] text-[#80610a]', chartColor: '#b8860b',
     },
