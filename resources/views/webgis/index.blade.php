@@ -95,17 +95,16 @@
         </div>
     </section>
 
-    <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="legend-heading">
+    <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="status-heading">
         <div class="flex flex-col gap-1 mb-5">
-            <h2 id="legend-heading" class="text-base font-bold text-[#173b29]">Status Penanganan</h2>
-            <p class="text-sm leading-6 text-[#66746c]">Kenali status penanganan berdasarkan ikon dan warna pin pada peta.</p>
+            <h2 id="status-heading" class="text-base font-bold text-[#173b29]">Status Penanganan</h2>
+            <p class="text-sm leading-6 text-[#66746c]">Ringkasan kondisi penanganan kasus berdasarkan data yang ditampilkan.</p>
         </div>
-        <div data-webgis-status-legend class="webgis-status-legend grid grid-cols-1 gap-y-4 sm:grid-cols-2 lg:grid-cols-5 lg:divide-x lg:divide-[#e6eee8]">
+        <div data-webgis-status-summary class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" aria-label="Status penanganan dan jumlah kasus">
             <noscript>
-                <p class="text-sm text-[#77847c]">JavaScript diperlukan untuk menampilkan legenda status.</p>
+                <p class="text-sm text-[#77847c]">JavaScript diperlukan untuk menampilkan status penanganan.</p>
             </noscript>
         </div>
-        <div data-webgis-status-summary class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4" aria-label="Jumlah kasus per status"></div>
     </section>
 
     @include('monitoring._content')
