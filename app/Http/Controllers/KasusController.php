@@ -81,6 +81,7 @@ class KasusController extends Controller
             popt: User::query()->findOrFail((int) $request->validated('popt_id')),
             operator: $request->user(),
             catatan: $request->validated('catatan'),
+            deadlineAt: $request->validated('deadline_at'),
         );
 
         return (new KasusPenangananResource(

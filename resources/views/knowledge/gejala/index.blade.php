@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Daftar Gejala')
+@section('subtitle', 'Kelola data gejala untuk basis pengetahuan.')
 
 @section('content')
 @php
@@ -11,11 +12,7 @@
     $createLabel = $isPopt ? 'Tambah Draft' : 'Tambah Gejala';
 @endphp
 <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="min-w-0">
-            <h1 class="break-words text-xl font-extrabold tracking-tight text-[#173b29] sm:text-2xl">Daftar Gejala</h1>
-            <p class="mt-1 text-sm leading-6 text-[#66746c]">Kelola data gejala untuk basis pengetahuan.</p>
-        </div>
+    <div class="flex justify-end">
         @if($canCreateKnowledge)<a href="{{ route('knowledge.gejala.create') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#115a39]">{{ $createLabel }}</a>@endif
     </div>
 

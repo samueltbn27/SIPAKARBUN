@@ -23,8 +23,6 @@
             <span aria-hidden="true">/</span>
             <span class="text-[#176b45]">WebGIS</span>
         </div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29] sm:text-[28px]">WebGIS &amp; Monitoring Kasus</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Pantau persebaran, status penanganan, dan perkembangan kasus perkebunan.</p>
         <p data-webgis-delete-feedback hidden class="mt-3 w-fit rounded-lg border border-[#bfe2cc] bg-[#effaf2] px-3 py-2 text-sm font-medium text-[#176b45]" role="status" aria-live="polite"></p>
     </div>
 
@@ -95,17 +93,16 @@
         </div>
     </section>
 
-    <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="legend-heading">
+    <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="status-heading">
         <div class="flex flex-col gap-1 mb-5">
-            <h2 id="legend-heading" class="text-base font-bold text-[#173b29]">Status Penanganan</h2>
-            <p class="text-sm leading-6 text-[#66746c]">Kenali status terakhir melalui ikon dan warna pin. Pilih pin di peta untuk melihat informasi kasus dan riwayat penanganannya.</p>
+            <h2 id="status-heading" class="text-base font-bold text-[#173b29]">Status Penanganan</h2>
+            <p class="text-sm leading-6 text-[#66746c]">Ringkasan kondisi penanganan kasus berdasarkan data yang ditampilkan.</p>
         </div>
-        <div data-webgis-status-legend class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div data-webgis-status-summary class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" aria-label="Status penanganan dan jumlah kasus">
             <noscript>
-                <p class="text-sm text-[#77847c]">JavaScript diperlukan untuk menampilkan legenda status.</p>
+                <p class="text-sm text-[#77847c]">JavaScript diperlukan untuk menampilkan status penanganan.</p>
             </noscript>
         </div>
-        <div data-webgis-status-summary class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4" aria-label="Jumlah kasus per status"></div>
     </section>
 
     @include('monitoring._content')
@@ -144,6 +141,8 @@
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kabupaten/Kota</dt><dd data-case-detail="regency" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kecamatan</dt><dd data-case-detail="district" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3 sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">POPT</dt><dd data-case-detail="popt" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
+                <div class="rounded-lg bg-[#fffaf0] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Target penyelesaian</dt><dd data-case-detail="deadline" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
+                <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Laporan akhir</dt><dd data-case-detail="final-report" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
             </dl>
         </section>
 
@@ -169,7 +168,7 @@
         <section class="mt-6 border-t border-[#eef3ef] pt-5" aria-labelledby="case-update-heading">
             <h3 id="case-update-heading" class="text-sm font-bold text-[#173b29]">Pembaruan Terakhir</h3>
             <p data-case-detail="updated-at" class="mt-2 text-sm text-[#526159]">-</p>
-            <div class="mt-3 rounded-lg border border-[#eef3ef] bg-[#f7faf8] p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Catatan terakhir</p><p data-case-detail="last-note" class="mt-1 text-sm leading-6 text-[#526159]">-</p></div>
+            <div class="mt-3 rounded-lg border border-[#eef3ef] bg-[#f7faf8] p-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Progress terakhir</p><p data-case-detail="latest-progress" class="mt-1 text-sm leading-6 text-[#526159]">-</p><p class="mt-3 text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Catatan status terakhir</p><p data-case-detail="last-note" class="mt-1 text-sm leading-6 text-[#526159]">-</p></div>
         </section>
 
         <section class="mt-6 border-t border-[#eef3ef] pt-5" aria-labelledby="case-timeline-heading">

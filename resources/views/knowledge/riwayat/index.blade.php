@@ -7,8 +7,6 @@
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge</span><span>/</span><span class="text-[#176b45]">Riwayat Perubahan</span></div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Riwayat Perubahan</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Pelacakan seluruh aktivitas pada basis pengetahuan SIPAKARBUN.</p>
     </div>
 
     <div class="soft-card rounded-xl border border-[#e6eee8] bg-white overflow-hidden">

@@ -8,8 +8,6 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Master Data</span><span>/</span><span class="text-[#176b45]">Komoditas</span></div>
-            <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Daftar Komoditas</h1>
-            <p class="mt-1 text-sm text-[#77847c]">Komoditas referensi terverifikasi yang menjadi cakupan basis pengetahuan SIPAKARBUN.</p>
         </div>
     </div>
 

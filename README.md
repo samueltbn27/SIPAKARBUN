@@ -76,6 +76,25 @@ php artisan db:seed --class=SipakarbunDemoSeeder
 Skenario Pimpinan mencakup menu **WebGIS & Monitoring Kasus** dan
 **Laporan Monitoring**. Keduanya bersifat read-only.
 
+Dataset demo juga mencakup kasus menunggu tanpa penugasan, penugasan belum
+diterima, progress aktif, ditunda, melewati batas waktu, perpanjangan pending
+dan approved, laporan akhir dengan foto lokal, serta kasus selesai legacy tanpa
+laporan akhir. Monitoring memakai lima label: **Menunggu Penanganan**, **Dalam
+Penanganan**, **Ditunda**, **Melewati Batas Waktu**, dan **Selesai**.
+
+Nilai CF dan seluruh kasus Knowledge pada dataset ini adalah fixture simulasi
+untuk UAT, bukan validasi pakar lapangan. Data demo tidak menghubungi API
+Disbun; sinkronisasi referensi Disbun hanya dijalankan bila diminta secara
+eksplisit.
+
+Alur UAT ringkas: **Knowledge → Diagnosis → Permohonan → Operator (review,
+terima/tolak, assign POPT + target penyelesaian) → POPT (terima penugasan,
+progress, perpanjangan bila diperlukan, laporan akhir + foto) → hasil kasus →
+Poktan melihat progress dan hasil miliknya → WebGIS/Laporan Monitoring untuk
+Pimpinan secara read-only**. Status teknis backend tetap menyimpan detail
+workflow untuk kebutuhan operasional; tampilan monitoring menggunakan lima
+status stakeholder di atas.
+
 > **Peringatan:** Akun dan password ini hanya untuk local/demo/UAT dan tidak
 > boleh digunakan pada production.
 

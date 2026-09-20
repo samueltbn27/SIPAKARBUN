@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function (): void {
 });
 
 /* M3 global read-only monitoring surfaces. */
-Route::middleware(['auth', 'role:admin|operator_uptd|popt|pimpinan'])->group(function (): void {
+Route::middleware(['auth', 'role:admin|operator_uptd|pimpinan'])->group(function (): void {
     Route::get('/webgis', [WebGISController::class, 'index'])->name('webgis.index');
 });
 
@@ -151,6 +151,8 @@ Route::middleware(['auth', 'role:admin|operator_uptd'])->prefix('operator')->nam
     Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])->name('kasus.index');
     Route::get('/kasus/{id}', [OperatorWorkflowController::class, 'kasusShow'])->whereNumber('id')->name('kasus.show');
     Route::post('/kasus/{id}/assign', [OperatorWorkflowController::class, 'assignPopt'])->whereNumber('id')->name('kasus.assign');
+    Route::post('/kasus/{id}/perpanjangan/{extensionId}/approve', [OperatorWorkflowController::class, 'approveExtension'])->whereNumber(['id', 'extensionId'])->name('kasus.extension.approve');
+    Route::post('/kasus/{id}/perpanjangan/{extensionId}/reject', [OperatorWorkflowController::class, 'rejectExtension'])->whereNumber(['id', 'extensionId'])->name('kasus.extension.reject');
 });
 
 Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])
@@ -163,6 +165,10 @@ Route::middleware(['auth', 'role:popt'])->prefix('popt')->name('popt.')->group(f
     Route::post('/laporan-gejala/{laporanGejala}/review', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'review'])->whereNumber('laporanGejala')->name('laporan-gejala.review');
     Route::get('/penugasan', [PoptWorkflowController::class, 'index'])->name('penugasan');
     Route::get('/penugasan/{id}', [PoptWorkflowController::class, 'show'])->whereNumber('id')->name('penugasan.show');
+    Route::post('/penugasan/{id}/accept', [PoptWorkflowController::class, 'accept'])->whereNumber('id')->name('penugasan.accept');
+    Route::post('/penugasan/{id}/progress', [PoptWorkflowController::class, 'storeProgress'])->whereNumber('id')->name('penugasan.progress');
+    Route::post('/penugasan/{id}/perpanjangan', [PoptWorkflowController::class, 'requestExtension'])->whereNumber('id')->name('penugasan.extension');
+    Route::post('/penugasan/{id}/selesaikan', [PoptWorkflowController::class, 'complete'])->whereNumber('id')->name('penugasan.complete');
     Route::post('/penugasan/{id}/status', [PoptWorkflowController::class, 'updateStatus'])->whereNumber('id')->name('penugasan.status');
 });
 

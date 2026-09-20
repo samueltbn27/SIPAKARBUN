@@ -1,16 +1,10 @@
 @extends('layouts.app')
 
 @section('title', 'Edit Gejala')
+@section('subtitle', 'Perbarui data gejala yang tersimpan.')
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Edit Gejala</h1>
-            <p class="mt-1 text-sm text-gray-600">Perbarui data gejala <span class="font-medium">{{ $gejala->nama }}</span>.</p>
-        </div>
-    </div>
-
     <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.gejala.update', $gejala) }}" class="space-y-5">
             @csrf

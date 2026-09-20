@@ -6,8 +6,10 @@ use App\Models\KasusPenanganan;
 use App\Models\PenugasanPopt;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -27,17 +29,31 @@ class KasusService
 {
     public function __construct(
         private readonly StatusTransitionService $transitionService,
+        private readonly PerpanjanganPenugasanService $extensionService,
+        private readonly MonitoringStatusService $monitoringStatusService,
     ) {}
 
     /**
      * Tetapkan POPT ke kasus. Kembalikan kasus (fresh) setelah penugasan.
      */
-    public function assignPopt(KasusPenanganan $kasus, User $popt, User $operator, ?string $catatan): KasusPenanganan
-    {
+    public function assignPopt(
+        KasusPenanganan $kasus,
+        User $popt,
+        User $operator,
+        ?string $catatan,
+        string $deadlineAt,
+    ): KasusPenanganan {
         $valid = $popt->hasRole('popt') && $popt->is_active === true;
         if (! $valid) {
             throw ValidationException::withMessages([
                 'popt_id' => 'POPT yang dipilih tidak valid: harus ber-role popt dan berstatus aktif.',
+            ]);
+        }
+
+        $deadline = Carbon::parse($deadlineAt);
+        if (! $deadline->isAfter(now())) {
+            throw ValidationException::withMessages([
+                'deadline_at' => 'Target penyelesaian harus berada di masa depan.',
             ]);
         }
 
@@ -47,12 +63,17 @@ class KasusService
             ]);
         }
 
-        return DB::transaction(function () use ($kasus, $popt, $operator, $catatan): KasusPenanganan {
-            // Tutup penugasan aktif lama jika ada (reassignment).
-            PenugasanPopt::query()
+        return DB::transaction(function () use ($kasus, $popt, $operator, $catatan, $deadline): KasusPenanganan {
+            $activeAssignment = PenugasanPopt::query()
                 ->where('kasus_id', $kasus->id)
                 ->where('status', PenugasanPopt::STATUS_AKTIF)
-                ->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+                ->lockForUpdate()
+                ->first();
+
+            if ($activeAssignment !== null) {
+                $this->extensionService->cancelPendingForAssignment($activeAssignment, $operator);
+                $activeAssignment->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+            }
 
             PenugasanPopt::create([
                 'kasus_id' => $kasus->id,
@@ -61,6 +82,8 @@ class KasusService
                 'status' => PenugasanPopt::STATUS_AKTIF,
                 'catatan' => $catatan,
                 'assigned_at' => now(),
+                'accepted_at' => null,
+                'deadline_at' => $deadline,
             ]);
 
             // Kasus yang masih menunggu penugasan pertama berpindah ke
@@ -78,6 +101,7 @@ class KasusService
                 'kasus_id' => $kasus->id,
                 'popt_id' => $popt->id,
                 'assigned_by' => $operator->id,
+                'deadline_at' => $deadline->toIso8601String(),
             ]);
 
             return $kasus->fresh();
@@ -140,27 +164,28 @@ class KasusService
             ->withQueryString();
     }
 
-    /** @return array{total: int, active: int, completed: int, postponed: int} */
+    /** @return array{total: int, active: int, completed: int, overdue: int} */
     public function monitoringSummary(array $filters = []): array
     {
         $query = $this->monitoringQuery($filters);
 
         $total = (clone $query)->count();
-        $completed = (clone $query)
-            ->where('current_status', KasusPenanganan::STATUS_SELESAI)
-            ->count();
+        $completedQuery = clone $query;
+        $this->monitoringStatusService->applyFilter($completedQuery, MonitoringStatusService::STATUS_SELESAI);
+        $completed = $completedQuery->count();
+        $overdueQuery = clone $query;
+        $this->monitoringStatusService->applyFilter($overdueQuery, MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU);
+        $overdue = $overdueQuery->count();
 
         return [
             'total' => $total,
             'active' => $total - $completed,
             'completed' => $completed,
-            'postponed' => (clone $query)
-                ->where('current_status', KasusPenanganan::STATUS_DITUNDA)
-                ->count(),
+            'overdue' => $overdue,
         ];
     }
 
-    /** @return array{regencies: \Illuminate\Support\Collection, commodities: \Illuminate\Support\Collection, diseases: \Illuminate\Support\Collection} */
+    /** @return array{regencies: Collection, commodities: Collection, diseases: Collection} */
     public function monitoringFilterOptions(): array
     {
         return [
@@ -211,7 +236,13 @@ class KasusService
     public function detailKasus(int $id): KasusPenanganan
     {
         return KasusPenanganan::query()
-            ->with([...$this->readContractRelations(), 'creator'])
+            ->with([
+                ...$this->readContractRelations(),
+                'creator',
+                'extensionRequests.requester',
+                'extensionRequests.reviewer',
+                'extensionRequests.penugasanPopt.popt',
+            ])
             ->findOrFail($id);
     }
 
@@ -255,8 +286,11 @@ class KasusService
         return [
             'permohonan',
             'penugasanAktif.popt',
+            'penugasanTerakhir.popt',
             'penugasanPopt.popt',
             'riwayatStatus',
+            'progressTerakhir',
+            'finalReport',
         ];
     }
 
@@ -289,9 +323,7 @@ class KasusService
             $query->where('penyakit_name_snapshot', $filters['disease']);
         }
 
-        if (! empty($filters['status'])) {
-            $query->where('current_status', $filters['status']);
-        }
+        $this->monitoringStatusService->applyFilter($query, $filters['status'] ?? null);
 
         return $query;
     }

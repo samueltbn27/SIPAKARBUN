@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\KasusPenanganan;
+use App\Services\MonitoringStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,6 +20,7 @@ class KasusPenangananResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $monitoring = app(MonitoringStatusService::class)->resolve($this->resource);
         $permohonan = $this->relationLoaded('permohonan')
             ? $this->permohonan
             : null;
@@ -35,6 +38,7 @@ class KasusPenangananResource extends JsonResource
         $poptNama = $penugasan?->relationLoaded('popt')
             ? $penugasan->popt?->name
             : null;
+        $progressTerakhir = $this->relationLoaded('progressTerakhir') ? $this->progressTerakhir : null;
 
         return [
             'kasus_id' => $this->id,
@@ -46,8 +50,13 @@ class KasusPenangananResource extends JsonResource
             'status' => $this->current_status,
             'current_status' => $this->current_status,
             'handling_status' => $this->current_status,
+            'monitoring_status' => $monitoring['key'],
+            'monitoring_status_label' => $monitoring['label'],
+            'is_overdue' => $monitoring['is_overdue'],
+            'effective_deadline_at' => $monitoring['effective_deadline_at']?->toIso8601String(),
+            'overdue_since' => $monitoring['overdue_since']?->toIso8601String(),
             'can_delete_case' => $request->user()?->hasRole('admin') === true
-                && $this->current_status === \App\Models\KasusPenanganan::STATUS_SELESAI,
+                && $this->current_status === KasusPenanganan::STATUS_SELESAI,
             'request_status' => $permohonan?->status,
             'kelompok_tani' => $permohonan === null ? null : [
                 'id' => $permohonan->kelompok_tani_id,
@@ -83,7 +92,17 @@ class KasusPenangananResource extends JsonResource
                 'status' => $penugasan->status,
                 'catatan' => $penugasan->catatan,
                 'assigned_at' => $penugasan->assigned_at?->toIso8601String(),
+                'accepted_at' => $penugasan->accepted_at?->toIso8601String(),
+                'deadline_at' => $penugasan->deadline_at?->toIso8601String(),
             ],
+            'latest_progress' => $progressTerakhir === null ? null : [
+                'note' => $progressTerakhir->catatan,
+                'timestamp' => $progressTerakhir->created_at?->toIso8601String(),
+            ],
+            'final_report_exists' => $this->relationLoaded('finalReport')
+                ? $this->finalReport !== null
+                : $this->finalReport()->exists(),
+            'completed_at' => $this->completed_at?->toIso8601String(),
             'last_note' => $riwayatTerakhir?->catatan,
             'last_status_at' => $riwayatTerakhir?->created_at?->toIso8601String(),
             // Riwayat terbaru lebih dahulu, mengikuti relasi model.

@@ -7,8 +7,6 @@
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Pengajuan Kasus</span><span>/</span><span class="text-[#176b45]">Validasi Pengajuan</span></div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Validasi Pengajuan</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Periksa detail pengajuan, lalu terima (diteruskan ke POPT) atau tolak dengan alasan.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">

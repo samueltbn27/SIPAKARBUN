@@ -9,7 +9,7 @@
     $pendingUsers = $userRole === 'admin' ? \App\Models\User::where('is_active', false)->count() : 0;
     $canAccessKnowledge = auth()->user()?->hasAnyRole(['admin', 'popt', 'operator_uptd']) ?? false;
     $canManageKnowledge = auth()->user()?->hasAnyRole(['admin', 'operator_uptd']) ?? false;
-    $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'popt', 'pimpinan']) ?? false;
+    $canAccessWebgis = auth()->user()?->hasAnyRole(['admin', 'operator_uptd', 'pimpinan']) ?? false;
     $canAccessMonitoringReport = auth()->user()?->hasAnyRole(['admin', 'pimpinan']) ?? false;
     $navSections = [
         [

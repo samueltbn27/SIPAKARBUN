@@ -216,7 +216,14 @@ class PermohonanService
     public function permohonanPemohon(int $userId, array $filters = []): LengthAwarePaginator
     {
         $query = PermohonanPenanganan::query()
-            ->with(['diagnosis.results', 'diagnosis.symptoms', 'keputusan', 'kasus', 'evidences'])
+            ->with([
+                'diagnosis.results',
+                'diagnosis.symptoms',
+                'keputusan',
+                'kasus.penugasanAktif.popt',
+                'kasus.penugasanTerakhir.popt',
+                'evidences',
+            ])
             ->where('created_by', $userId);
 
         return $this->filterQuery($query, $filters)->latest('id')->paginate($this->perPage($filters));

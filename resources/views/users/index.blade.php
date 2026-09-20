@@ -8,8 +8,6 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Pengaturan</span><span>/</span><span class="text-[#176b45]">Pengguna</span></div>
-            <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Manajemen Pengguna</h1>
-            <p class="mt-1 text-sm text-[#77847c]">Kelola akun pengguna dan provision akun sesuai role aplikasi.</p>
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115a39] transition">

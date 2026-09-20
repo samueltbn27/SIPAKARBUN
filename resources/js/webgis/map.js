@@ -55,6 +55,7 @@ function createCasePopup(caseData) {
     const popup = document.createElement('div');
     popup.className = 'min-w-[210px] text-[#173b29]';
     const statusConfig = getStatusConfig(caseData.status);
+    const statusLabel = caseData.monitoring_status_label || statusConfig.label;
 
     const title = document.createElement('h3');
     title.className = 'text-sm font-bold text-[#173b29]';
@@ -66,7 +67,7 @@ function createCasePopup(caseData) {
 
     const statusBadge = document.createElement('span');
     statusBadge.className = `inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-bold ${statusConfig.badgeClass}`;
-    statusBadge.textContent = statusConfig.label;
+    statusBadge.textContent = statusLabel;
 
     const statusRow = document.createElement('div');
     statusRow.className = 'mt-3 flex items-center gap-2';
@@ -79,8 +80,16 @@ function createCasePopup(caseData) {
     fields.className = 'mt-3 space-y-2';
     appendPopupField(fields, 'Komoditas', caseData.komoditas?.nama);
     appendPopupField(fields, 'Penyakit', caseData.penyakit?.nama);
-    appendPopupField(fields, 'POPT', caseData.popt?.nama);
-    appendPopupField(fields, 'Update terakhir', formatDateTime(caseData.last_status_at));
+    appendPopupField(fields, 'POPT', caseData.popt?.nama || 'Belum ditugaskan');
+    appendPopupField(fields, 'Target penyelesaian', formatDateTime(caseData.effective_deadline_at));
+    appendPopupField(fields, 'Progress terakhir', caseData.latest_progress?.note || 'Belum ada progress');
+    if (caseData.is_overdue) {
+        appendPopupField(fields, 'Melewati target sejak', formatDateTime(caseData.overdue_since));
+    }
+    if (caseData.status === 'selesai') {
+        appendPopupField(fields, 'Laporan akhir', caseData.final_report_exists ? 'Tersedia' : 'Belum tersedia');
+        appendPopupField(fields, 'Tanggal selesai', formatDateTime(caseData.completed_at));
+    }
 
     const detailButton = document.createElement('button');
     detailButton.type = 'button';
@@ -205,36 +214,6 @@ function setFilterErrorState() {
     }
 }
 
-function renderStatusLegend() {
-    const legend = document.querySelector('[data-webgis-status-legend]');
-
-    if (!legend) {
-        return;
-    }
-
-    legend.replaceChildren();
-
-    getStatusOptions().forEach(({ value, label }) => {
-        const config = getStatusConfig(value);
-        const item = document.createElement('div');
-        item.className = 'webgis-legend-item';
-
-        const marker = createStatusSymbol(value);
-
-        const copy = document.createElement('div');
-        const labelElement = document.createElement('h3');
-        labelElement.className = 'text-sm font-bold leading-5 text-[#173b29]';
-        labelElement.textContent = label;
-        const description = document.createElement('p');
-        description.className = 'mt-1 text-xs leading-5 text-[#66746c]';
-        description.textContent = config.description;
-        copy.append(labelElement, description);
-
-        item.append(marker, copy);
-        legend.append(item);
-    });
-}
-
 function renderStatusSummary(cases, filters) {
     const summary = document.querySelector('[data-webgis-status-summary]');
 
@@ -245,8 +224,10 @@ function renderStatusSummary(cases, filters) {
     summary.replaceChildren();
 
     groupByStatus(applyFilters(cases, filters)).forEach(({ key, label, count }) => {
+        const config = getStatusConfig(key);
         const card = document.createElement('article');
-        card.className = 'rounded-xl border border-[#e6eee8] bg-[#f7faf8] p-3';
+        card.className = 'webgis-status-card rounded-xl border border-[#e6eee8] bg-[#f7faf8] p-4';
+        card.setAttribute('aria-label', `${label}: ${count} kasus`);
 
         const header = document.createElement('div');
         header.className = 'flex items-center justify-between gap-2';
@@ -257,12 +238,16 @@ function renderStatusSummary(cases, filters) {
         countElement.className = 'text-lg font-bold text-[#173b29]';
         countElement.textContent = String(count);
 
-        const labelElement = document.createElement('p');
-        labelElement.className = 'mt-2 text-xs font-semibold leading-4 text-[#526159]';
+        const labelElement = document.createElement('h3');
+        labelElement.className = 'mt-3 text-sm font-bold leading-5 text-[#173b29]';
         labelElement.textContent = label;
 
+        const description = document.createElement('p');
+        description.className = 'mt-1 text-xs leading-5 text-[#66746c]';
+        description.textContent = config.description;
+
         header.append(marker, countElement);
-        card.append(header, labelElement);
+        card.append(header, labelElement, description);
         summary.append(card);
     });
 }
@@ -379,8 +364,6 @@ export function initializeWebGIS(container, cases) {
     initializeCaseDetailDrawer({ onDeleted: refreshCasesAfterDelete });
 
     updateFilterOptions();
-    renderStatusLegend();
-
     Object.entries(controls).forEach(([filterName, control]) => {
         control?.addEventListener('change', () => {
             filterState[filterName] = control.value;

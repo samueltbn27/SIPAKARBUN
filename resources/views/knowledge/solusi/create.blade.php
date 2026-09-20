@@ -1,16 +1,10 @@
 @extends('layouts.app')
 
 @section('title', 'Tambah Solusi')
+@section('subtitle', 'Isi form untuk menambah solusi baru.')
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Tambah Solusi</h1>
-            <p class="mt-1 text-sm text-gray-600">Isi form di bawah untuk menambah solusi baru.</p>
-        </div>
-    </div>
-
     <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <form method="POST" action="{{ route('knowledge.solusi.store') }}" class="space-y-5">
             @csrf

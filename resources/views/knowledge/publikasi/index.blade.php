@@ -39,8 +39,6 @@
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge</span><span>/</span><span class="text-[#176b45]">Publikasi</span></div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Publikasi Knowledge</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Kelola workflow knowledge: <strong class="text-[#b8860b]">Draft</strong> → <strong class="text-[#176b45]">Aktif</strong> → <strong class="text-[#8b9790]">Nonaktif</strong>.</p>
     </div>
 
     {{-- Statistik ringkas --}}

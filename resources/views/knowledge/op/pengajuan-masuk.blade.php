@@ -7,8 +7,6 @@
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Pengajuan Kasus</span><span>/</span><span class="text-[#176b45]">Pengajuan Masuk</span></div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Pengajuan Masuk</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Daftar pengajuan kasus penanganan dari Poktan/Gapoktan yang menunggu tinjauan OP.</p>
     </div>
 
     <div class="soft-card rounded-xl border border-[#e6eee8] bg-white overflow-hidden">

@@ -54,6 +54,7 @@ class KasusPenanganan extends Model
         'latitude_kasus',
         'longitude_kasus',
         'created_by',
+        'completed_at',
     ];
 
     protected $casts = [
@@ -63,6 +64,7 @@ class KasusPenanganan extends Model
         'latitude_kasus' => 'float',
         'longitude_kasus' => 'float',
         'created_by' => 'integer',
+        'completed_at' => 'datetime',
     ];
 
     public function permohonan(): BelongsTo
@@ -103,5 +105,29 @@ class KasusPenanganan extends Model
         return $this->hasMany(RiwayatStatusPenanganan::class, 'kasus_id')
             ->orderByDesc('created_at')
             ->orderByDesc('id');
+    }
+
+    public function progress(): HasMany
+    {
+        return $this->hasMany(ProgresPenanganan::class, 'kasus_id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
+
+    public function progressTerakhir(): HasOne
+    {
+        return $this->hasOne(ProgresPenanganan::class, 'kasus_id')->latestOfMany();
+    }
+
+    public function extensionRequests(): HasMany
+    {
+        return $this->hasMany(PerpanjanganPenugasan::class, 'kasus_id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
+
+    public function finalReport(): HasOne
+    {
+        return $this->hasOne(LaporanAkhirPenanganan::class, 'kasus_id');
     }
 }

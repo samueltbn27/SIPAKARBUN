@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\KelompokTaniReferensiClient;
 use App\Exceptions\DisbunReferenceSyncException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -502,21 +503,35 @@ class HttpKelompokTaniReferensiClient implements KelompokTaniReferensiClient
             ]);
         } catch (Throwable $e) {
             if ($e instanceof RequestException && $e->response !== null) {
-                throw new DisbunReferenceSyncException("API kelompok tani menolak request pada start={$start} (HTTP {$e->response->status()}).", 0, $e);
+                $diagnostics = $this->responseDiagnostics($e->response, $start, $limit);
+                Log::warning('Request referensi kelompok tani ditolak oleh Disbun API.', $diagnostics);
+
+                throw new DisbunReferenceSyncException(
+                    "API kelompok tani menolak request pada start={$start} (".$this->diagnosticsSummary($diagnostics).').',
+                    0,
+                    $e,
+                );
             }
 
             $detail = trim($e->getMessage()) ?: get_class($e);
+            Log::warning('Request referensi kelompok tani gagal sebelum menerima response.', [
+                'url' => $this->endpointUrl(),
+                'requested_start' => $start,
+                'requested_limit' => $limit,
+                'error' => $this->sanitizeErrorMessage($detail),
+            ]);
             throw new DisbunReferenceSyncException("API kelompok tani tidak dapat dihubungi pada start={$start}: {$detail}", 0, $e);
         }
 
-        if ($response->failed()) {
-            Log::warning('Gagal ambil referensi kelompok tani dari Disbun API', [
-                'status' => $response->status(),
-                'start' => $start,
-                'limit' => $limit,
-            ]);
+        $diagnostics = $this->responseDiagnostics($response, $start, $limit);
+        Log::debug('Response referensi kelompok tani diterima dari Disbun API.', $diagnostics);
 
-            throw new DisbunReferenceSyncException("API kelompok tani gagal pada start={$start} (HTTP {$response->status()}).");
+        if ($response->failed()) {
+            Log::warning('Gagal ambil referensi kelompok tani dari Disbun API', $diagnostics);
+
+            throw new DisbunReferenceSyncException(
+                "API kelompok tani gagal pada start={$start} (".$this->diagnosticsSummary($diagnostics).').'
+            );
         }
 
         $root = $response->json();
@@ -525,7 +540,10 @@ class HttpKelompokTaniReferensiClient implements KelompokTaniReferensiClient
         $ecode = is_array($root) ? ($root['ecode'] ?? null) : null;
 
         if ($status !== true || ! is_numeric($ecode) || (int) $ecode !== 0 || ! is_array($result)) {
-            throw new DisbunReferenceSyncException("Response kelompok tani malformed pada start={$start}: status/ecode/result tidak valid.");
+            Log::warning('Response referensi kelompok tani malformed.', $diagnostics);
+            throw new DisbunReferenceSyncException(
+                "Response kelompok tani malformed pada start={$start}: status/ecode/result tidak valid (".$this->diagnosticsSummary($diagnostics).').'
+            );
         }
 
         $data = $result['data'] ?? null;
@@ -539,11 +557,16 @@ class HttpKelompokTaniReferensiClient implements KelompokTaniReferensiClient
             || ! is_numeric($countAll) || (int) $countAll < (int) $total
             || ! is_numeric($reportedStart)
             || ! is_numeric($reportedLimit) || (int) $reportedLimit <= 0) {
-            throw new DisbunReferenceSyncException("Response kelompok tani malformed pada start={$start}: metadata pagination tidak valid.");
+            Log::warning('Metadata pagination referensi kelompok tani malformed.', $diagnostics);
+            throw new DisbunReferenceSyncException(
+                "Response kelompok tani malformed pada start={$start}: metadata pagination tidak valid (".$this->diagnosticsSummary($diagnostics).').'
+            );
         }
 
         if ($enforceRequestedStart && (int) $reportedStart !== $start) {
-            throw new DisbunReferenceSyncException("Response kelompok tani malformed pada start={$start}: response start tidak sesuai request.");
+            throw new DisbunReferenceSyncException(
+                "Response kelompok tani malformed pada start={$start}: response start tidak sesuai request (".$this->diagnosticsSummary($diagnostics).').'
+            );
         }
 
         return [
@@ -708,6 +731,89 @@ class HttpKelompokTaniReferensiClient implements KelompokTaniReferensiClient
         }
 
         return min(2000, max(200, $attempt * 200));
+    }
+
+    /** @return array<string, int|string|bool> */
+    private function responseDiagnostics(Response $response, int $start, int $limit): array
+    {
+        $body = $response->body();
+        $contentType = trim((string) $response->header('Content-Type'));
+
+        return [
+            'url' => $this->endpointUrl(),
+            'http_status' => $response->status(),
+            'content_type' => $contentType !== '' ? $contentType : 'unknown',
+            'response_bytes' => strlen($body),
+            'response_format' => $this->responseFormat($body, $contentType),
+            'cloudflare_challenge' => $this->isCloudflareChallenge($body, $contentType),
+            'requested_start' => $start,
+            'requested_limit' => $limit,
+        ];
+    }
+
+    /** @param array<string, int|string|bool> $diagnostics */
+    private function diagnosticsSummary(array $diagnostics): string
+    {
+        return sprintf(
+            'url=%s; HTTP %s; content_type=%s; response_bytes=%s; response_format=%s; cloudflare_challenge=%s',
+            $diagnostics['url'],
+            $diagnostics['http_status'],
+            $diagnostics['content_type'],
+            $diagnostics['response_bytes'],
+            $diagnostics['response_format'],
+            $diagnostics['cloudflare_challenge'] ? 'yes' : 'no',
+        );
+    }
+
+    private function endpointUrl(): string
+    {
+        $parts = parse_url($this->baseUrl);
+        if (! is_array($parts) || ! isset($parts['host'])) {
+            return '[configured endpoint]/api/kelompok-tani';
+        }
+
+        $scheme = isset($parts['scheme']) ? $parts['scheme'].'://' : '//';
+        $host = $parts['host'];
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+        $path = trim((string) ($parts['path'] ?? ''), '/');
+
+        return rtrim($scheme.$host.$port.($path !== '' ? '/'.$path : ''), '/').'/api/kelompok-tani';
+    }
+
+    private function responseFormat(string $body, string $contentType): string
+    {
+        $contentType = mb_strtolower($contentType);
+        if (str_contains($contentType, 'json') || preg_match('/^\s*[\[{]/', $body) === 1) {
+            return 'json';
+        }
+
+        if (str_contains($contentType, 'html') || preg_match('/<\/?html\b|<!doctype\s+html/i', $body) === 1) {
+            return 'html';
+        }
+
+        return $body === '' ? 'empty' : 'other';
+    }
+
+    private function isCloudflareChallenge(string $body, string $contentType): bool
+    {
+        if ($this->responseFormat($body, $contentType) !== 'html') {
+            return false;
+        }
+
+        $body = mb_strtolower($body);
+
+        return str_contains($body, 'cloudflare')
+            || str_contains($body, 'cf-chl-')
+            || str_contains($body, 'challenge-platform')
+            || str_contains($body, 'just a moment')
+            || str_contains($body, 'attention required');
+    }
+
+    private function sanitizeErrorMessage(string $message): string
+    {
+        $message = preg_replace('/(authorization|token|password|secret|cookie)\s*[:=]\s*[^\s,;]+/i', '$1=[redacted]', $message) ?? $message;
+
+        return mb_substr($message, 0, 300);
     }
 
 }

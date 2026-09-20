@@ -94,6 +94,16 @@ Route::middleware(['auth:sanctum', 'role:popt'])
         Route::get('/penugasan', [PoptController::class, 'index']);
         Route::get('/kasus/{id}', [PoptController::class, 'show'])
             ->whereNumber('id');
+        Route::post('/penugasan/{assignment}/accept', [PoptController::class, 'acceptAssignment'])
+            ->whereNumber('assignment');
+        Route::post('/kasus/{id}/accept', [PoptController::class, 'accept'])
+            ->whereNumber('id');
+        Route::post('/kasus/{id}/progress', [PoptController::class, 'storeProgress'])
+            ->whereNumber('id');
+        Route::post('/kasus/{id}/perpanjangan', [PoptController::class, 'requestExtension'])
+            ->whereNumber('id');
+        Route::post('/kasus/{id}/selesaikan', [PoptController::class, 'complete'])
+            ->whereNumber('id');
         Route::post('/kasus/{id}/status', [PoptController::class, 'updateStatus'])
             ->whereNumber('id');
     });
