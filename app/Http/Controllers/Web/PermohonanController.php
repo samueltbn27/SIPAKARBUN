@@ -276,7 +276,6 @@ class PermohonanController extends Controller
             $list = collect($this->kelompokTaniClient->all())
                 ->filter(fn (array $item): bool => ($item['is_active'] ?? false) === true)
                 ->sortBy('nama')
-                ->take(25)
                 ->values()
                 ->all();
 

@@ -29,7 +29,6 @@ class ReferenceController extends Controller
                 });
             })
             ->orderBy('nama')
-            ->limit(25)
             ->get($fields);
 
         if ($selected > 0 && ! $rows->contains('id', $selected)) {
