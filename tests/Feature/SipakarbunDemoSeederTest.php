@@ -3,16 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\AturanCf;
-use App\Models\Diagnosis;
 use App\Models\Gejala;
 use App\Models\KasusPenanganan;
+use App\Models\LaporanAkhirEvidence;
+use App\Models\LaporanAkhirPenanganan;
 use App\Models\PenugasanPopt;
-use App\Models\PermohonanPenanganan;
 use App\Models\Penyakit;
+use App\Models\PermohonanPenanganan;
+use App\Models\PerpanjanganPenugasan;
+use App\Models\ProgresPenanganan;
 use App\Models\RefKelompokTani;
 use App\Models\RefKomoditas;
 use App\Models\RiwayatStatusPenanganan;
 use App\Models\User;
+use App\Services\MonitoringStatusService;
 use Database\Seeders\SipakarbunDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -45,14 +49,30 @@ class SipakarbunDemoSeederTest extends TestCase
         $this->assertSame(4, Penyakit::where('kode', 'like', 'PNY-UAT-%')->count());
         $this->assertSame(24, Gejala::where('kode', 'like', 'G-UAT-%')->count());
         $this->assertSame(24, AturanCf::whereHas('penyakit', fn ($q) => $q->where('kode', 'like', 'PNY-UAT-%'))->count());
-        $this->assertSame(5, KasusPenanganan::count());
-        $this->assertSame(6, PermohonanPenanganan::where('permohonan_code', 'like', 'PM-20260101-%')->count());
+        $this->assertSame(9, KasusPenanganan::count());
+        $this->assertSame(10, PermohonanPenanganan::where('permohonan_code', 'like', 'PM-20260101-%')->count());
         $this->assertSame(1, RiwayatStatusPenanganan::whereHas('kasus', fn ($q) => $q->where('kasus_code', 'KS-20260101-9001'))->where('status', 'diterima')->count());
         $this->assertSame(6, RiwayatStatusPenanganan::whereHas('kasus', fn ($q) => $q->where('kasus_code', 'KS-20260101-9004'))->count());
+        $this->assertSame(1, LaporanAkhirPenanganan::whereHas('kasus', fn ($q) => $q->where('kasus_code', 'KS-20260101-9004'))->count());
+        $this->assertSame(1, LaporanAkhirEvidence::count());
+        Storage::disk('public')->assertExists('laporan-akhir/demo-final-report.png');
+        $this->assertSame(1, ProgresPenanganan::whereHas('kasus', fn ($q) => $q->where('kasus_code', 'KS-20260101-9007'))->count());
+        $this->assertSame(1, PerpanjanganPenugasan::where('status', PerpanjanganPenugasan::STATUS_PENDING)->count());
+        $this->assertSame(1, PerpanjanganPenugasan::where('status', PerpanjanganPenugasan::STATUS_APPROVED)->count());
+        $this->assertSame(1, KasusPenanganan::where('kasus_code', 'KS-20260101-9010')->whereDoesntHave('finalReport')->count());
+
+        $monitoring = app(MonitoringStatusService::class);
+        $this->assertSame(MonitoringStatusService::STATUS_MENUNGGU_PENANGANAN, $monitoring->resolve(KasusPenanganan::where('kasus_code', 'KS-20260101-9001')->firstOrFail())['key']);
+        $this->assertSame(MonitoringStatusService::STATUS_DALAM_PENANGANAN, $monitoring->resolve(KasusPenanganan::where('kasus_code', 'KS-20260101-9003')->firstOrFail())['key']);
+        $this->assertSame(MonitoringStatusService::STATUS_DITUNDA, $monitoring->resolve(KasusPenanganan::where('kasus_code', 'KS-20260101-9006')->firstOrFail())['key']);
+        $this->assertSame(MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU, $monitoring->resolve(KasusPenanganan::where('kasus_code', 'KS-20260101-9007')->firstOrFail())['key']);
+        $this->assertSame(MonitoringStatusService::STATUS_SELESAI, $monitoring->resolve(KasusPenanganan::where('kasus_code', 'KS-20260101-9004')->firstOrFail())['key']);
 
         foreach (['admin', 'operator_uptd', 'popt', 'poktan', 'pimpinan'] as $role) {
             $email = $role === 'admin' ? 'admin.tester@sipakarbun.local' : $role.'.tester@sipakarbun.local';
-            if ($role === 'operator_uptd') $email = 'operator.tester@sipakarbun.local';
+            if ($role === 'operator_uptd') {
+                $email = 'operator.tester@sipakarbun.local';
+            }
             $user = User::where('email', $email)->firstOrFail();
             $this->assertSame([$role], $user->getRoleNames()->values()->all());
             $this->assertTrue(Hash::check('SIPAKARBUN-Tester-2026!', $user->password));
@@ -73,9 +93,13 @@ class SipakarbunDemoSeederTest extends TestCase
         $this->assertSame(5, User::where('email', 'like', '%@sipakarbun.local')->count());
         $this->assertSame(5, RefKelompokTani::where('source', 'disbun')->count());
         $this->assertSame(41, RefKomoditas::where('source', 'disbun')->count());
-        $this->assertSame(5, KasusPenanganan::count());
-        $this->assertSame(6, PermohonanPenanganan::where('permohonan_code', 'like', 'PM-20260101-%')->count());
-        $this->assertSame(4, PenugasanPopt::whereHas('kasus', fn ($q) => $q->where('kasus_code', 'like', 'KS-20260101-%'))->count());
+        $this->assertSame(9, KasusPenanganan::count());
+        $this->assertSame(10, PermohonanPenanganan::where('permohonan_code', 'like', 'PM-20260101-%')->count());
+        $this->assertSame(8, PenugasanPopt::whereHas('kasus', fn ($q) => $q->where('kasus_code', 'like', 'KS-20260101-%'))->count());
+        $this->assertSame(1, LaporanAkhirPenanganan::count());
+        $this->assertSame(1, LaporanAkhirEvidence::count());
+        $this->assertSame(1, ProgresPenanganan::count());
+        $this->assertSame(2, PerpanjanganPenugasan::count());
         $this->assertSame(1, KasusPenanganan::where('kasus_code', 'KS-20260101-9001')->where('current_status', 'diterima')->count());
         $this->assertSame(1, KasusPenanganan::where('kasus_code', 'KS-20260101-9004')->where('current_status', 'selesai')->count());
         $this->assertSame(1, PermohonanPenanganan::where('permohonan_code', 'PM-20260101-9005')->where('status', 'ditolak')->count());
@@ -88,7 +112,7 @@ class SipakarbunDemoSeederTest extends TestCase
         $this->assertNotSame((float) RefKelompokTani::where('disbun_record_id', '5488')->value('longitude'), (float) $accepted->longitude_kasus);
 
         $admin = User::where('email', 'admin.tester@sipakarbun.local')->firstOrFail();
-        $this->actingAs($admin)->getJson('/api/kasus')->assertOk()->assertJsonCount(5, 'data');
+        $this->actingAs($admin)->getJson('/api/kasus')->assertOk()->assertJsonCount(9, 'data');
     }
 
     public function test_seluruh_akun_demo_dapat_login_dengan_password_bersama(): void
