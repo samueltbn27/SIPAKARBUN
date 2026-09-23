@@ -177,7 +177,8 @@ class KnowledgeController extends Controller
     public function penyakitIndex(Request $request): View
     {
         $query = Penyakit::query()
-            ->with('penyakitKomoditas')
+            ->with(['penyakitKomoditas.komoditas'])
+            ->withCount('aturanCf')
             ->when($request->boolean('aktif_saja'), fn($q) => $q->aktifSaja())
             ->when($request->q, function($q, $q2) {
                 $q->where('kode', 'like', "%{$q2}%")
@@ -366,7 +367,7 @@ class KnowledgeController extends Controller
     public function aturanCfCreate(): View
     {
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
-        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->pluck('nama', 'id');
+        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
 
         return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList'));
     }
@@ -395,7 +396,7 @@ class KnowledgeController extends Controller
     {
         $this->ensureCanEditKnowledge($aturanCf);
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
-        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->pluck('nama', 'id');
+        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
 
         return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList'));
     }

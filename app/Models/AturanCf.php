@@ -36,6 +36,8 @@ class AturanCf extends Model
         'penyakit_id',
         'gejala_id',
         'cf_pakar',
+        'sumber',
+        'pendekatan',
         'status',
         'version',
         'created_by',

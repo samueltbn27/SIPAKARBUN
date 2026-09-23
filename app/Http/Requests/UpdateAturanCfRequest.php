@@ -27,6 +27,8 @@ class UpdateAturanCfRequest extends FormRequest
             'penyakit_id' => ['sometimes', 'required', 'integer', 'exists:penyakit,id'],
             'gejala_id' => ['sometimes', 'required', 'integer', 'exists:gejala,id'],
             'cf_pakar' => ['sometimes', 'required', 'numeric', 'between:-1,1'],
+            'sumber' => ['nullable', 'string', 'max:150'],
+            'pendekatan' => ['nullable', 'string', 'max:150'],
             'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }
@@ -37,6 +39,8 @@ class UpdateAturanCfRequest extends FormRequest
             'penyakit_id.exists' => 'Penyakit yang dipilih tidak ditemukan.',
             'gejala_id.exists' => 'Gejala yang dipilih tidak ditemukan.',
             'cf_pakar.between' => 'Nilai CF pakar harus di antara -1 dan 1.',
+            'sumber.max' => 'Sumber/referensi maksimal 150 karakter.',
+            'pendekatan.max' => 'Pendekatan penentuan CF maksimal 150 karakter.',
             'status.in' => 'Status harus draft, aktif, atau nonaktif.',
         ];
     }

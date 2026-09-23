@@ -11,13 +11,7 @@
 
                 <div>
                     <label for="penyakit_id" class="block text-sm font-medium text-gray-700 mb-1">Penyakit <span class="text-red-500">*</span></label>
-                    <select id="penyakit_id" name="penyakit_id" required
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                        <option value="">— Pilih Penyakit —</option>
-                        @foreach($penyakitList as $id => $nama)
-                            <option value="{{ $id }}" @selected(old('penyakit_id') == $id)>{{ $nama }}</option>
-                        @endforeach
-                    </select>
+                    <x-search-select name="penyakit_id" :options="$penyakitList" selected="{{ old('penyakit_id') }}" placeholder="Cari penyakit..." required />
                     @error('penyakit_id')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -25,13 +19,7 @@
 
                 <div>
                     <label for="gejala_id" class="block text-sm font-medium text-gray-700 mb-1">Gejala <span class="text-red-500">*</span></label>
-                    <select id="gejala_id" name="gejala_id" required
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                        <option value="">— Pilih Gejala —</option>
-                        @foreach($gejalaList as $id => $nama)
-                            <option value="{{ $id }}" @selected(old('gejala_id') == $id)>{{ $nama }}</option>
-                        @endforeach
-                    </select>
+                    <x-search-select name="gejala_id" :options="$gejalaList" selected="{{ old('gejala_id') }}" placeholder="Cari gejala..." required />
                     @error('gejala_id')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -45,6 +33,30 @@
                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
                     <p class="mt-1 text-xs text-gray-500">Nilai CF harus di antara -1 dan 1</p>
                     @error('cf_pakar')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="sumber" class="block text-sm font-medium text-gray-700 mb-1">Sumber / Referensi</label>
+                    <input type="text" id="sumber" name="sumber" maxlength="150"
+                           value="{{ old('sumber') }}"
+                           placeholder="Contoh: Wawancara pakar POPT, jurnal, buku"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
+                    <p class="mt-1 text-xs text-gray-500">Asal nilai CF diperoleh (opsional)</p>
+                    @error('sumber')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="pendekatan" class="block text-sm font-medium text-gray-700 mb-1">Pendekatan Penentuan CF</label>
+                    <input type="text" id="pendekatan" name="pendekatan" maxlength="150"
+                           value="{{ old('pendekatan') }}"
+                           placeholder="Contoh: Pengalaman pakar, uji lapangan, studi literatur"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
+                    <p class="mt-1 text-xs text-gray-500">Cara/metode penentuan nilai CF (opsional)</p>
+                    @error('pendekatan')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>

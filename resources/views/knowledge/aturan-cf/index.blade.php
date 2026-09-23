@@ -29,8 +29,8 @@
                     <select id="penyakit_id" name="penyakit_id"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
                         <option value="">Semua Penyakit</option>
-                        @foreach($penyakitList as $id => $nama)
-                            <option value="{{ $id }}" @selected((string) request('penyakit_id') === (string) $id)>{{ $nama }}</option>
+                        @foreach($penyakitList as $p)
+                            <option value="{{ $p->id }}" @selected((string) request('penyakit_id') === (string) $p->id)>{{ $p->nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -61,6 +61,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penyakit</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gejala</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CF Pakar</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sumber &amp; Pendekatan</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Versi</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -72,6 +73,18 @@
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->penyakit?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format($aturan->cf_pakar, 3) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600">
+                                    @if($aturan->sumber || $aturan->pendekatan)
+                                        @if($aturan->sumber)
+                                            <div class="text-xs"><span class="font-medium text-gray-700">Sumber:</span> {{ $aturan->sumber }}</div>
+                                        @endif
+                                        @if($aturan->pendekatan)
+                                            <div class="text-xs text-gray-500"><span class="font-medium text-gray-700">Pendekatan:</span> {{ $aturan->pendekatan }}</div>
+                                        @endif
+                                    @else
+                                        <span class="text-xs text-gray-400">—</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3">
                                     <x-knowledge.status-badge :status="$aturan->status" />
                                 </td>
@@ -96,7 +109,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-12 text-center">
+                                <td colspan="7" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
