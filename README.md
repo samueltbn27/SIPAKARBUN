@@ -4,6 +4,13 @@ SIPAKARBUN adalah aplikasi Laravel untuk diagnosis penyakit tanaman,
 permohonan penanganan, workflow Operator UPTD/POPT, Knowledge Management,
 WebGIS, dan dashboard monitoring.
 
+## Validasi Nilai CF
+
+Setiap aturan Knowledge perlu menyimpan sumber/provenance, metode penetapan CF,
+justifikasi, validator, dan status validasi. Nilai CF pada data demo adalah
+**Simulation/UAT**, bukan nilai tervalidasi, kecuali validasi nyata telah
+terdokumentasi. Lihat [panduan validasi Knowledge CF](docs/KNOWLEDGE_CF_VALIDATION.md).
+
 ## Setup & Team Testing
 
 Untuk setup dari clone baru, akun tester lima role, study case, UAT end-to-end,

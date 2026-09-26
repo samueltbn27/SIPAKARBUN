@@ -60,7 +60,14 @@ class AturanCfSeeder extends Seeder
                 ],
                 [
                     'cf_pakar' => $cf,
-                    'status' => 'aktif',
+                    'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
+                    'pendekatan' => 'Simulation / Testing',
+                    'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
+                    'status_validasi' => AturanCf::VALIDATION_UNVALIDATED,
+                    'validator_nama' => null,
+                    'validator_instansi' => null,
+                    'tanggal_validasi' => null,
+                    'status' => AturanCf::STATUS_AKTIF,
                     'created_by' => null,
                     'updated_by' => null,
                 ]

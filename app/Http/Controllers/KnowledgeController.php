@@ -20,6 +20,7 @@ use App\Models\PermohonanPenanganan;
 use App\Models\RefKomoditas;
 use App\Models\Solusi;
 use App\Services\KnowledgeImageService;
+use App\Support\CfProvenance;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -294,7 +295,9 @@ class KnowledgeController extends Controller
 
     public function gejalaCreate(): View
     {
-        return view('knowledge.gejala.create');
+        $referensiJenis = Gejala::REFERENSI_LABELS;
+
+        return view('knowledge.gejala.create', compact('referensiJenis'));
     }
 
     public function gejalaStore(StoreGejalaRequest $request): RedirectResponse
@@ -315,10 +318,17 @@ class KnowledgeController extends Controller
         return redirect()->route('knowledge.gejala.index')->with('success', 'Gejala berhasil dibuat.');
     }
 
+    public function gejalaShow(Gejala $gejala): View
+    {
+        return view('knowledge.gejala.show', compact('gejala'));
+    }
+
     public function gejalaEdit(Gejala $gejala): View
     {
         $this->ensureCanEditKnowledge($gejala);
-        return view('knowledge.gejala.edit', compact('gejala'));
+        $referensiJenis = Gejala::REFERENSI_LABELS;
+
+        return view('knowledge.gejala.edit', compact('gejala', 'referensiJenis'));
     }
 
     public function gejalaUpdate(UpdateGejalaRequest $request, Gejala $gejala): RedirectResponse
@@ -360,16 +370,20 @@ class KnowledgeController extends Controller
 
         $aturanCf = $query->paginate(15)->withQueryString();
         $penyakitList = Penyakit::orderBy('nama')->get(['id', 'nama']);
+        $sourceTypes = AturanCf::SOURCE_LABELS;
+        $validationStatuses = AturanCf::VALIDATION_LABELS;
 
-        return view('knowledge.aturan-cf.index', compact('aturanCf', 'penyakitList'));
+        return view('knowledge.aturan-cf.index', compact('aturanCf', 'penyakitList', 'sourceTypes', 'validationStatuses'));
     }
 
     public function aturanCfCreate(): View
     {
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
         $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
+        $sourceTypes = AturanCf::SOURCE_LABELS;
+        $validationStatuses = AturanCf::VALIDATION_LABELS;
 
-        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList'));
+        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses'));
     }
 
     public function aturanCfStore(StoreAturanCfRequest $request): RedirectResponse
@@ -392,13 +406,22 @@ class KnowledgeController extends Controller
         return redirect()->route('knowledge.aturan-cf.index')->with('success', 'Aturan CF berhasil dibuat.');
     }
 
+    public function aturanCfShow(AturanCf $aturanCf): View
+    {
+        $aturanCf->load(['penyakit', 'gejala']);
+
+        return view('knowledge.aturan-cf.show', compact('aturanCf'));
+    }
+
     public function aturanCfEdit(AturanCf $aturanCf): View
     {
         $this->ensureCanEditKnowledge($aturanCf);
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
         $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
+        $sourceTypes = AturanCf::SOURCE_LABELS;
+        $validationStatuses = AturanCf::VALIDATION_LABELS;
 
-        return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList'));
+        return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses'));
     }
 
     public function aturanCfUpdate(UpdateAturanCfRequest $request, AturanCf $aturanCf): RedirectResponse
@@ -546,6 +569,17 @@ class KnowledgeController extends Controller
         $record = $modelClass::findOrFail($request->id);
 
         $entityName = $record->nama ?? $record->judul ?? '—';
+
+        if ($record instanceof AturanCf && $request->status === AturanCf::STATUS_AKTIF) {
+            $errors = CfProvenance::errors(['status' => AturanCf::STATUS_AKTIF], $record);
+
+            if ($errors !== []) {
+                return back()
+                    ->withErrors($errors, 'publish')
+                    ->with('error', 'Aturan CF belum dapat dipublikasikan. Lengkapi provenance dan validasinya terlebih dahulu.');
+            }
+        }
+
         $record->update(['status' => $request->status]);
 
         $labelStatus = ['draft' => 'Draft', 'aktif' => 'Aktif', 'nonaktif' => 'Nonaktif'];

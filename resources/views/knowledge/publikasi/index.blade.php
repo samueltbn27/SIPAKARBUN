@@ -9,7 +9,11 @@
     // Petakan tiap entity ke baris seragam: id, nama, sub.
     $mapPenyakit = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
     $mapGejala = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
-    $mapAturan = fn ($item) => ['id' => $item->id, 'nama' => ($item->penyakit?->nama ?? '-') . ' — ' . ($item->gejala?->nama ?? '-'), 'sub' => 'CF ' . number_format((float) $item->cf_pakar, 3)];
+    $mapAturan = fn ($item) => [
+        'id' => $item->id,
+        'nama' => ($item->penyakit?->nama ?? '-') . ' — ' . ($item->gejala?->nama ?? '-'),
+        'sub' => 'CF ' . number_format((float) $item->cf_pakar, 3) . ' · ' . $item->jenisSumberLabel() . ' · ' . $item->statusValidasiLabel(),
+    ];
     $mapSolusi = fn ($item) => ['id' => $item->id, 'nama' => $item->judul, 'sub' => $item->penyakit?->nama];
 
     $entityDefs = [

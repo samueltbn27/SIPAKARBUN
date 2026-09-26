@@ -1,58 +1,18 @@
 @extends('layouts.app')
 
 @section('title', 'Tambah Gejala')
-@section('subtitle', 'Isi form untuk menambah gejala baru.')
+@section('subtitle', 'Isi definisi operasional, kriteria observasi, dan referensi gejala.')
 
 @section('content')
-<div class="space-y-6">
-    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.gejala.store') }}" class="space-y-5">
-            @csrf
+<div class="mx-auto max-w-4xl">
+    <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.gejala.store') }}" class="space-y-6">
+        @csrf
+        @include('knowledge.gejala._form-fields')
 
-            <div>
-                <label for="kode" class="mb-1 block text-sm font-medium text-gray-700">Kode <span class="text-gray-400">(opsional)</span></label>
-                <input type="text" name="kode" id="kode" value="{{ old('kode') }}" placeholder="Contoh: G01" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                @error('kode')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div>
-                <label for="nama" class="mb-1 block text-sm font-medium text-gray-700">Nama <span class="text-red-500">*</span></label>
-                <input type="text" name="nama" id="nama" value="{{ old('nama') }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                @error('nama')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div>
-                <label for="deskripsi" class="mb-1 block text-sm font-medium text-gray-700">Deskripsi</label>
-                <textarea name="deskripsi" id="deskripsi" rows="4" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">{{ old('deskripsi') }}</textarea>
-                @error('deskripsi')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div class="flex items-center gap-2">
-                <x-knowledge.status-select name="status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />
-            </div>
-
-            <div>
-                <label for="image" class="mb-1 block text-sm font-medium text-gray-700">Foto gejala <span class="text-gray-400">(opsional)</span></label>
-                <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/webp" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                <p class="mt-1 text-xs text-gray-500">JPG, PNG, atau WebP; maksimal 5 MB. Foto belum tersedia tetap diperbolehkan.</p>
-                @error('image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            <div class="flex items-center gap-3 border-t border-gray-100 pt-5">
-                <button type="submit" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
-                    Simpan
-                </button>
-                <a href="{{ route('knowledge.gejala.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                    Batal
-                </a>
-            </div>
-        </form>
-    </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">Simpan</button>
+            <a href="{{ route('knowledge.gejala.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">Batal</a>
+        </div>
+    </form>
 </div>
 @endsection

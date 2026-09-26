@@ -78,11 +78,13 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
 
         Route::get('/gejala/create', [KnowledgeController::class, 'gejalaCreate'])->name('gejala.create');
         Route::post('/gejala', [KnowledgeController::class, 'gejalaStore'])->name('gejala.store');
+        Route::get('/gejala/{gejala}', [KnowledgeController::class, 'gejalaShow'])->whereNumber('gejala')->name('gejala.show');
         Route::get('/gejala/{gejala}/edit', [KnowledgeController::class, 'gejalaEdit'])->name('gejala.edit');
         Route::put('/gejala/{gejala}', [KnowledgeController::class, 'gejalaUpdate'])->name('gejala.update');
 
         Route::get('/aturan-cf/create', [KnowledgeController::class, 'aturanCfCreate'])->name('aturan-cf.create');
         Route::post('/aturan-cf', [KnowledgeController::class, 'aturanCfStore'])->name('aturan-cf.store');
+        Route::get('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfShow'])->whereNumber('aturanCf')->name('aturan-cf.show');
         Route::get('/aturan-cf/{aturanCf}/edit', [KnowledgeController::class, 'aturanCfEdit'])->name('aturan-cf.edit');
         Route::put('/aturan-cf/{aturanCf}', [KnowledgeController::class, 'aturanCfUpdate'])->name('aturan-cf.update');
 

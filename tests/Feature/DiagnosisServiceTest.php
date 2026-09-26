@@ -33,7 +33,7 @@ class DiagnosisServiceTest extends TestCase
         config(['services.knowledge_api.token' => 'rahasia-token']);
     }
 
-    private function fakeKnowledge(): void
+    private function fakeKnowledge(array $ruleMetadata = []): void
     {
         Http::fake([
             self::BASE_URL.'/api/penyakit*' => Http::response(['data' => [
@@ -44,8 +44,8 @@ class DiagnosisServiceTest extends TestCase
                     'deskripsi' => null,
                     'komoditas_id' => [1],
                     'aturan_cf' => [
-                        ['gejala_id' => 1, 'gejala_nama' => 'Bercak jingga', 'cf_pakar' => 0.9],
-                        ['gejala_id' => 2, 'gejala_nama' => 'Daun menguning', 'cf_pakar' => 0.7],
+                        array_merge(['gejala_id' => 1, 'gejala_nama' => 'Bercak jingga', 'cf_pakar' => 0.9], $ruleMetadata),
+                        array_merge(['gejala_id' => 2, 'gejala_nama' => 'Daun menguning', 'cf_pakar' => 0.7], $ruleMetadata),
                     ],
                     'solusi' => [
                         ['judul' => 'Pangkas daun', 'deskripsi' => 'Buang daun terinfeksi.'],
@@ -59,7 +59,7 @@ class DiagnosisServiceTest extends TestCase
                     'deskripsi' => null,
                     'komoditas_id' => [1],
                     'aturan_cf' => [
-                        ['gejala_id' => 3, 'gejala_nama' => 'Batang layu', 'cf_pakar' => 0.8],
+                        array_merge(['gejala_id' => 3, 'gejala_nama' => 'Batang layu', 'cf_pakar' => 0.8], $ruleMetadata),
                     ],
                     'solusi' => [
                         ['judul' => 'Cabut tanaman', 'deskripsi' => 'Cabut dan bakar.'],
@@ -205,6 +205,30 @@ class DiagnosisServiceTest extends TestCase
         $stored = DiagnosisResult::where('ranking', 1)->first();
         $this->assertSame(0.5, $stored->trace_snapshot[0]['cf_user']);
         $this->assertSame(0.45, $stored->trace_snapshot[0]['cf_gejala']);
+    }
+
+    public function test_cf_metadata_changes_do_not_change_diagnosis_results(): void
+    {
+        $this->fakeKnowledge();
+        $user = User::factory()->create();
+        $service = app(DiagnosisService::class);
+
+        $before = $service->diagnose(1, [1, 2, 3], $user->id, [1 => 0.5, 2 => 0.5, 3 => 0.5]);
+
+        $this->fakeKnowledge([
+            'jenis_sumber' => 'literature',
+            'pendekatan' => 'Literature Based',
+            'dasar_penentuan' => 'Metadata provenance tidak digunakan mesin diagnosis.',
+            'status_validasi' => 'validated',
+        ]);
+
+        $after = $service->diagnose(1, [1, 2, 3], $user->id, [1 => 0.5, 2 => 0.5, 3 => 0.5]);
+
+        $this->assertSame(
+            $before->map(fn (array $item): array => [$item['disease_id'], $item['final_cf'], $item['ranking']])->all(),
+            $after->map(fn (array $item): array => [$item['disease_id'], $item['final_cf'], $item['ranking']])->all(),
+        );
+        $this->assertSame(0.643, $after->first()['final_cf']);
     }
 
     public function test_cf_user_sebagian_default_satu_untuk_gejala_tanpa_kunci(): void

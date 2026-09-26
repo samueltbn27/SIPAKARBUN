@@ -61,8 +61,9 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penyakit</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gejala</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CF Pakar</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sumber &amp; Pendekatan</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sumber</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Validasi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Knowledge</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Versi</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
@@ -74,24 +75,19 @@
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format($aturan->cf_pakar, 3) }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-600">
-                                    @if($aturan->sumber || $aturan->pendekatan)
-                                        @if($aturan->sumber)
-                                            <div class="text-xs"><span class="font-medium text-gray-700">Sumber:</span> {{ $aturan->sumber }}</div>
-                                        @endif
-                                        @if($aturan->pendekatan)
-                                            <div class="text-xs text-gray-500"><span class="font-medium text-gray-700">Pendekatan:</span> {{ $aturan->pendekatan }}</div>
-                                        @endif
-                                    @else
-                                        <span class="text-xs text-gray-400">—</span>
-                                    @endif
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION ? 'bg-amber-100 text-amber-800' : 'bg-blue-50 text-blue-700' }}">{{ $aturan->jenisSumberLabel() }}</span>
+                                    @if($aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION)<div class="mt-1 text-xs text-amber-700">Data Simulasi</div>@endif
+                                </td>
+                                <td class="px-4 py-3 text-sm">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $aturan->status_validasi === \App\Models\AturanCf::VALIDATION_VALIDATED ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' }}">{{ $aturan->statusValidasiLabel() }}</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <x-knowledge.status-badge :status="$aturan->status" />
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-500">{{ $aturan->version }}</td>
                                 <td class="px-4 py-3 text-right text-sm font-medium space-x-2">
-                                    @if($canEditRecord($aturan))<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}"
-                                       class="text-green-600 hover:text-green-900">Edit</a>
+                                    <a href="{{ route('knowledge.aturan-cf.show', $aturan) }}" class="text-gray-700 hover:text-gray-900">Detail</a>
+                                    @if($canEditRecord($aturan))<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}" class="text-green-600 hover:text-green-900">Edit</a>
                                         @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.aturan-cf.destroy', $aturan) }}"
                                               class="inline"
                                               data-confirm-title="Hapus aturan CF?"
@@ -109,7 +105,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-12 text-center">
+                                <td colspan="8" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>

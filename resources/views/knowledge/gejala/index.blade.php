@@ -38,7 +38,8 @@
                 <tr>
                     <th class="px-4 py-3">Kode</th>
                     <th class="px-4 py-3">Nama</th>
-                    <th class="px-4 py-3">Deskripsi</th>
+                    <th class="px-4 py-3">Kriteria Observasi</th>
+                    <th class="px-4 py-3">Referensi</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
@@ -49,29 +50,33 @@
                     <td class="px-4 py-3 font-mono text-gray-700">{{ $g->kode }}</td>
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $g->nama }}</td>
                     <td class="px-4 py-3 text-gray-600">
-                        {{ \Illuminate\Support\Str::limit($g->deskripsi, 60) }}
+                        <div>{{ \Illuminate\Support\Str::limit($g->kriteria_observasi ?: $g->deskripsi, 70) ?: 'Belum tersedia' }}</div>
+                        @if($g->metode_pengamatan)<div class="mt-1 text-xs text-gray-400">{{ $g->metode_pengamatan }}</div>@endif
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">
+                        <div class="text-xs font-medium text-gray-700">{{ $g->referensiJenisLabel() }}</div>
+                        <div class="mt-1 max-w-xs break-words text-xs text-gray-500">{{ \Illuminate\Support\Str::limit($g->referensi_judul, 45) ?: 'Belum tersedia' }}</div>
                     </td>
                     <td class="px-4 py-3">
                         <x-knowledge.status-badge :status="$g->status" />
                     </td>
                     <td class="px-4 py-3 text-right">
-                        @if($canEditRecord($g))<div class="inline-flex items-center gap-2">
-                            <a href="{{ route('knowledge.gejala.edit', $g) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
-                                Edit
-                            </a>
+                        <div class="inline-flex items-center gap-2">
+                            <a href="{{ route('knowledge.gejala.show', $g) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">Detail</a>
+                            @if($canEditRecord($g))
+                            <a href="{{ route('knowledge.gejala.edit', $g) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">Edit</a>
                             @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.gejala.destroy', $g) }}" data-confirm-title="Hapus gejala?" data-confirm-message="Data yang dihapus tidak dapat dikembalikan." data-confirm-action="Hapus" data-confirm-tone="danger">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="bg-red-600 text-white hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-medium">
-                                        Hapus
-                                    </button>
+                                    <button type="submit" class="bg-red-600 text-white hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-medium">Hapus</button>
                                 </form>@endif
-                        </div>@else<span class="text-xs text-gray-500">Read-only</span>@endif
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-4 py-12 text-center text-gray-500">
+                    <td colspan="6" class="px-4 py-12 text-center text-gray-500">
                         <div class="flex flex-col items-center gap-2">
                             <svg class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m-6 8h6a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2z" />
