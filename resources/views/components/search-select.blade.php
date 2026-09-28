@@ -14,6 +14,7 @@
             return [
                 'value' => (string) ($o->value ?? $o->id ?? ''),
                 'label' => $code !== '' ? $code . ' — ' . $label : $label,
+                'name' => $label,
             ];
         }
         $o = (array) $o;
@@ -22,6 +23,7 @@
         return [
             'value' => (string) ($o['value'] ?? $o['id'] ?? ''),
             'label' => $code !== '' ? $code . ' — ' . $label : $label,
+            'name' => $label,
         ];
     })->values()->all();
     $selectedVal = (string) old($name, $selected);
@@ -41,7 +43,7 @@
             this.selected = o.value;
             this.query = o.label;
             this.open = false;
-            window.dispatchEvent(new CustomEvent('search-select-change', { detail: { name: '{{ $name }}', value: o.value, label: o.label } }));
+            window.dispatchEvent(new CustomEvent('search-select-change', { detail: { name: '{{ $name }}', value: o.value, label: o.name || o.label } }));
         },
         clear() {
             this.selected = '';
