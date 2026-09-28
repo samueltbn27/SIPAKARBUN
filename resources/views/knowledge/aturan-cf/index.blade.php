@@ -12,7 +12,8 @@
         $createLabel = $isPopt ? 'Tambah Draft' : 'Tambah Aturan CF';
     @endphp
     <div class="space-y-6">
-        <div class="flex justify-end">
+        <div class="flex flex-wrap justify-end gap-3">
+            <a href="{{ route('knowledge.cf-methods.index') }}" class="inline-flex items-center justify-center rounded-lg border border-[#cfe0d4] bg-white px-4 py-2 text-sm font-medium text-[#176b45] hover:bg-[#f3f8f4]">Metode CF</a>
             @if($canCreateKnowledge)<a href="{{ route('knowledge.aturan-cf.create') }}"
                class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,11 +61,11 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penyakit</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gejala</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CF Pakar</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sumber</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Validasi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penilaian Pakar</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CF</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode CF</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pakar Penilai</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Knowledge</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Versi</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
@@ -73,18 +74,21 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->penyakit?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format($aturan->cf_pakar, 3) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-700">{{ $aturan->expert_term ?: 'Belum tercatat' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format((float) $aturan->cf_pakar, 3) }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-600">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION ? 'bg-amber-100 text-amber-800' : 'bg-blue-50 text-blue-700' }}">{{ $aturan->jenisSumberLabel() }}</span>
-                                    @if($aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION)<div class="mt-1 text-xs text-amber-700">Data Simulasi</div>@endif
+                                    @if($aturan->cfMethod)
+                                        <a href="{{ route('knowledge.cf-methods.show', $aturan->cfMethod) }}" class="font-medium text-[#176b45] hover:underline">{{ $aturan->cfMethod->name }}</a>
+                                        <div class="mt-1 text-xs text-gray-500">v{{ $aturan->cfMethod->version }}</div>
+                                    @else
+                                        <span>Legacy / Belum tercatat</span>
+                                    @endif
+                                    @if($aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION)<div class="mt-1 text-xs text-amber-700">Simulasi / UAT</div>@endif
                                 </td>
-                                <td class="px-4 py-3 text-sm">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $aturan->status_validasi === \App\Models\AturanCf::VALIDATION_VALIDATED ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' }}">{{ $aturan->statusValidasiLabel() }}</span>
-                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-600">{{ $aturan->expert_name ?: 'Belum tersedia' }}<div class="mt-1 text-xs text-gray-500">{{ $aturan->statusValidasiLabel() }}</div></td>
                                 <td class="px-4 py-3">
                                     <x-knowledge.status-badge :status="$aturan->status" />
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $aturan->version }}</td>
                                 <td class="px-4 py-3 text-right text-sm font-medium space-x-2">
                                     <a href="{{ route('knowledge.aturan-cf.show', $aturan) }}" class="text-gray-700 hover:text-gray-900">Detail</a>
                                     @if($canEditRecord($aturan))<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}" class="text-green-600 hover:text-green-900">Edit</a>

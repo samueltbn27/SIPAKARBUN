@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CfMethodController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KnowledgeController;
 use App\Http\Controllers\MonitoringReportController;
@@ -64,6 +65,8 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
     Route::get('/penyakit', [KnowledgeController::class, 'penyakitIndex'])->name('penyakit.index');
     Route::get('/gejala', [KnowledgeController::class, 'gejalaIndex'])->name('gejala.index');
     Route::get('/aturan-cf', [KnowledgeController::class, 'aturanCfIndex'])->name('aturan-cf.index');
+    Route::get('/cf-methods', [CfMethodController::class, 'index'])->name('cf-methods.index');
+    Route::get('/cf-methods/{cfMethod}', [CfMethodController::class, 'show'])->whereNumber('cfMethod')->name('cf-methods.show');
     Route::get('/solusi', [KnowledgeController::class, 'solusiIndex'])->name('solusi.index');
     Route::get('/publikasi', [KnowledgeController::class, 'publikasiIndex'])->name('publikasi.index');
     Route::get('/riwayat', [KnowledgeController::class, 'riwayatIndex'])->name('riwayat.index');
@@ -92,6 +95,13 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
         Route::post('/solusi', [KnowledgeController::class, 'solusiStore'])->name('solusi.store');
         Route::get('/solusi/{solusi}/edit', [KnowledgeController::class, 'solusiEdit'])->name('solusi.edit');
         Route::put('/solusi/{solusi}', [KnowledgeController::class, 'solusiUpdate'])->name('solusi.update');
+    });
+
+    Route::middleware(['role:admin'])->group(function (): void {
+        Route::get('/cf-methods/create', [CfMethodController::class, 'create'])->name('cf-methods.create');
+        Route::post('/cf-methods', [CfMethodController::class, 'store'])->name('cf-methods.store');
+        Route::get('/cf-methods/{cfMethod}/edit', [CfMethodController::class, 'edit'])->name('cf-methods.edit');
+        Route::put('/cf-methods/{cfMethod}', [CfMethodController::class, 'update'])->name('cf-methods.update');
     });
 
     // Penghapusan dan publication adalah hak Admin/Operator saja.

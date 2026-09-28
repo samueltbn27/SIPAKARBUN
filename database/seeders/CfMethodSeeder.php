@@ -1,0 +1,56 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\CfMethod;
+use Illuminate\Database\Seeder;
+
+class CfMethodSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $scale = [
+            ['term' => 'Pasti Tidak', 'cf' => -1.0],
+            ['term' => 'Hampir Pasti Tidak', 'cf' => -0.8],
+            ['term' => 'Kemungkinan Tidak', 'cf' => -0.6],
+            ['term' => 'Mungkin Tidak', 'cf' => -0.4],
+            ['term' => 'Tidak Tahu / Netral', 'cf' => 0.0],
+            ['term' => 'Mungkin', 'cf' => 0.4],
+            ['term' => 'Kemungkinan Besar', 'cf' => 0.6],
+            ['term' => 'Hampir Pasti', 'cf' => 0.8],
+            ['term' => 'Pasti', 'cf' => 1.0],
+        ];
+
+        CfMethod::updateOrCreate(
+            ['name' => CfMethod::EXPERT_METHOD_NAME, 'version' => '1.0'],
+            [
+                'description' => 'Metode untuk memperoleh nilai CF dari tingkat keyakinan pakar terhadap hubungan gejala dan penyakit.',
+                'elicitation_question_template' => 'Jika gejala "{gejala}" ditemukan pada tanaman, seberapa kuat gejala tersebut mendukung diagnosis penyakit "{penyakit}"?',
+                'scale_definition' => $scale,
+                // Bibliography is intentionally empty until the research
+                // reference is verified by the project owner.
+                'reference_title' => null,
+                'reference_authors' => null,
+                'reference_year' => null,
+                'reference_doi' => null,
+                'reference_url' => null,
+                'is_active' => true,
+            ],
+        );
+
+        CfMethod::updateOrCreate(
+            ['name' => CfMethod::SIMULATION_METHOD_NAME, 'version' => '1.0'],
+            [
+                'description' => 'Nilai CF digunakan untuk kebutuhan simulasi dan pengujian sistem dan belum merupakan hasil expert elicitation lapangan.',
+                'elicitation_question_template' => null,
+                'scale_definition' => $scale,
+                'reference_title' => null,
+                'reference_authors' => null,
+                'reference_year' => null,
+                'reference_doi' => null,
+                'reference_url' => null,
+                'is_active' => true,
+            ],
+        );
+    }
+}

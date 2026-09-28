@@ -85,6 +85,14 @@ class AturanCf extends Model
         'penyakit_id',
         'gejala_id',
         'cf_pakar',
+        'cf_method_id',
+        'expert_term',
+        'expert_rationale',
+        'expert_name',
+        'expert_institution',
+        'elicited_at',
+        'reviewed_at',
+        'reviewed_by',
         'jenis_sumber',
         'sumber',
         'pendekatan',
@@ -104,6 +112,8 @@ class AturanCf extends Model
 
     protected $casts = [
         'cf_pakar' => 'decimal:3',
+        'elicited_at' => 'date',
+        'reviewed_at' => 'datetime',
         'version' => 'integer',
         'tanggal_validasi' => 'date',
     ];
@@ -111,6 +121,16 @@ class AturanCf extends Model
     public function penyakit(): BelongsTo
     {
         return $this->belongsTo(Penyakit::class);
+    }
+
+    public function cfMethod(): BelongsTo
+    {
+        return $this->belongsTo(CfMethod::class, 'cf_method_id');
+    }
+
+    public function mappedCf(): ?float
+    {
+        return $this->cfMethod?->cfForTerm($this->expert_term);
     }
 
     public function gejala(): BelongsTo

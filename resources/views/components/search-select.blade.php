@@ -9,15 +9,19 @@
 @php
     $opts = collect($options)->map(function ($o) {
         if (is_object($o)) {
+            $label = (string) ($o->label ?? $o->nama ?? '');
+            $code = (string) ($o->code ?? $o->kode ?? '');
             return [
                 'value' => (string) ($o->value ?? $o->id ?? ''),
-                'label' => (string) ($o->label ?? $o->nama ?? ''),
+                'label' => $code !== '' ? $code . ' — ' . $label : $label,
             ];
         }
         $o = (array) $o;
+        $label = (string) ($o['label'] ?? $o['nama'] ?? '');
+        $code = (string) ($o['code'] ?? $o['kode'] ?? '');
         return [
             'value' => (string) ($o['value'] ?? $o['id'] ?? ''),
-            'label' => (string) ($o['label'] ?? $o['nama'] ?? ''),
+            'label' => $code !== '' ? $code . ' — ' . $label : $label,
         ];
     })->values()->all();
     $selectedVal = (string) old($name, $selected);
@@ -33,8 +37,17 @@
             const q = this.query.trim().toLowerCase();
             return q ? this.options.filter(o => o.label.toLowerCase().includes(q)) : this.options;
         },
-        select(o) { this.selected = o.value; this.query = o.label; this.open = false; },
-        clear() { this.selected = ''; this.query = ''; }
+        select(o) {
+            this.selected = o.value;
+            this.query = o.label;
+            this.open = false;
+            window.dispatchEvent(new CustomEvent('search-select-change', { detail: { name: '{{ $name }}', value: o.value, label: o.label } }));
+        },
+        clear() {
+            this.selected = '';
+            this.query = '';
+            window.dispatchEvent(new CustomEvent('search-select-change', { detail: { name: '{{ $name }}', value: '', label: '' } }));
+        }
     }"
     x-init="
         const found = options.find(o => o.value === selected);

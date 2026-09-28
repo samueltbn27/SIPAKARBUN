@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesCfProvenance;
 use App\Models\AturanCf;
+use App\Models\CfMethod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -31,7 +32,13 @@ class UpdateAturanCfRequest extends FormRequest
         return [
             'penyakit_id' => ['sometimes', 'required', 'integer', 'exists:penyakit,id'],
             'gejala_id' => ['sometimes', 'required', 'integer', 'exists:gejala,id'],
-            'cf_pakar' => ['sometimes', 'required', 'numeric', 'between:-1,1'],
+            'cf_pakar' => ['sometimes', 'nullable', 'numeric', 'between:-1,1', 'required_without:expert_term'],
+            'cf_method_id' => ['sometimes', 'nullable', 'integer', 'exists:cf_methods,id'],
+            'expert_term' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'expert_rationale' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'expert_name' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'expert_institution' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'elicited_at' => ['sometimes', 'nullable', 'date'],
             'jenis_sumber' => ['nullable', 'string', Rule::in(AturanCf::SOURCE_TYPES)],
             'sumber' => ['nullable', 'string', 'max:150'],
             'pendekatan' => ['nullable', 'string', 'max:150'],
@@ -52,6 +59,7 @@ class UpdateAturanCfRequest extends FormRequest
         return [
             'penyakit_id.exists' => 'Penyakit yang dipilih tidak ditemukan.',
             'gejala_id.exists' => 'Gejala yang dipilih tidak ditemukan.',
+            'cf_pakar.required_without' => 'Isi tingkat keyakinan pakar atau nilai CF untuk data legacy/simulasi.',
             'cf_pakar.between' => 'Nilai CF pakar harus di antara -1 dan 1.',
             'jenis_sumber.in' => 'Jenis sumber CF tidak valid.',
             'sumber.max' => 'Sumber/referensi maksimal 150 karakter.',
@@ -95,7 +103,37 @@ class UpdateAturanCfRequest extends FormRequest
                 }
             }
 
+            if ($methodId = $this->input('cf_method_id')) {
+                $method = CfMethod::find((int) $methodId);
+                $sameHistoricalMethod = is_object($current) && (int) $current->cf_method_id === (int) $methodId;
+                if ($method && ! $method->is_active && ! $sameHistoricalMethod) {
+                    $validator->errors()->add('cf_method_id', 'Metode CF harus aktif untuk aturan baru.');
+                }
+            }
+
             $this->validateCfProvenance($validator, $this->all(), is_object($current) ? $current : null);
         });
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $current = $this->route('aturanCf') ?? $this->route('aturan_cf');
+        $methodId = $this->input('cf_method_id', is_object($current) ? $current->cf_method_id : null);
+        $term = $this->input('expert_term', is_object($current) ? $current->expert_term : null);
+        $method = $methodId ? CfMethod::find((int) $methodId) : null;
+        $mapped = $method?->cfForTerm(is_string($term) ? $term : null);
+
+        if ($mapped !== null) {
+            $this->merge(['cf_pakar' => $mapped]);
+        }
+
+        if ($method && ! $this->filled('jenis_sumber')) {
+            $this->merge([
+                'jenis_sumber' => $method->name === CfMethod::SIMULATION_METHOD_NAME
+                    ? AturanCf::SOURCE_SIMULATION
+                    : AturanCf::SOURCE_EXPERT,
+                'pendekatan' => $this->input('pendekatan') ?: $method->name,
+            ]);
+        }
     }
 }

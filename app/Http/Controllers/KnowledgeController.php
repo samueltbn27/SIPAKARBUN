@@ -12,6 +12,7 @@ use App\Http\Requests\UpdatePenyakitRequest;
 use App\Http\Requests\UpdateSolusiRequest;
 use App\Models\ActivityLog;
 use App\Models\AturanCf;
+use App\Models\CfMethod;
 use App\Models\Gejala;
 use App\Models\KasusPenanganan;
 use App\Models\Penyakit;
@@ -363,7 +364,7 @@ class KnowledgeController extends Controller
     public function aturanCfIndex(Request $request): View
     {
         $query = AturanCf::query()
-            ->with(['penyakit', 'gejala'])
+            ->with(['penyakit', 'gejala', 'cfMethod'])
             ->when($request->boolean('aktif_saja'), fn($q) => $q->aktifSaja())
             ->when($request->penyakit_id, fn($q, $id) => $q->where('penyakit_id', $id))
             ->latest();
@@ -378,12 +379,13 @@ class KnowledgeController extends Controller
 
     public function aturanCfCreate(): View
     {
-        $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
-        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
+        $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
+        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $sourceTypes = AturanCf::SOURCE_LABELS;
         $validationStatuses = AturanCf::VALIDATION_LABELS;
+        $cfMethods = CfMethod::aktifSaja()->orderBy('name')->orderByDesc('version')->get();
 
-        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses'));
+        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods'));
     }
 
     public function aturanCfStore(StoreAturanCfRequest $request): RedirectResponse
@@ -408,7 +410,7 @@ class KnowledgeController extends Controller
 
     public function aturanCfShow(AturanCf $aturanCf): View
     {
-        $aturanCf->load(['penyakit', 'gejala']);
+        $aturanCf->load(['penyakit', 'gejala', 'cfMethod']);
 
         return view('knowledge.aturan-cf.show', compact('aturanCf'));
     }
@@ -416,12 +418,19 @@ class KnowledgeController extends Controller
     public function aturanCfEdit(AturanCf $aturanCf): View
     {
         $this->ensureCanEditKnowledge($aturanCf);
-        $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
-        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'nama']);
+        $aturanCf->load(['penyakit', 'gejala']);
+        $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
+        $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $sourceTypes = AturanCf::SOURCE_LABELS;
         $validationStatuses = AturanCf::VALIDATION_LABELS;
+        $cfMethods = CfMethod::query()
+            ->where('is_active', true)
+            ->orWhere('id', $aturanCf->cf_method_id)
+            ->orderBy('name')
+            ->orderByDesc('version')
+            ->get();
 
-        return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses'));
+        return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods'));
     }
 
     public function aturanCfUpdate(UpdateAturanCfRequest $request, AturanCf $aturanCf): RedirectResponse
@@ -534,12 +543,12 @@ class KnowledgeController extends Controller
         // Aktif -> Nonaktifkan / kembalikan ke Draft (dari daftar aktif).
         $penyakitDraft = Penyakit::draftSaja()->withCount('aturanCf')->orderBy('nama')->get();
         $gejalaDraft = Gejala::draftSaja()->orderBy('nama')->get();
-        $aturanCfDraft = AturanCf::draftSaja()->with(['penyakit', 'gejala'])->latest()->get();
+        $aturanCfDraft = AturanCf::draftSaja()->with(['penyakit', 'gejala', 'cfMethod'])->latest()->get();
         $solusiDraft = Solusi::draftSaja()->with('penyakit')->orderBy('judul')->get();
 
         $penyakitNonaktif = Penyakit::nonaktifSaja()->withCount('aturanCf')->orderBy('nama')->get();
         $gejalaNonaktif = Gejala::nonaktifSaja()->orderBy('nama')->get();
-        $aturanCfNonaktif = AturanCf::nonaktifSaja()->with(['penyakit', 'gejala'])->latest()->get();
+        $aturanCfNonaktif = AturanCf::nonaktifSaja()->with(['penyakit', 'gejala', 'cfMethod'])->latest()->get();
         $solusiNonaktif = Solusi::nonaktifSaja()->with('penyakit')->orderBy('judul')->get();
 
         $statistik = [
@@ -580,7 +589,12 @@ class KnowledgeController extends Controller
             }
         }
 
-        $record->update(['status' => $request->status]);
+        $statusUpdate = ['status' => $request->status];
+        if ($record instanceof AturanCf && $request->status === AturanCf::STATUS_AKTIF) {
+            $statusUpdate['reviewed_at'] = now();
+            $statusUpdate['reviewed_by'] = auth()->id();
+        }
+        $record->update($statusUpdate);
 
         $labelStatus = ['draft' => 'Draft', 'aktif' => 'Aktif', 'nonaktif' => 'Nonaktif'];
         $action = match ($request->status) {

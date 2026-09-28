@@ -11,6 +11,11 @@ justifikasi, validator, dan status validasi. Nilai CF pada data demo adalah
 **Simulation/UAT**, bukan nilai tervalidasi, kecuali validasi nyata telah
 terdokumentasi. Lihat [panduan validasi Knowledge CF](docs/KNOWLEDGE_CF_VALIDATION.md).
 
+Untuk aturan baru berbasis penilaian pakar, SIPAKARBUN menyimpan metode CF
+beserta versi dan skala elicitation, istilah keyakinan pakar, CF numerik hasil
+pemetaan, rationale, identitas penilai, dan tanggal elicitation. Nilai dari
+data demo tetap berlabel Simulation/UAT. Lihat [panduan CF Expert Elicitation](docs/CF_EXPERT_ELICITATION.md).
+
 ## Setup & Team Testing
 
 Untuk setup dari clone baru, akun tester lima role, study case, UAT end-to-end,

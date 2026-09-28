@@ -12,7 +12,7 @@
     $mapAturan = fn ($item) => [
         'id' => $item->id,
         'nama' => ($item->penyakit?->nama ?? '-') . ' — ' . ($item->gejala?->nama ?? '-'),
-        'sub' => 'CF ' . number_format((float) $item->cf_pakar, 3) . ' · ' . $item->jenisSumberLabel() . ' · ' . $item->statusValidasiLabel(),
+        'sub' => 'Penilaian ' . ($item->expert_term ?: 'belum tercatat') . ' · CF ' . number_format((float) $item->cf_pakar, 3) . ' · ' . ($item->cfMethod?->name ?? 'Legacy / Belum tercatat'),
     ];
     $mapSolusi = fn ($item) => ['id' => $item->id, 'nama' => $item->judul, 'sub' => $item->penyakit?->nama];
 
