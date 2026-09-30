@@ -31,6 +31,11 @@
             <h1 class="text-2xl font-bold text-[#173b29]">{{ $kasus->kasus_code }}</h1>
             <span class="rounded-full bg-[#eef6f1] px-3 py-1.5 text-sm font-semibold text-[#176b45]">{{ $statusLabels[$kasus->current_status] ?? $kasus->current_status }}</span>
             <span class="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700">{{ $monitoring['label'] }}</span>
+            @if($kasus->isSelesaiTerverifikasi())
+                <span class="rounded-full bg-[#e8f4ed] px-3 py-1.5 text-sm font-semibold text-[#176b45]">Terverifikasi Operator</span>
+            @elseif($kasus->current_status === 'selesai')
+                <span class="rounded-full bg-[#fff4df] px-3 py-1.5 text-sm font-semibold text-[#b8860b]">Menunggu verifikasi Operator</span>
+            @endif
         </div>
     </div>
 

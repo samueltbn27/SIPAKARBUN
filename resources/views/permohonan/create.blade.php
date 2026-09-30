@@ -83,13 +83,13 @@
             step: {{ $errors->any() ? 1 : $initialStep }},
             submitting: false,
             kelompokTaniList: {{ Js::from($kelompokTaniList) }},
-            kelompokTaniId: {{ Js::from(old('kelompok_tani_id')) }},
+            kelompokTaniId: {{ Js::from(old('kelompok_tani_id', $kelompokTaniTerkunci ? $poktanMilik['id'] : null)) }},
             kelompokTaniQuery: '',
             kelompokTaniLoading: false,
             kelompokTaniSearchError: false,
             locationError: false,
-            latitudeKasus: {{ Js::from(old('latitude_kasus')) }},
-            longitudeKasus: {{ Js::from(old('longitude_kasus')) }},
+            latitudeKasus: {{ Js::from(old('latitude_kasus', $lokasiAwal['latitude'])) }},
+            longitudeKasus: {{ Js::from(old('longitude_kasus', $lokasiAwal['longitude'])) }},
             alamatKasus: {{ Js::from(old('alamat_kasus')) }},
             catatanPemohon: {{ Js::from(old('catatan_pemohon')) }},
             pilihKelompokTani(event) {
@@ -221,12 +221,35 @@
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Kelompok Tani</h3>
                         <p class="mb-3 text-xs text-[#8a9990]">Kelompok tani yang mengajukan permohonan ini.</p>
 
-                        @if ($kelompokTaniError)
+                        @if ($kelompokTaniTerkunci)
+                            <input type="hidden" name="kelompok_tani_id" value="{{ old('kelompok_tani_id', $poktanMilik['id']) }}">
+                            <div class="rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
+                                <p class="font-semibold text-[#173b29]">{{ $poktanMilik['nama'] }}</p>
+                                <p class="mt-0.5">Kode: <span class="font-semibold text-[#176b45]">{{ ($poktanMilik['kode_kelompok'] ?? null) ?: $poktanMilik['kode'] }}</span></p>
+                                @if(!empty($poktanMilik['jenis_komoditi']))<p>Komoditas: {{ $poktanMilik['jenis_komoditi'] }}</p>@endif
+                                @if(!empty($poktanMilik['kecamatan']) || !empty($poktanMilik['kabupaten']))
+                                    <p>Wilayah: {{ collect([$poktanMilik['kecamatan'] ?? null, $poktanMilik['kabupaten'] ?? null])->filter()->join(', ') }}</p>
+                                @endif
+                                <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#e8f4ed] px-2 py-0.5 font-semibold text-[#176b45]">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    Terkunci mengikuti akun Anda
+                                </p>
+                            </div>
+                            @error('kelompok_tani_id')
+                                <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        @elseif ($kelompokTaniError)
                             <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
                                 <p class="font-semibold">Data Kelompok Tani belum tersedia.</p>
                                 <p class="mt-1">Referensi kelompok tani tidak dapat dimuat. Silakan lakukan sinkronisasi data Disbun lalu coba kembali.</p>
                             </div>
                         @else
+                            @if ($poktanTakTersedia)
+                                <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                                    <p class="font-semibold">Kelompok tani akun Anda tidak tersedia.</p>
+                                    <p class="mt-1">Referensi Disbun untuk Poktan Anda sedang tidak aktif. Silakan pilih manual atau hubungi Admin.</p>
+                                </div>
+                            @endif
                             <label for="kelompok-tani-search" class="sr-only">Cari kelompok tani</label>
                             <input type="search" id="kelompok-tani-search" x-model="kelompokTaniQuery"
                                    @input.debounce.300ms="cariKelompokTani()"
@@ -279,7 +302,7 @@
                             <input type="number" name="latitude_kasus" id="latitude_kasus"
                                        x-ref="lat"
                                        x-model="latitudeKasus"
-                                       value="{{ old('latitude_kasus') }}" step="any" min="-90" max="90"
+                                       value="{{ old('latitude_kasus', $lokasiAwal['latitude']) }}" step="any" min="-90" max="90"
                                        required readonly
                                        placeholder="-6.9126"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
@@ -292,7 +315,7 @@
                             <input type="number" name="longitude_kasus" id="longitude_kasus"
                                        x-ref="lng"
                                        x-model="longitudeKasus"
-                                       value="{{ old('longitude_kasus') }}" step="any" min="-180" max="180"
+                                       value="{{ old('longitude_kasus', $lokasiAwal['longitude']) }}" step="any" min="-180" max="180"
                                        required readonly
                                        placeholder="107.6085"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">

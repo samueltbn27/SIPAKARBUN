@@ -22,6 +22,9 @@ Route::middleware('guest')->group(function (): void {
 // remain provisionable through the authenticated Admin view of this flow.
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+Route::get('/register/kelompok-tani', [AuthController::class, 'kelompokTaniOptions'])
+    ->middleware('throttle:60,1')
+    ->name('register.kelompok-tani');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
@@ -104,13 +107,6 @@ Route::middleware(['auth', 'role:admin|popt|operator_uptd'])->prefix('knowledge'
         Route::post('/publikasi/toggle', [KnowledgeController::class, 'publikasiToggle'])->name('publikasi.toggle');
     });
 
-    Route::middleware(['role:admin|operator_uptd'])->prefix('op')->name('op.')->group(function (): void {
-        Route::get('/pengajuan-masuk', fn () => redirect()->route('operator.permohonan'))->name('pengajuan-masuk');
-        Route::get('/validasi', fn () => redirect()->route('operator.permohonan', ['status' => 'diajukan']))->name('validasi');
-        Route::get('/riwayat-pengajuan', fn () => redirect()->route('operator.permohonan', ['status' => 'ditolak']))->name('riwayat-pengajuan');
-        Route::get('/status-kasus', fn () => redirect()->route('kasus.index'))->name('status-kasus');
-    });
-
     Route::middleware(['role:admin'])->prefix('pengguna')->name('pengguna.')->group(function (): void {
         Route::get('/', [\App\Http\Controllers\UserController::class, 'index'])->name('index');
         Route::post('/{user}/approve', [\App\Http\Controllers\UserController::class, 'approve'])->name('approve');
@@ -155,6 +151,9 @@ Route::middleware(['auth', 'role:admin|operator_uptd'])->prefix('operator')->nam
     Route::post('/kasus/{id}/assign', [OperatorWorkflowController::class, 'assignPopt'])->whereNumber('id')->name('kasus.assign');
     Route::post('/kasus/{id}/perpanjangan/{extensionId}/approve', [OperatorWorkflowController::class, 'approveExtension'])->whereNumber(['id', 'extensionId'])->name('kasus.extension.approve');
     Route::post('/kasus/{id}/perpanjangan/{extensionId}/reject', [OperatorWorkflowController::class, 'rejectExtension'])->whereNumber(['id', 'extensionId'])->name('kasus.extension.reject');
+    Route::post('/kasus/{id}/status', [OperatorWorkflowController::class, 'updateStatus'])->whereNumber('id')->name('kasus.status');
+    Route::post('/kasus/{id}/verifikasi', [OperatorWorkflowController::class, 'verifikasi'])->whereNumber('id')->name('kasus.verifikasi');
+    Route::post('/kasus/{id}/batal', [OperatorWorkflowController::class, 'batal'])->whereNumber('id')->name('kasus.batal');
 });
 
 Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])
@@ -166,6 +165,7 @@ Route::middleware(['auth', 'role:popt'])->prefix('popt')->name('popt.')->group(f
     Route::get('/laporan-gejala/{laporanGejala}', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'show'])->whereNumber('laporanGejala')->name('laporan-gejala.show');
     Route::post('/laporan-gejala/{laporanGejala}/review', [\App\Http\Controllers\PoptLaporanGejalaController::class, 'review'])->whereNumber('laporanGejala')->name('laporan-gejala.review');
     Route::get('/penugasan', [PoptWorkflowController::class, 'index'])->name('penugasan');
+    Route::get('/antrian', [PoptWorkflowController::class, 'antrian'])->name('antrian');
     Route::get('/penugasan/{id}', [PoptWorkflowController::class, 'show'])->whereNumber('id')->name('penugasan.show');
     Route::post('/penugasan/{id}/accept', [PoptWorkflowController::class, 'accept'])->whereNumber('id')->name('penugasan.accept');
     Route::post('/penugasan/{id}/progress', [PoptWorkflowController::class, 'storeProgress'])->whereNumber('id')->name('penugasan.progress');

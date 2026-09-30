@@ -71,6 +71,10 @@ class WebOperationalWorkflowTest extends TestCase
         $caseLongitude = $permohonan->longitude_kasus;
 
         $this->actingAs($operator)
+            ->post(route('operator.permohonan.review', $permohonan->id))
+            ->assertRedirect();
+
+        $this->actingAs($operator)
             ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'Layak ditangani'])
             ->assertRedirect(route('operator.permohonan.show', $permohonan->id));
 
@@ -107,6 +111,8 @@ class WebOperationalWorkflowTest extends TestCase
         $pertama = $this->permohonan($poktan);
         $kedua = $this->permohonan($poktan);
 
+        $this->actingAs($operator)->post(route('operator.permohonan.review', $pertama->id));
+        $this->actingAs($operator)->post(route('operator.permohonan.review', $kedua->id));
         $this->actingAs($operator)->post(route('operator.permohonan.accept', $pertama->id));
         $this->actingAs($operator)->post(route('operator.permohonan.accept', $kedua->id));
         $kasusSaya = $pertama->fresh('kasus')->kasus;

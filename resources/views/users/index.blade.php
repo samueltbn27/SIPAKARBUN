@@ -27,7 +27,7 @@
         <form method="GET" action="{{ route('knowledge.pengguna.index') }}" class="flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex-1 relative">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa59e]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama, email, atau no. HP..."
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama, email, no. HP, atau Poktan..."
                        class="w-full rounded-lg border border-[#d6e0d9] pl-9 pr-3 py-2.5 text-sm outline-none transition focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15">
             </div>
             <select name="status" class="rounded-lg border border-[#d6e0d9] px-3 py-2.5 text-sm outline-none transition focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 bg-white">
@@ -52,6 +52,7 @@
                         <th class="px-6 py-3 text-left text-xs font-bold text-[#8b9790] uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-[#8b9790] uppercase tracking-wider">No. HP</th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-[#8b9790] uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-[#8b9790] uppercase tracking-wider">Poktan</th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-[#8b9790] uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-[#8b9790] uppercase tracking-wider">Terdaftar</th>
                         <th class="px-6 py-3 text-right text-xs font-bold text-[#8b9790] uppercase tracking-wider">Aksi</th>
@@ -81,6 +82,25 @@
                             <span class="inline-flex items-center rounded-full bg-[#eef5f7] px-2.5 py-0.5 text-xs font-medium text-[#3d6b78]">{{ $roleLabel }}</span>
                         </td>
                         <td class="px-6 py-4">
+                            @if($user->kelompok_tani_nama !== null || $user->kelompokTani !== null)
+                                <div class="text-sm font-semibold text-[#173b29]">{{ $user->kelompok_tani_nama ?? $user->kelompokTani->nama }}</div>
+                                <div class="text-xs text-[#8b9790]">{{ $user->kelompok_tani_kode ?? ($user->kelompokTani->kode_kelompok ?: $user->kelompokTani->kode) }}</div>
+                                @if($user->kelompok_tani_id !== null)
+                                    @if($user->hasAvailablePoktan())
+                                        <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e8f4ed] px-2 py-0.5 text-[11px] font-semibold text-[#176b45]">
+                                            <span class="w-1 h-1 rounded-full bg-[#176b45]"></span> Terverifikasi Disbun
+                                        </span>
+                                    @else
+                                        <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fdeaea] px-2 py-0.5 text-[11px] font-semibold text-[#c53030]">
+                                            <span class="w-1 h-1 rounded-full bg-[#c53030]"></span> Referensi tidak tersedia
+                                        </span>
+                                    @endif
+                                @endif
+                            @else
+                                <span class="text-sm text-[#8b9790]">-</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
                             @if($user->is_active)
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-[#e8f4ed] px-2.5 py-0.5 text-xs font-semibold text-[#176b45]">
                                     <span class="w-1.5 h-1.5 rounded-full bg-[#176b45]"></span> Aktif
@@ -96,7 +116,7 @@
                             <div class="inline-flex items-center gap-2">
                                 @if(!$user->is_active)
                                     {{-- Approve --}}
-                                    <form method="POST" action="{{ route('knowledge.pengguna.approve', $user) }}" data-confirm-title="Setujui akun?" data-confirm-message="Akun {{ $user->name }} akan dapat digunakan untuk login." data-confirm-action="Setujui">
+                                    <form method="POST" action="{{ route('knowledge.pengguna.approve', $user) }}" data-confirm-title="Setujui akun?" data-confirm-message="Akun {{ $user->name }}@if($user->kelompok_tani_nama !== null) (Poktan {{ $user->kelompok_tani_nama }} — {{ $user->kelompok_tani_kode }})@endif akan dapat digunakan untuk login." data-confirm-action="Setujui">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center gap-1 rounded-lg bg-[#176b45] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#115a39] transition">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>

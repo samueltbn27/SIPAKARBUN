@@ -17,6 +17,11 @@ use Illuminate\Http\Request;
 /**
  * PoptController — read and action endpoints for the assigned POPT.
  *
+ *   GET  /api/popt/penugasan         — daftar kasus yang pernah saya tangani.
+ *   GET  /api/popt/antrian            — antrian kasus menunggu penugasan.
+ *   GET  /api/popt/kasus/{id}        — detail kasus yang pernah ditugaskan kepada saya.
+ *   POST /api/popt/kasus/{id}/status — perbarui status (state machine).
+ *
  * The action endpoints delegate ownership and workflow rules to
  * PoptHandlingService. The legacy status endpoint remains available for legal
  * non-completion technical transitions; final completion uses a report.
@@ -126,6 +131,15 @@ class PoptController extends Controller
 
         return new KasusPenangananResource(
             $kasus->load(['permohonan.diagnosis', 'penugasanTerakhir.popt', 'riwayatStatus.actor'])
+        );
+    }
+
+    public function antrian(Request $request)
+    {
+        return KasusPenangananResource::collection(
+            $this->service->kasusAntrian(
+                $request->only(['per_page']),
+            )
         );
     }
 

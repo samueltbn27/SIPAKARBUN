@@ -49,7 +49,7 @@ class KasusFlowTest extends TestCase
 
     /**
      * Buat kasus penanganan berstatus 'diterima' lewat alur nyata:
-     * diagnosis → permohonan → operator accept.
+     * diagnosis → permohonan → review → operator accept.
      */
     private function buatKasusDiterima(User $pemohon, User $operator): KasusPenanganan
     {
@@ -74,6 +74,8 @@ class KasusFlowTest extends TestCase
         ]);
 
         Sanctum::actingAs($operator);
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")
+            ->assertOk();
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])
             ->assertCreated();
 

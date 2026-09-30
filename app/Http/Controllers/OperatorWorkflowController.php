@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ApprovePerpanjanganRequest;
 use App\Http\Requests\AssignPoptRequest;
+use App\Http\Requests\BatalKasusRequest;
+use App\Http\Requests\OperatorKasusStatusRequest;
 use App\Http\Requests\RejectPerpanjanganRequest;
 use App\Http\Requests\TerimaPermohonanRequest;
 use App\Http\Requests\TolakPermohonanRequest;
@@ -148,5 +150,44 @@ class OperatorWorkflowController extends Controller
 
         return redirect()->route('operator.kasus.show', $id)
             ->with('success', 'Permintaan perpanjangan ditolak dan riwayatnya tersimpan.');
+    }
+
+    public function updateStatus(OperatorKasusStatusRequest $request, int $id): RedirectResponse
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->kasusService->updateStatusOlehOperator(
+            $kasus,
+            (string) $request->validated('status'),
+            $request->validated('catatan'),
+            $request->user(),
+        );
+
+        return redirect()->route('operator.kasus.show', $id)
+            ->with('success', 'Status kasus berhasil diperbarui.');
+    }
+
+    public function verifikasi(int $id, Request $request): RedirectResponse
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->kasusService->verifikasiSelesai($kasus, $request->user());
+
+        return redirect()->route('operator.kasus.show', $id)
+            ->with('success', 'Penyelesaian kasus telah diverifikasi.');
+    }
+
+    public function batal(BatalKasusRequest $request, int $id): RedirectResponse
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->kasusService->batalkanKasus(
+            $kasus,
+            $request->user(),
+            (string) $request->validated('alasan'),
+        );
+
+        return redirect()->route('operator.kasus.index')
+            ->with('success', "Kasus {$kasus->kasus_code} dibatalkan. Permohonan kembali ke Sedang Direview.");
     }
 }
