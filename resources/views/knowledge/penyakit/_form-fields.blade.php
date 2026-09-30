@@ -4,7 +4,8 @@
     $checkedCommodities = array_map('strval', old('komoditas_id', $selectedKomoditas ?? []));
 @endphp
 
-<section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+<div class="knowledge-form-sections">
+    <section class="knowledge-form-section">
     <div class="mb-5">
         <h2 class="text-base font-bold text-[#173b29]">Informasi Penyakit</h2>
         <p class="mt-1 text-sm text-gray-500">Nama dan deskripsi yang jelas membantu pengelolaan basis pengetahuan.</p>
@@ -28,7 +29,7 @@
     </div>
 </section>
 
-<section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6" x-data="{ search: '', names: @js($komoditas->map(fn ($item) => mb_strtolower($item->nama . ' ' . $item->kode))->values()), get hasMatches() { return this.names.some(item => item.includes(this.search.trim().toLocaleLowerCase())); } }">
+<section class="knowledge-form-section" x-data="{ search: '', names: @js($komoditas->map(fn ($item) => mb_strtolower($item->nama . ' ' . $item->kode))->values()), get hasMatches() { return this.names.some(item => item.includes(this.search.trim().toLocaleLowerCase())); } }">
     <h2 class="text-base font-bold text-[#173b29]">Komoditas Terkait</h2>
     <p class="mt-1 text-sm text-gray-500">Pilih komoditas terverifikasi yang dapat terkena penyakit ini. Lebih dari satu pilihan diperbolehkan.</p>
     @if ($komoditas->isNotEmpty())
@@ -50,7 +51,7 @@
     @error('komoditas_id.*')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
 </section>
 
-<section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+<section class="knowledge-form-section">
     <h2 class="text-base font-bold text-[#173b29]">Media dan Status</h2>
     <div class="mt-5 grid gap-5 sm:grid-cols-2">
         <div>
@@ -63,3 +64,4 @@
         <x-knowledge.status-select name="status" :value="$record?->status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />
     </div>
 </section>
+</div>

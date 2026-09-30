@@ -3,9 +3,11 @@
 @section('title', 'Edit Penyakit')
 @section('subtitle', 'Perbarui data penyakit dan komoditas terkait.')
 
+@section('knowledge-form-width', 'standard')
+
 @section('content')
-<div class="mx-auto w-full max-w-4xl">
-    <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.penyakit.update', $penyakit) }}" class="space-y-6">
+<div class="knowledge-form-width--standard">
+    <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.penyakit.update', $penyakit) }}" class="knowledge-form-card">
         @csrf
         @method('PUT')
         @include('knowledge.penyakit._form-fields')

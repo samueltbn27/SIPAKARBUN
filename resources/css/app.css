@@ -21,6 +21,14 @@ body {
     text-rendering: optimizeLegibility;
 }
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+.knowledge-form-width--standard { width: 100%; max-width: 64rem; margin-inline: auto; }
+.knowledge-form-width--complex { width: 100%; max-width: 72rem; margin-inline: auto; }
+.knowledge-form-card { border: 1px solid #e5e7eb; border-radius: .75rem; background: #fff; padding: 1.25rem; box-shadow: 0 1px 2px rgba(16, 42, 28, .04); }
+.knowledge-form-section { min-width: 0; }
+.knowledge-form-section:not(:first-child) { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+@media (min-width: 640px) {
+    .knowledge-form-card { padding: 1.5rem; }
+}
 /* Shared page typography keeps legacy and component-based headings consistent. */
 #main-content h1 { font-family: var(--font-sans); font-size: 1.25rem; line-height: 1.3; font-weight: 800; letter-spacing: -.025em; color: #173b29; overflow-wrap: break-word; }
 #main-content h1 + p { margin-top: .35rem; font-family: var(--font-sans); font-size: .875rem; line-height: 1.7; font-weight: 400; color: #66746c; }

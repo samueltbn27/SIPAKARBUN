@@ -10,7 +10,7 @@
 @endphp
 
 <details class="rounded-xl border border-[#cfe5d6] bg-[#f7fcf9] shadow-sm">
-    <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6">
+    <summary class="flex cursor-pointer list-none flex-col items-start gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
         <div>
             <h2 class="text-base font-bold text-[#173b29]">Pedoman Penentuan Nilai CF</h2>
             <p class="mt-1 text-sm text-[#66746c]">Ringkasan skala hubungan gejala dan penyakit yang digunakan SIPAKARBUN.</p>

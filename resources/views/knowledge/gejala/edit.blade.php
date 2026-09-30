@@ -3,9 +3,11 @@
 @section('title', 'Edit Gejala')
 @section('subtitle', 'Perbarui definisi, kriteria observasi, dan referensi gejala.')
 
+@section('knowledge-form-width', 'standard')
+
 @section('content')
-<div class="mx-auto w-full max-w-4xl">
-    <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.gejala.update', $gejala) }}" class="space-y-6">
+<div class="knowledge-form-width--standard">
+    <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.gejala.update', $gejala) }}" class="knowledge-form-card">
         @csrf
         @method('PUT')
         @include('knowledge.gejala._form-fields')

@@ -3,9 +3,11 @@
 @section('title', 'Edit Aturan Penyakit')
 @section('subtitle', 'Perbarui hubungan gejala dan penyakit dengan nilai CF baku.')
 
+@section('knowledge-form-width', 'complex')
+
 @section('content')
-<div class="mx-auto w-full max-w-6xl">
-    <form method="POST" action="{{ route('knowledge.aturan-cf.update', $aturanCf) }}" class="space-y-6">
+<div class="knowledge-form-width--complex">
+    <form method="POST" action="{{ route('knowledge.aturan-cf.update', $aturanCf) }}" class="knowledge-form-card">
         @csrf
         @method('PUT')
         @include('knowledge.aturan-cf._form-fields')

@@ -3,9 +3,11 @@
 @section('title', 'Tambah Solusi')
 @section('subtitle', 'Tambahkan rekomendasi penanganan penyakit.')
 
+@section('knowledge-form-width', 'standard')
+
 @section('content')
-<div class="mx-auto w-full max-w-4xl">
-    <form method="POST" action="{{ route('knowledge.solusi.store') }}" class="space-y-6">
+<div class="knowledge-form-width--standard">
+    <form method="POST" action="{{ route('knowledge.solusi.store') }}" class="knowledge-form-card">
         @csrf
         @include('knowledge.solusi._form-fields')
         <x-knowledge.form-actions :cancel="route('knowledge.solusi.index')" submit="Simpan" />

@@ -3,7 +3,8 @@
     $fieldClass = 'mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200';
 @endphp
 
-<section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+<div class="knowledge-form-sections">
+    <section class="knowledge-form-section">
     <h2 class="text-base font-bold text-[#173b29]">Target Penyakit</h2>
     <p class="mt-1 text-sm text-gray-500">Cari penyakit yang akan menerima rekomendasi ini.</p>
     <div class="mt-5">
@@ -13,7 +14,7 @@
     </div>
 </section>
 
-<section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+<section class="knowledge-form-section">
     <h2 class="text-base font-bold text-[#173b29]">Rekomendasi Penanganan</h2>
     <div class="mt-5 space-y-5">
         <div>
@@ -29,7 +30,8 @@
     </div>
 </section>
 
-<section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+<section class="knowledge-form-section">
     <h2 class="mb-4 text-base font-bold text-[#173b29]">Status Knowledge</h2>
     <x-knowledge.status-select name="status" :value="$record?->status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />
 </section>
+</div>

@@ -3,9 +3,11 @@
 @section('title', 'Edit Solusi')
 @section('subtitle', 'Perbarui rekomendasi penanganan penyakit.')
 
+@section('knowledge-form-width', 'standard')
+
 @section('content')
-<div class="mx-auto w-full max-w-4xl">
-    <form method="POST" action="{{ route('knowledge.solusi.update', $solusi) }}" class="space-y-6">
+<div class="knowledge-form-width--standard">
+    <form method="POST" action="{{ route('knowledge.solusi.update', $solusi) }}" class="knowledge-form-card">
         @csrf
         @method('PUT')
         @include('knowledge.solusi._form-fields')
