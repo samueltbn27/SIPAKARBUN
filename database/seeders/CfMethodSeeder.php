@@ -27,13 +27,11 @@ class CfMethodSeeder extends Seeder
                 'description' => 'Metode untuk memperoleh nilai CF dari tingkat keyakinan pakar terhadap hubungan gejala dan penyakit.',
                 'elicitation_question_template' => 'Jika gejala "{gejala}" ditemukan pada tanaman, seberapa kuat gejala tersebut mendukung diagnosis penyakit "{penyakit}"?',
                 'scale_definition' => $scale,
-                // Bibliography is intentionally empty until the research
-                // reference is verified by the project owner.
-                'reference_title' => null,
-                'reference_authors' => null,
-                'reference_year' => null,
-                'reference_doi' => null,
-                'reference_url' => null,
+                'reference_title' => 'A Model of Inexact Reasoning in Medicine',
+                'reference_authors' => 'Edward H. Shortliffe; Bruce G. Buchanan',
+                'reference_year' => 1975,
+                'reference_doi' => '10.1016/0025-5564(75)90047-4',
+                'reference_url' => 'https://doi.org/10.1016/0025-5564(75)90047-4',
                 'is_active' => true,
             ],
         );

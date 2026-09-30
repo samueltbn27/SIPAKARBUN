@@ -21,6 +21,8 @@ class CfMethodologyGuideTest extends TestCase
             'reference_title' => 'Pedoman Penilaian CF Uji',
             'reference_authors' => 'Tim Uji',
             'reference_year' => 2026,
+            'reference_doi' => '10.1000/uji-cf',
+            'reference_url' => 'https://doi.org/10.1000/uji-cf',
             'scale_definition' => [
                 ['term' => 'Sangat Lemah', 'cf' => 0.2],
                 ['term' => 'Lemah', 'cf' => 0.4],
@@ -36,6 +38,8 @@ class CfMethodologyGuideTest extends TestCase
             ->assertSee($method->name)
             ->assertSee('1.0')
             ->assertSee('Pedoman Penilaian CF Uji · Tim Uji · 2026')
+            ->assertSee('https://doi.org/10.1000/uji-cf', false)
+            ->assertSee('DOI: 10.1000/uji-cf')
             ->assertSee('Sangat Lemah')
             ->assertSee('0,20')
             ->assertDontSee('select id="cf_method_id"', false);

@@ -44,7 +44,14 @@
                 </div>
                 <div class="mt-3">
                     <dt class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Referensi Metodologi CF</dt>
-                    <dd class="mt-1 break-words text-[#315e47]">{{ $guideReference }}</dd>
+                    <dd class="mt-1 break-words text-[#315e47]">
+                        @if($guideMethod?->reference_url)
+                            <a href="{{ $guideMethod->reference_url }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-[#176b45] underline decoration-[#9dc9ab] underline-offset-2 hover:text-[#0f4b31]">{{ $guideReference }}</a>
+                            @if($guideMethod->reference_doi)<span class="mt-1 block text-xs text-[#66746c]">DOI: {{ $guideMethod->reference_doi }}</span>@endif
+                        @else
+                            {{ $guideReference }}
+                        @endif
+                    </dd>
                 </div>
             </dl>
         </div>
