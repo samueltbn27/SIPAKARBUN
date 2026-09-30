@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Aturan CF')
-@section('subtitle', 'Provenance dan validasi nilai Certainty Factor.')
+@section('title', 'Detail Aturan Penyakit')
+@section('subtitle', 'Hubungan penyakit dan gejala pendukung berdasarkan penilaian pakar.')
 
 @section('content')
 @php
@@ -39,20 +39,20 @@
                 <h2 class="mt-1 text-lg font-bold text-[#173b29]">{{ $aturanCf->cfMethod?->name ?? 'Legacy / Belum tercatat' }}</h2>
                 @if($aturanCf->cfMethod)<p class="mt-1 text-sm text-[#66746c]">Versi {{ $aturanCf->cfMethod->version }} · {{ $aturanCf->cfMethod->description }}</p>@endif
             </div>
-            @if($aturanCf->cfMethod)<a href="{{ route('knowledge.cf-methods.show', $aturanCf->cfMethod) }}" class="text-sm font-semibold text-[#176b45] hover:underline">Lihat detail metode</a>@endif
+            @if($aturanCf->cfMethod)<a href="{{ route('knowledge.cf-methods.show', $aturanCf->cfMethod) }}" class="text-sm font-semibold text-[#176b45] hover:underline">Lihat Pedoman CF Lengkap</a>@endif
         </div>
         <dl class="mt-5 grid gap-5 sm:grid-cols-2">
             <div class="sm:col-span-2"><dt class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Pertanyaan Elicitation</dt><dd class="mt-1 text-sm leading-6 text-gray-800">{{ $aturanCf->cfMethod?->elicitation_question_template ? str_replace(['{gejala}', '{penyakit}'], [$aturanCf->gejala?->nama ?? '[gejala]', $aturanCf->penyakit?->nama ?? '[penyakit]'], $aturanCf->cfMethod->elicitation_question_template) : 'Belum tersedia' }}</dd></div>
-            <div><dt class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Referensi Metodologi CF</dt><dd class="mt-1 break-words text-sm text-gray-800">{{ $aturanCf->cfMethod?->referenceLabel() ?? 'Belum tersedia' }}</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Referensi Metodologi CF</dt><dd class="mt-1 break-words text-sm text-gray-800">{{ $aturanCf->cfMethod?->referenceLabel() && $aturanCf->cfMethod->referenceLabel() !== 'Belum tersedia' ? $aturanCf->cfMethod->referenceLabel() : 'Referensi metodologi belum tersedia.' }}</dd></div>
             <div><dt class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Skala</dt><dd class="mt-1 text-sm text-gray-800">{{ $aturanCf->cfMethod ? 'Tersimpan sebagai skala metode' : 'Belum tersedia' }}</dd></div>
         </dl>
     </section>
 
     <section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Penilaian Pakar</p>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Kekuatan Hubungan</p>
         <dl class="mt-4 grid gap-5 sm:grid-cols-2">
-            <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Tingkat Keyakinan</dt><dd class="mt-1 text-sm font-semibold text-gray-800">{{ $aturanCf->expert_term ?: 'Belum tercatat' }}</dd></div>
-            <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nilai CF hasil pemetaan</dt><dd class="mt-1 font-mono text-xl font-bold text-[#176b45]">{{ number_format((float) $aturanCf->cf_pakar, 3) }}</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Kekuatan Hubungan</dt><dd class="mt-1 text-sm font-semibold text-gray-800">{{ $aturanCf->expert_term ?: 'Belum tercatat' }}</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nilai CF</dt><dd class="mt-1 font-mono text-xl font-bold text-[#176b45]">{{ number_format((float) $aturanCf->cf_pakar, 3) }}</dd></div>
             <div class="sm:col-span-2"><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Alasan / Rationale</dt><dd class="mt-1 whitespace-pre-line break-words text-sm text-gray-800">{{ $aturanCf->expert_rationale ?: 'Belum tersedia' }}</dd></div>
         </dl>
     </section>

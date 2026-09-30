@@ -138,7 +138,7 @@ class KnowledgeController extends Controller
             ['label' => 'Komoditas', 'value' => $stats['komoditas'], 'meta' => 'Aktif', 'icon' => 'M12 3c-4 2-7 5-7 9a7 7 0 0 0 14 0c0-4-3-7-7-9Z', 'color' => '#e8f4ed', 'href' => route('knowledge.komoditas.index')],
             ['label' => 'Penyakit', 'value' => $stats['penyakit'], 'meta' => $stats['penyakit_aktif'].' Aktif', 'icon' => 'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z', 'color' => '#f2edf8', 'href' => route('knowledge.penyakit.index')],
             ['label' => 'Gejala', 'value' => $stats['gejala'], 'meta' => $stats['gejala_aktif'].' Aktif', 'icon' => 'M6 3h12v18H6zM9 7h6M9 11h6M9 15h4', 'color' => '#eef5e7', 'href' => route('knowledge.gejala.index')],
-            ['label' => 'Aturan CF', 'value' => $stats['aturan_cf'], 'meta' => $stats['aturan_cf_aktif'].' Aktif', 'icon' => 'M4 18V6m0 12h16M8 15V9m4 6V5m4 10v-3', 'color' => '#fff4df', 'href' => route('knowledge.aturan-cf.index')],
+            ['label' => 'Aturan Penyakit', 'value' => $stats['aturan_cf'], 'meta' => $stats['aturan_cf_aktif'].' Aktif', 'icon' => 'M4 18V6m0 12h16M8 15V9m4 6V5m4 10v-3', 'color' => '#fff4df', 'href' => route('knowledge.aturan-cf.index')],
             ['label' => 'Solusi', 'value' => $stats['solusi'], 'meta' => $stats['solusi_aktif'].' Aktif', 'icon' => 'M9 18h6m-5 3h4M12 3a6 6 0 0 0-3 11c.6.4 1 1.1 1 2h4c0-.9.4-1.6 1-2a6 6 0 0 0-3-11Z', 'color' => '#e7f3f4', 'href' => route('knowledge.solusi.index')],
         ];
     }
@@ -418,19 +418,16 @@ class KnowledgeController extends Controller
     public function aturanCfEdit(AturanCf $aturanCf): View
     {
         $this->ensureCanEditKnowledge($aturanCf);
-        $aturanCf->load(['penyakit', 'gejala']);
+        $aturanCf->load(['penyakit', 'gejala', 'cfMethod']);
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $sourceTypes = AturanCf::SOURCE_LABELS;
         $validationStatuses = AturanCf::VALIDATION_LABELS;
-        $cfMethods = CfMethod::query()
-            ->where('is_active', true)
-            ->orWhere('id', $aturanCf->cf_method_id)
-            ->orderBy('name')
-            ->orderByDesc('version')
-            ->get();
+        $cfMethod = CfMethod::query()->standard()->where('is_active', true)->first()
+            ?? $aturanCf->cfMethod;
+        $cfMethods = collect([$cfMethod])->filter();
 
-        return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods'));
+        return view('knowledge.aturan-cf.edit', compact('aturanCf', 'penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods', 'cfMethod'));
     }
 
     public function aturanCfUpdate(UpdateAturanCfRequest $request, AturanCf $aturanCf): RedirectResponse

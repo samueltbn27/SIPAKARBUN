@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Aturan CF')
-@section('subtitle', 'Kelola aturan certainty factor antara penyakit dan gejala.')
+@section('title', 'Aturan Penyakit')
+@section('subtitle', 'Kelola hubungan antara penyakit dan gejala pendukung berdasarkan penilaian pakar.')
 
 @section('content')
     @php
@@ -9,11 +9,10 @@
         $isPopt = auth()->user()?->hasRole('popt') ?? false;
         $canCreateKnowledge = $canManageKnowledge || $isPopt;
         $canEditRecord = fn ($record) => $canManageKnowledge || ($isPopt && $record->status === 'draft');
-        $createLabel = $isPopt ? 'Tambah Draft' : 'Tambah Aturan CF';
+        $createLabel = 'Tambah Aturan Penyakit';
     @endphp
     <div class="space-y-6">
         <div class="flex flex-wrap justify-end gap-3">
-            <a href="{{ route('knowledge.cf-methods.index') }}" class="inline-flex items-center justify-center rounded-lg border border-[#cfe0d4] bg-white px-4 py-2 text-sm font-medium text-[#176b45] hover:bg-[#f3f8f4]">Metode CF</a>
             @if($canCreateKnowledge)<a href="{{ route('knowledge.aturan-cf.create') }}"
                class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,9 +60,8 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penyakit</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gejala</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penilaian Pakar</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CF</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode CF</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kekuatan Hubungan</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nilai CF</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pakar Penilai</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Knowledge</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -74,17 +72,11 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->penyakit?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-700">{{ $aturan->expert_term ?: 'Belum tercatat' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format((float) $aturan->cf_pakar, 3) }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-600">
-                                    @if($aturan->cfMethod)
-                                        <a href="{{ route('knowledge.cf-methods.show', $aturan->cfMethod) }}" class="font-medium text-[#176b45] hover:underline">{{ $aturan->cfMethod->name }}</a>
-                                        <div class="mt-1 text-xs text-gray-500">v{{ $aturan->cfMethod->version }}</div>
-                                    @else
-                                        <span>Legacy / Belum tercatat</span>
-                                    @endif
+                                <td class="px-4 py-3 text-sm text-gray-700">
+                                    {{ $aturan->expert_term ?: 'Belum tercatat' }}
                                     @if($aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION)<div class="mt-1 text-xs text-amber-700">Simulasi / UAT</div>@endif
                                 </td>
+                                <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format((float) $aturan->cf_pakar, 3) }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-600">{{ $aturan->expert_name ?: 'Belum tersedia' }}<div class="mt-1 text-xs text-gray-500">{{ $aturan->statusValidasiLabel() }}</div></td>
                                 <td class="px-4 py-3">
                                     <x-knowledge.status-badge :status="$aturan->status" />
@@ -109,12 +101,12 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-4 py-12 text-center">
+                                <td colspan="7" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                         </svg>
-                                        <p class="text-sm text-gray-500">Belum ada aturan CF yang tersimpan.</p>
+                                        <p class="text-sm text-gray-500">Belum ada aturan penyakit yang tersimpan.</p>
                                     </div>
                                 </td>
                             </tr>

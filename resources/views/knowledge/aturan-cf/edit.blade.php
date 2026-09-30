@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Aturan CF')
-@section('subtitle', 'Perbarui hubungan, nilai, provenance, dan validasi Aturan CF.')
+@section('title', 'Edit Aturan Penyakit')
+@section('subtitle', 'Perbarui hubungan penyakit, kekuatan gejala, dan informasi penilaian pakar.')
 
 @section('content')
 <div class="mx-auto max-w-4xl">

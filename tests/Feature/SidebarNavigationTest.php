@@ -18,7 +18,6 @@ class SidebarNavigationTest extends TestCase
         'knowledge.gejala.index',
         'knowledge.solusi.index',
         'knowledge.aturan-cf.index',
-        'knowledge.cf-methods.index',
     ];
 
     public function test_operator_memiliki_satu_grup_knowledge_canonical_tanpa_duplikasi(): void
@@ -27,6 +26,8 @@ class SidebarNavigationTest extends TestCase
             ->get(route('webgis.index'))
             ->assertOk()
             ->assertSee('Knowledge Management')
+            ->assertSee('Aturan Penyakit')
+            ->assertDontSee('Metode CF')
             ->assertDontSee('Referensi Knowledge');
 
         $html = $response->getContent();
@@ -57,6 +58,8 @@ class SidebarNavigationTest extends TestCase
 
         $poptResponse = $this->actingAs($this->createPopt())->get(route('knowledge.cf-methods.index'))->assertOk();
         $this->assertKnowledgeLinksOnce($poptResponse->getContent());
+        $this->assertStringContainsString('Aturan Penyakit', $poptResponse->getContent());
+        $this->assertStringNotContainsString('href="'.route('knowledge.cf-methods.index').'"', $poptResponse->getContent());
         $this->assertStringNotContainsString('Master Data', $poptResponse->getContent());
         $this->assertStringNotContainsString('Referensi Knowledge', $poptResponse->getContent());
     }

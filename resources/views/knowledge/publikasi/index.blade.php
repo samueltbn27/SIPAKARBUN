@@ -19,7 +19,7 @@
     $entityDefs = [
         ['model' => 'Penyakit', 'label' => 'Penyakit'],
         ['model' => 'Gejala', 'label' => 'Gejala'],
-        ['model' => 'AturanCf', 'label' => 'Aturan CF'],
+        ['model' => 'AturanCf', 'label' => 'Aturan Penyakit'],
         ['model' => 'Solusi', 'label' => 'Solusi'],
     ];
 
