@@ -1,6 +1,6 @@
 @php
     $record = $gejala ?? null;
-    $fieldClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200';
+    $fieldClass = 'w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200';
 @endphp
 
 <section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
@@ -10,18 +10,18 @@
     </div>
     <div class="grid gap-5 sm:grid-cols-2">
         <div>
-            <label for="kode" class="mb-1 block text-sm font-medium text-gray-700">Kode <span class="text-gray-400">(opsional)</span></label>
+            <label for="kode" class="mb-1 block text-sm font-medium text-gray-700">Kode Gejala <span class="text-gray-400">(opsional)</span></label>
             <input type="text" name="kode" id="kode" value="{{ old('kode', $record?->kode) }}" placeholder="Contoh: G01" class="{{ $fieldClass }}">
             @error('kode')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
         <div>
-            <label for="nama" class="mb-1 block text-sm font-medium text-gray-700">Nama <span class="text-red-500">*</span></label>
+            <label for="nama" class="mb-1 block text-sm font-medium text-gray-700">Nama Gejala <span class="text-red-500">*</span></label>
             <input type="text" name="nama" id="nama" value="{{ old('nama', $record?->nama) }}" required class="{{ $fieldClass }}">
             @error('nama')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
         <div class="sm:col-span-2">
             <label for="deskripsi" class="mb-1 block text-sm font-medium text-gray-700">Deskripsi</label>
-            <textarea name="deskripsi" id="deskripsi" rows="4" class="{{ $fieldClass }}">{{ old('deskripsi', $record?->deskripsi) }}</textarea>
+            <textarea name="deskripsi" id="deskripsi" rows="5" class="{{ $fieldClass }}">{{ old('deskripsi', $record?->deskripsi) }}</textarea>
             @error('deskripsi')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
     </div>
@@ -87,6 +87,7 @@
 </section>
 
 <section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+    <h2 class="mb-4 text-base font-bold text-[#173b29]">Media dan Status</h2>
     <div class="grid gap-5 sm:grid-cols-2">
         <div>
             <x-knowledge.status-select name="status" :value="$record?->status" default="draft" :locked="auth()->user()?->hasRole('popt') ?? false" />

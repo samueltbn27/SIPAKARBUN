@@ -22,17 +22,11 @@
             </a>@endif
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <form method="GET" action="{{ route('knowledge.aturan-cf.index') }}" class="flex flex-col sm:flex-row sm:items-end gap-4">
                 <div class="flex-1">
                     <label for="penyakit_id" class="block text-sm font-medium text-gray-700 mb-1">Penyakit</label>
-                    <select id="penyakit_id" name="penyakit_id"
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                        <option value="">Semua Penyakit</option>
-                        @foreach($penyakitList as $p)
-                            <option value="{{ $p->id }}" @selected((string) request('penyakit_id') === (string) $p->id)>{{ $p->nama }}</option>
-                        @endforeach
-                    </select>
+                    <x-search-select name="penyakit_id" :options="$penyakitList" :selected="request('penyakit_id')" placeholder="Cari penyakit..." />
                 </div>
                 <div class="flex items-center h-[38px]">
                     <input type="checkbox" id="aktif_saja" name="aktif_saja" value="1"
@@ -53,7 +47,7 @@
             </form>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">

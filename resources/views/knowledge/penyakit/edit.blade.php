@@ -1,109 +1,15 @@
 @extends('layouts.app')
 
 @section('title', 'Edit Penyakit')
-@section('subtitle', 'Perbarui data penyakit beserta relasi komoditasnya.')
+@section('subtitle', 'Perbarui data penyakit dan komoditas terkait.')
 
 @section('content')
-<div class="space-y-6 max-w-4xl">
-    <div class="flex justify-end">
-        <a href="{{ route('knowledge.penyakit.index') }}" class="inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium">
-            Kembali
-        </a>
-    </div>
-
-    @if ($errors->any())
-        <div class="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-            <p class="font-medium mb-1">Terdapat kesalahan pada input:</p>
-            <ul class="list-disc list-inside space-y-0.5">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
+<div class="mx-auto w-full max-w-4xl">
     <form method="POST" enctype="multipart/form-data" action="{{ route('knowledge.penyakit.update', $penyakit) }}" class="space-y-6">
-        @method('PUT')
         @csrf
-
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 space-y-5">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                    <label for="kode" class="block text-sm font-medium text-gray-700">Kode <span class="text-gray-400 font-normal">(opsional)</span></label>
-                    <input type="text" id="kode" name="kode" value="{{ old('kode', $penyakit->kode) }}"
-                        class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                    @if ($errors->has('kode'))
-                        <p class="mt-1 text-xs text-red-600">{{ $errors->first('kode') }}</p>
-                    @endif
-                </div>
-                <div>
-                    <label for="nama" class="block text-sm font-medium text-gray-700">Nama <span class="text-red-500">*</span></label>
-                    <input type="text" id="nama" name="nama" value="{{ old('nama', $penyakit->nama) }}" required
-                        class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                    @if ($errors->has('nama'))
-                        <p class="mt-1 text-xs text-red-600">{{ $errors->first('nama') }}</p>
-                    @endif
-                </div>
-            </div>
-
-            <div>
-                <label for="deskripsi" class="block text-sm font-medium text-gray-700">Deskripsi</label>
-                <textarea id="deskripsi" name="deskripsi" rows="4"
-                    class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">{{ old('deskripsi', $penyakit->deskripsi) }}</textarea>
-                @if ($errors->has('deskripsi'))
-                    <p class="mt-1 text-xs text-red-600">{{ $errors->first('deskripsi') }}</p>
-                @endif
-            </div>
-
-            <div class="sm:col-span-1">
-                <x-knowledge.status-select name="status" :value="$penyakit->status" :locked="auth()->user()?->hasRole('popt') ?? false" />
-            </div>
-
-            <div>
-                <label for="image" class="block text-sm font-medium text-gray-700">Foto penyakit <span class="text-gray-400 font-normal">(opsional)</span></label>
-                @if ($penyakit->image_path)<p class="mb-2 text-xs text-gray-500">Foto saat ini tersedia. Pilih file baru untuk menggantinya.</p>@endif
-                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                <p class="mt-1 text-xs text-gray-500">JPG, PNG, atau WebP; maksimal 5 MB.</p>
-                @error('image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-            <h2 class="text-sm font-semibold text-gray-900">Komoditas Terkait</h2>
-            <p class="mt-0.5 text-xs text-gray-500">Pilih komoditas yang dapat terkena penyakit ini. Hanya komoditas terverifikasi yang ditampilkan.</p>
-            @if ($komoditas->isNotEmpty())
-                <div class="mt-4 max-h-72 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    @foreach ($komoditas as $k)
-                        @php
-                            $isSelected = in_array((string) $k->id, array_map('strval', old('komoditas_id', $selectedKomoditas ?? [])));
-                        @endphp
-                        <label class="inline-flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 select-none">
-                            <input type="checkbox" name="komoditas_id[]" value="{{ $k->id }}"
-                                {{ $isSelected ? 'checked' : '' }}
-                                class="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-200">
-                            <span>
-                                <span class="font-mono text-xs text-gray-500">{{ $k->kode }}</span>
-                                <span class="block font-medium">{{ $k->nama }}</span>
-                            </span>
-                        </label>
-                    @endforeach
-                </div>
-            @else
-                <p class="mt-4 text-sm text-gray-500">Belum ada komoditas terverifikasi yang terdaftar.</p>
-            @endif
-            @if ($errors->has('komoditas_id'))
-                <p class="mt-2 text-xs text-red-600">{{ $errors->first('komoditas_id') }}</p>
-            @endif
-        </div>
-
-        <div class="flex items-center justify-end gap-3">
-            <a href="{{ route('knowledge.penyakit.index') }}" class="inline-flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium">
-                Batal
-            </a>
-            <button type="submit" class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
-                Update
-            </button>
-        </div>
+        @method('PUT')
+        @include('knowledge.penyakit._form-fields')
+        <x-knowledge.form-actions :cancel="route('knowledge.penyakit.index')" submit="Simpan Perubahan" />
     </form>
 </div>
 @endsection

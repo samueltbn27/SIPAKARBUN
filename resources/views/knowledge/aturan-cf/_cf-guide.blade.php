@@ -9,7 +9,7 @@
     }
 @endphp
 
-<details open class="rounded-xl border border-[#cfe5d6] bg-[#f7fcf9] shadow-sm">
+<details class="rounded-xl border border-[#cfe5d6] bg-[#f7fcf9] shadow-sm">
     <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6">
         <div>
             <h2 class="text-base font-bold text-[#173b29]">Pedoman Penentuan Nilai CF</h2>
