@@ -52,6 +52,7 @@ class SipakarbunDemoSeeder extends Seeder
         $accounts = $this->seedAccounts($password);
         $commodities = $this->seedCommodities();
         $groups = $this->seedGroups($commodities);
+        $this->tautkanPoktanDemo($accounts, $groups);
         $this->seedKnowledgeImages();
         $this->seedStudyCases($accounts, $commodities, $groups);
 
@@ -184,6 +185,25 @@ class SipakarbunDemoSeeder extends Seeder
         }
 
         return $groups;
+    }
+
+    /** @param array<string, User> $accounts
+     *  @param array<string, RefKelompokTani> $groups
+     */
+    private function tautkanPoktanDemo(array $accounts, array $groups): void
+    {
+        $poktan = $accounts['poktan'] ?? null;
+        $group = $groups['arosta'] ?? null;
+
+        if ($poktan === null || $group === null) {
+            return;
+        }
+
+        $poktan->update([
+            'kelompok_tani_id' => $group->id,
+            'kelompok_tani_kode' => (string) ($group->kode_kelompok ?: $group->kode),
+            'kelompok_tani_nama' => (string) $group->nama,
+        ]);
     }
 
     private function seedKnowledgeImages(): void

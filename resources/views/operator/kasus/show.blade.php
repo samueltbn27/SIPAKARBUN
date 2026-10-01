@@ -178,5 +178,47 @@
             @endforelse
         </ol>
     </section>
+
+    @if($kasus->current_status === 'selesai')
+    <section class="rounded-xl border border-[#e6eee8] bg-white p-5">
+        <h2 class="font-bold text-[#173b29]">Verifikasi penyelesaian</h2>
+        @if($kasus->verified_at)
+            <p class="mt-3 text-sm text-[#66746c]">Sudah diverifikasi oleh <strong>{{ $kasus->verifier?->name ?? 'Operator' }}</strong> pada {{ $kasus->verified_at->format('d-m-Y H:i') }}.</p>
+        @else
+            <p class="mt-3 text-sm text-[#66746c]">POPT menandai kasus selesai. Verifikasi kebenaran penyelesaian sebelum dianggap final.</p>
+            <form method="POST" action="{{ route('operator.kasus.verifikasi', $kasus->id) }}" class="mt-4">
+                @csrf
+                <button class="w-full rounded-lg bg-[#176b45] px-4 py-2 text-sm font-semibold text-white">Verifikasi Selesai</button>
+            </form>
+        @endif
+    </section>
+    @else
+    <section class="rounded-xl border border-[#e6eee8] bg-white p-5">
+        <h2 class="font-bold text-[#173b29]">Ubah status (intervensi Operator)</h2>
+        <form method="POST" action="{{ route('operator.kasus.status', $kasus->id) }}" class="mt-4 space-y-2">
+            @csrf
+            <select name="status" required class="w-full rounded-lg border-gray-300 text-sm">
+                <option value="">Pilih status berikutnya</option>
+                @foreach(config('kasus.transitions.'.$kasus->current_status, []) as $next)
+                    <option value="{{ $next }}">{{ config('kasus.labels.'.$next, $next) }}</option>
+                @endforeach
+            </select>
+            <textarea name="catatan" rows="2" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Catatan intervensi (opsional)"></textarea>
+            <button class="w-full rounded-lg border border-[#176b45] px-4 py-2 text-sm font-semibold text-[#176b45]">Simpan Status</button>
+        </form>
+    </section>
+    @endif
+
+    @if(in_array($kasus->current_status, ['diterima', 'ditugaskan'], true))
+    <section class="rounded-xl border border-red-200 bg-white p-5">
+        <h2 class="font-bold text-[#c53030]">Batalkan kasus</h2>
+        <p class="mt-2 text-sm text-[#66746c]">Hanya untuk kasus yang salah terima dan belum dikerjakan. Permohonan kembali ke Sedang Direview.</p>
+        <form method="POST" action="{{ route('operator.kasus.batal', $kasus->id) }}" class="mt-4 space-y-2">
+            @csrf
+            <textarea name="alasan" rows="2" required minlength="10" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Alasan pembatalan (min. 10 karakter)"></textarea>
+            <button class="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">Batalkan Kasus</button>
+        </form>
+    </section>
+    @endif
 </div>
 @endsection

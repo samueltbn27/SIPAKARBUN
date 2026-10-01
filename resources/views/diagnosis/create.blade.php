@@ -76,10 +76,70 @@
                 reportImagePreview: '',
                 gejalaLoading: false,
                 error: '',
+                userId: {{ auth()->id() }},
+                draftTersedia: null,
+                draftInfo: '',
+                simpanTimer: null,
 
                 init() {
                     this.selected = this.selected.map(Number);
                     this.selected.forEach(id => { if (!(id in this.confidences)) this.confidences[id] = 0.8; });
+                    const hasOld = Boolean(this.commodityId) || this.selected.length > 0;
+                    if (!hasOld) {
+                        const d = this.muatDraft();
+                        if (d !== null) {
+                            this.draftTersedia = d;
+                            const s = window.SipakarbunDiagnosisDraft;
+                            this.draftInfo = s ? s.formatDraftDateTime(d.updatedAt) : '';
+                        }
+                    }
+                },
+                draftKey() {
+                    const s = window.SipakarbunDiagnosisDraft;
+                    return s ? s.draftStorageKey(this.userId) : ('sipakarbun.diagnosis.v1:' + this.userId);
+                },
+                konteksDraft() { return { komoditas: this.komoditas, gejala: this.gejala }; },
+                simpanDraft() {
+                    clearTimeout(this.simpanTimer);
+                    this.simpanTimer = setTimeout(() => {
+                        const s = window.SipakarbunDiagnosisDraft;
+                        if (!s) return;
+                        const hasil = s.saveDraft(localStorage, this.draftKey(), {
+                            commodityId: this.commodityId,
+                            selected: this.selected,
+                            confidences: this.confidences,
+                            step: this.step,
+                            maxVisited: this.maxVisited,
+                        });
+                        if (hasil === 'saved') {
+                            this.draftInfo = 'Tersimpan otomatis ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        }
+                    }, 400);
+                },
+                muatDraft() {
+                    const s = window.SipakarbunDiagnosisDraft;
+                    if (!s) return null;
+                    return s.loadDraft(localStorage, this.draftKey(), this.konteksDraft());
+                },
+                terapkanDraft() {
+                    const d = this.draftTersedia;
+                    if (!d) return;
+                    this.commodityId = d.commodityId;
+                    this.selected = d.selected;
+                    this.confidences = d.confidences;
+                    this.step = d.step;
+                    this.maxVisited = d.maxVisited;
+                    this.draftTersedia = null;
+                    this.error = '';
+                    this.simpanDraft();
+                },
+                buangDraft() {
+                    this.hapusDraft();
+                    this.draftTersedia = null;
+                },
+                hapusDraft() {
+                    const s = window.SipakarbunDiagnosisDraft;
+                    if (s) s.clearDraft(localStorage, this.draftKey());
                 },
                 filteredKomoditas() {
                     const q = this.komoditasSearch.trim().toLowerCase();
@@ -103,9 +163,10 @@
                     const i = this.selected.indexOf(id);
                     if (i > -1) { this.selected.splice(i, 1); delete this.confidences[id]; }
                     else { this.selected.push(id); if (!(id in this.confidences)) this.confidences[id] = 0.8; }
+                    this.simpanDraft();
                 },
                 confValue(id) { return this.confidences[Number(id)] ?? 0.8; },
-                setConf(id, value) { this.confidences[Number(id)] = value; },
+                setConf(id, value) { this.confidences[Number(id)] = value; this.simpanDraft(); },
                 openReport() {
                     this.reportOpen = true;
                     this.reportSuccess = false;
@@ -164,17 +225,18 @@
                     return lvl ? lvl.label : String(v);
                 },
                 confIndex(id) { return this.levels.findIndex(l => l.value === this.confValue(id)); },
-                goTo(n) { if (n >= 1 && n <= this.maxVisited) this.step = n; },
+                goTo(n) { if (n >= 1 && n <= this.maxVisited) { this.step = n; this.simpanDraft(); } },
                 next() {
                     if (this.step === 1 && !this.commodityId) { this.error = 'Pilih komoditas terlebih dahulu.'; return; }
                     if (this.step === 2 && this.selected.length === 0) { this.error = 'Pilih minimal satu gejala.'; return; }
                     this.error = '';
-                    if (this.step < 4) { this.step++; this.maxVisited = Math.max(this.maxVisited, this.step); }
+                    if (this.step < 4) { this.step++; this.maxVisited = Math.max(this.maxVisited, this.step); this.simpanDraft(); }
                 },
-                prev() { if (this.step > 1) this.step--; },
+                prev() { if (this.step > 1) { this.step--; this.simpanDraft(); } },
                 reset() {
                     this.commodityId = ''; this.selected = []; this.confidences = {};
                     this.error = ''; this.step = 1; this.maxVisited = 1;
+                    this.hapusDraft(); this.draftTersedia = null;
                 },
                 pilihKomoditas(id) {
                     id = Number(id);
@@ -182,6 +244,7 @@
                         // Komoditas sama: gejala sudah dimuat, cukup lanjut ke Step 2.
                         this.step = 2;
                         this.maxVisited = Math.max(this.maxVisited, 2);
+                        this.simpanDraft();
                         return;
                     }
                     // Komoditas berubah → reset gejala/keyakinan sebelumnya,
@@ -194,11 +257,12 @@
                     this.gejalaLoading = true;
                     this.step = 2;
                     this.maxVisited = Math.max(this.maxVisited, 2);
+                    this.simpanDraft();
                     setTimeout(() => { this.gejalaLoading = false; }, 450);
                 },
             }"
         >
-            <form method="POST" action="{{ route('diagnosis.store') }}" @submit="submitting = true">
+            <form method="POST" action="{{ route('diagnosis.store') }}" @submit="submitting = true; hapusDraft()">
                 @csrf
 
                 <input type="hidden" name="commodity_id" :value="commodityId || ''">
@@ -234,6 +298,30 @@
 
                 {{-- Inline error --}}
                 <div x-show="error" x-cloak class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" x-text="error"></div>
+
+                {{-- Resume draft tersimpan otomatis --}}
+                <div x-show="draftTersedia" x-cloak class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="text-sm text-amber-800">
+                            <p class="font-bold">Lanjutkan diagnosis terakhir?</p>
+                            <p class="mt-0.5 text-xs">
+                                Draf tersimpan otomatis <span class="font-semibold" x-text="draftInfo"></span>
+                                · <span x-text="komoditasNama(draftTersedia?.commodityId)"></span>
+                                · <span x-text="(draftTersedia?.selected?.length ?? 0) + ' gejala'"></span>
+                            </p>
+                        </div>
+                        <div class="flex shrink-0 gap-2">
+                            <button type="button" @click="buangDraft()"
+                                    class="rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100">Buang</button>
+                            <button type="button" @click="terapkanDraft()"
+                                    class="rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjutkan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <p x-show="commodityId && draftInfo && !draftTersedia" x-cloak class="mb-4 text-xs text-[#8a9990]">
+                    <span x-text="draftInfo"></span> · draf terhapus otomatis setelah diagnosis diproses.
+                </p>
 
                 {{-- STEP 1: Pilih Komoditas --}}
                 <section x-show="step === 1" x-cloak>

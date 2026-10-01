@@ -105,7 +105,19 @@ class PermohonanController extends Controller
             $selectedDiagnosis = $diagnoses->firstWhere('id', $diagnosisId);
         }
 
-        [$kelompokTaniList, $kelompokTaniError] = $this->muatKelompokTani();
+        $poktanState = $this->poktanMilikState($user);
+
+        if ($poktanState['terkunci']) {
+            $kelompokTaniList = [$poktanState['poktan']];
+            $kelompokTaniError = false;
+        } else {
+            [$kelompokTaniList, $kelompokTaniError] = $this->muatKelompokTani();
+        }
+
+        $kelompokTaniTerkunci = $poktanState['terkunci'];
+        $poktanMilik = $poktanState['poktan'];
+        $lokasiAwal = $poktanState['lokasiAwal'];
+        $poktanTakTersedia = $poktanState['takTersedia'];
         [$komoditasMap, $komoditasError] = $this->muatKomoditas();
 
         $komoditas = $selectedDiagnosis === null
@@ -119,6 +131,10 @@ class PermohonanController extends Controller
             'selectedDiagnosis',
             'kelompokTaniList',
             'kelompokTaniError',
+            'kelompokTaniTerkunci',
+            'poktanMilik',
+            'lokasiAwal',
+            'poktanTakTersedia',
             'komoditasMap',
             'komoditasError',
             'komoditas',
@@ -263,6 +279,45 @@ class PermohonanController extends Controller
             'actor' => $actor?->name,
             'actor_role' => $actor?->roles->first()?->name,
         ];
+    }
+
+    /**
+     * Status Poktan milik user login (satu-akun-satu-Poktan).
+     *
+     * @return array{terkunci:bool, poktan:?array<string, mixed>, lokasiAwal:array{latitude:?float, longitude:?float}, takTersedia:bool}
+     */
+    private function poktanMilikState(User $user): array
+    {
+        $awal = ['terkunci' => false, 'poktan' => null, 'lokasiAwal' => ['latitude' => null, 'longitude' => null], 'takTersedia' => false];
+
+        if ($user->kelompok_tani_id === null) {
+            return $awal;
+        }
+
+        try {
+            $milik = $this->kelompokTaniClient->find((int) $user->kelompok_tani_id);
+        } catch (Throwable $e) {
+            Log::warning('Web permohonan: referensi Poktan milik user gagal dimuat.', [
+                'user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+            $milik = null;
+        }
+
+        if ($milik === null) {
+            $awal['takTersedia'] = true;
+
+            return $awal;
+        }
+
+        $awal['terkunci'] = true;
+        $awal['poktan'] = $milik;
+        $awal['lokasiAwal'] = [
+            'latitude' => $milik['latitude'] ?? null,
+            'longitude' => $milik['longitude'] ?? null,
+        ];
+
+        return $awal;
     }
 
     /**

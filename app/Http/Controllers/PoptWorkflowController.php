@@ -40,6 +40,15 @@ class PoptWorkflowController extends Controller
         return view('popt.penugasan.index', compact('kasus', 'monitoringStatuses'));
     }
 
+    public function antrian(Request $request): View
+    {
+        $kasus = $this->kasusService->kasusAntrian(
+            $request->only(['per_page']),
+        );
+
+        return view('popt.penugasan.antrian', compact('kasus'));
+    }
+
     public function show(Request $request, int $id): View
     {
         $kasus = $this->kasusService->detailKasusPopt($id, (int) $request->user()->id);

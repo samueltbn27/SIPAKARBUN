@@ -55,6 +55,9 @@ class KasusPenangananResource extends JsonResource
             'is_overdue' => $monitoring['is_overdue'],
             'effective_deadline_at' => $monitoring['effective_deadline_at']?->toIso8601String(),
             'overdue_since' => $monitoring['overdue_since']?->toIso8601String(),
+            'selesai_terverifikasi' => $this->current_status === \App\Models\KasusPenanganan::STATUS_SELESAI && $this->verified_at !== null,
+            'verified_by' => $this->verified_by,
+            'verified_at' => $this->verified_at?->toIso8601String(),
             'can_delete_case' => $request->user()?->hasRole('admin') === true
                 && $this->current_status === KasusPenanganan::STATUS_SELESAI,
             'request_status' => $permohonan?->status,

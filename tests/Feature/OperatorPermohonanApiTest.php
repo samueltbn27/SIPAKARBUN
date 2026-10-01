@@ -153,6 +153,8 @@ class OperatorPermohonanApiTest extends TestCase
         $permohonan = $this->buatPermohonanDiajukan($pemohon);
         Sanctum::actingAs($operator);
 
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")->assertOk();
+
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", [
             'catatan' => 'Disetujui',
         ])
@@ -182,6 +184,25 @@ class OperatorPermohonanApiTest extends TestCase
 
         $kasus = $permohonan->kasus;
         $this->assertStringStartsWith('KS-', $kasus->kasus_code);
+    }
+
+    public function test_accept_tanpa_review_ditolak(): void
+    {
+        $operator = $this->buatUserOperator();
+        $permohonan = $this->buatPermohonanDiajukan($this->buatUserPoktan());
+        Sanctum::actingAs($operator);
+
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['permohonan_id']);
+
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/reject", ['catatan' => 'alasan'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['permohonan_id']);
+
+        $this->assertSame(PermohonanPenanganan::STATUS_DIAJUKAN, $permohonan->refresh()->status);
+        $this->assertDatabaseCount('keputusan_permohonan', 0);
+        $this->assertDatabaseCount('kasus_penanganan', 0);
     }
 
     public function test_accept_permohonan_sudah_diputuskan_ditolak(): void
@@ -227,6 +248,8 @@ class OperatorPermohonanApiTest extends TestCase
         $permohonan = $this->buatPermohonanDiajukan($this->buatUserPoktan());
         Sanctum::actingAs($operator);
 
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")->assertOk();
+
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/reject", [
             'catatan' => 'Lokasi di luar wilayah kerja UPTD.',
         ])
@@ -258,6 +281,7 @@ class OperatorPermohonanApiTest extends TestCase
         $permohonan = $this->buatPermohonanDiajukan($pemohon);
         Sanctum::actingAs($operator);
 
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")->assertOk();
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])->assertCreated();
 
         $this->getJson("/api/operator/permohonan/{$permohonan->id}")

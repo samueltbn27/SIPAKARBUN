@@ -75,6 +75,17 @@
                     <div class="flex flex-wrap items-center gap-2"><span class="text-sm font-bold text-[#173b29]">{{ $kasus->kasus_code }}</span><span class="rounded-full px-3 py-1 text-xs font-semibold {{ $handling['status']['badge_class'] }}">{{ $handling['status']['label'] }}</span></div>
                     @if ($handling['status']['is_overdue'])<p class="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">Penanganan telah melewati target penyelesaian.</p>@else<p class="mt-3 text-xs text-[#8a9990]">Kasus dibuat {{ $formatDate($kasus->created_at) }} ketika permohonan diterima.</p>@endif
                     @if ($handling['last_update_at'] !== null)<p class="mt-3 text-xs text-[#8a9990]">Update terakhir: {{ $formatDate($handling['last_update_at']) }}</p>@endif
+                    @if ($kasus->current_status === 'selesai')
+                        @if ($kasus->verified_at !== null)
+                            <p class="mt-3 rounded-xl bg-[#e8f4ed] p-3 text-xs font-semibold text-[#176b45]">
+                                Penyelesaian sudah diverifikasi Operator pada {{ $kasus->verified_at->timezone('Asia/Jakarta')->translatedFormat('d F Y H:i') }}.
+                            </p>
+                        @else
+                            <p class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-700">
+                                Penanganan selesai oleh POPT dan menunggu verifikasi Operator UPTD.
+                            </p>
+                        @endif
+                    @endif
                 </div>
             </x-card>
         @endif

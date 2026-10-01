@@ -55,6 +55,8 @@ class KasusPenanganan extends Model
         'longitude_kasus',
         'created_by',
         'completed_at',
+        'verified_by',
+        'verified_at',
     ];
 
     protected $casts = [
@@ -65,7 +67,19 @@ class KasusPenanganan extends Model
         'longitude_kasus' => 'float',
         'created_by' => 'integer',
         'completed_at' => 'datetime',
+        'verified_by' => 'integer',
+        'verified_at' => 'datetime',
     ];
+
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function isSelesaiTerverifikasi(): bool
+    {
+        return $this->current_status === self::STATUS_SELESAI && $this->verified_at !== null;
+    }
 
     public function permohonan(): BelongsTo
     {

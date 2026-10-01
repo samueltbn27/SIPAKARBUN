@@ -401,7 +401,7 @@ class PoktanSecurityTest extends TestCase
         $this->loginPoktan();
 
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('@submit="submitting = true"', false)
+            ->assertSee('@submit="submitting = true; hapusDraft()"', false)
             ->assertSee(':disabled="submitting', false)
             ->assertSee('Memproses…');
     }

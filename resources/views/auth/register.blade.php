@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrasi — SIPAKARBUN</title>
+    <style>[x-cloak]{display:none!important}</style>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -42,28 +43,100 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('register.store') }}" class="space-y-5" x-data="{ showPassword: false, showConfirm: false }">
+            <form method="POST" action="{{ route('register.store') }}" class="space-y-5" x-init="if (kelompokTaniId && !kelompokTaniList.some((k) => String(k.id) === String(kelompokTaniId))) cariKelompokTani()" x-data="{
+                showPassword: false,
+                showConfirm: false,
+                role: {{ Js::from(old('role', count($roles) === 1 ? array_key_first($roles) : '')) }},
+                kelompokTaniList: {{ Js::from($kelompokTaniList ?? []) }},
+                kelompokTaniId: {{ Js::from(old('kelompok_tani_id')) }},
+                kelompokTaniQuery: '',
+                showPassword: false,
+                showConfirm: false,
+                role: {{ Js::from(old('role', count($roles) === 1 ? array_key_first($roles) : '')) }},
+                kelompokTaniList: {{ Js::from($kelompokTaniList ?? []) }},
+                kelompokTaniId: {{ Js::from(old('kelompok_tani_id')) }},
+                kelompokTaniQuery: '',
+                kelompokTaniLoading: false,
+                kelompokTaniSearchError: false,
+                async cariKelompokTani() {
+                    const query = this.kelompokTaniQuery.trim();
+                    this.kelompokTaniLoading = true;
+                    this.kelompokTaniSearchError = false;
+                    try {
+                        const params = new URLSearchParams({ q: query });
+                        if (this.kelompokTaniId) params.set('selected', this.kelompokTaniId);
+                        const response = await fetch('{{ route('register.kelompok-tani') }}?' + params.toString(), {
+                            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        });
+                        if (! response.ok) throw new Error('reference-search-failed');
+                        const payload = await response.json();
+                        this.kelompokTaniList = Array.isArray(payload.data) ? payload.data : [];
+                    } catch (error) {
+                        this.kelompokTaniList = [];
+                        this.kelompokTaniSearchError = true;
+                    } finally {
+                        this.kelompokTaniLoading = false;
+                    }
+                },
+                get kelompokTaniTerpilih() {
+                    return this.kelompokTaniList.find((k) => String(k.id) === String(this.kelompokTaniId)) || null;
+                },
+                get kelompokTaniHasil() {
+                    const query = this.kelompokTaniQuery.trim().toLowerCase();
+                    if (! query) return this.kelompokTaniList;
+                    return this.kelompokTaniList.filter((k) => [k.nama, k.kode, k.kabupaten, k.kecamatan, k.kelurahan, k.desa]
+                        .filter(Boolean)
+                        .some((value) => String(value).toLowerCase().includes(query)));
+                }
+            }">
                 @csrf
 
-                {{-- Nama Lengkap --}}
+                {{-- Role (hanya untuk Admin yang membuat akun; publik selalu Poktan) --}}
+                @if(count($roles) > 1)
                 <div>
-                    <label for="name" class="block text-sm font-semibold text-[#314239] mb-1.5">Nama Lengkap <span class="text-red-500">*</span></label>
-                    <input type="text" id="name" name="name" required autofocus
-                           value="{{ old('name') }}"
-                           class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition @error('name') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror"
-                           placeholder="Contoh: Budi Santoso">
-                    @error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    <label for="role" class="block text-sm font-semibold text-[#314239] mb-1.5">Role <span class="text-red-500">*</span></label>
+                    <select id="role" name="role" required x-model="role"
+                            class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition bg-white @error('role') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror">
+                        <option value="">— Pilih Role —</option>
+                        @foreach($roles as $value => $label)
+                            <option value="{{ $value }}" @selected(old('role') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('role')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
+                @endif
 
-                {{-- Email --}}
-                <div>
-                    <label for="email" class="block text-sm font-semibold text-[#314239] mb-1.5">Email <span class="text-red-500">*</span></label>
-                    <input type="email" id="email" name="email" required
-                           value="{{ old('email') }}"
-                           class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition @error('email') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror"
-                           placeholder="Masukkan email Anda">
-                    @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                {{-- Identitas manual (hanya untuk role non-Poktan oleh Admin) --}}
+                @if(count($roles) > 1)
+                <div x-show="role !== 'poktan'" x-cloak class="space-y-5">
+                    <div>
+                        <label for="name" class="block text-sm font-semibold text-[#314239] mb-1.5">Nama Lengkap <span class="text-red-500">*</span></label>
+                        <input type="text" id="name" name="name"
+                               value="{{ old('name') }}"
+                               class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition @error('name') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror"
+                               placeholder="Contoh: Budi Santoso">
+                        @error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-semibold text-[#314239] mb-1.5">Email <span class="text-red-500">*</span></label>
+                        <input type="email" id="email" name="email"
+                               value="{{ old('email') }}"
+                               class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition @error('email') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror"
+                               placeholder="Masukkan email">
+                        @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label for="phone" class="block text-sm font-semibold text-[#314239] mb-1.5">No. HP/WhatsApp <span class="text-red-500">*</span></label>
+                        <input type="tel" id="phone" name="phone"
+                               value="{{ old('phone') }}"
+                               class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition @error('phone') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror"
+                               placeholder="081234567890">
+                        @error('phone')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
                 </div>
+                @endif
 
                 {{-- Password + Konfirmasi (2 kolom) --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -96,44 +169,34 @@
                     </div>
                 </div>
 
-                {{-- Role + No HP (2 kolom) --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="role" class="block text-sm font-semibold text-[#314239] mb-1.5">Role <span class="text-red-500">*</span></label>
-                        <select id="role" name="role" required
-                                class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition bg-white @error('role') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror">
-                            <option value="">— Pilih Role —</option>
-                            @foreach($roles as $value => $label)
-                                <option value="{{ $value }}" @selected(old('role') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        @error('role')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
-
-                    <div>
-                        <label for="phone" class="block text-sm font-semibold text-[#314239] mb-1.5">No. HP/WhatsApp <span class="text-red-500">*</span></label>
-                        <input type="tel" id="phone" name="phone" required
-                               value="{{ old('phone') }}"
-                               class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition @error('phone') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror"
-                               placeholder="081234567890">
-                        @error('phone')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
-                </div>
-
-                {{-- Checkbox Syarat & Ketentuan --}}
-                <div class="pt-1">
-                    <label class="flex items-start gap-2.5 cursor-pointer">
-                        <input type="checkbox" name="agree_terms" value="1" {{ old('agree_terms') ? 'checked' : '' }}
-                               class="mt-0.5 w-4 h-4 rounded border-[#d6e0d9] text-[#176b45] focus:ring-[#176b45]/20 @error('agree_terms') border-red-400 @enderror">
-                        <span class="text-xs text-[#526159] leading-relaxed">
-                            Saya telah membaca dan menyetujui
-                            <a href="#" class="font-semibold text-[#176b45] hover:underline">Syarat &amp; Ketentuan</a>
-                            serta
-                            <a href="#" class="font-semibold text-[#176b45] hover:underline">Kebijakan Privasi</a>
-                            SIPAKARBUN.
-                        </span>
-                    </label>
-                    @error('agree_terms')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                {{-- Kelompok Tani (wajib untuk Poktan, dari referensi Disbun) --}}
+                <div x-show="role === 'poktan'" x-cloak>
+                    <label for="kelompok-tani-search" class="block text-sm font-semibold text-[#314239] mb-1.5">Kelompok Tani <span class="text-red-500">*</span></label>
+                    <p class="mb-2 text-xs text-[#77847c]">Pilih kelompok tani Anda sesuai data referensi Disbun. Akun diverifikasi Admin berdasarkan kode ini.</p>
+                    <input type="search" id="kelompok-tani-search" x-model="kelompokTaniQuery"
+                           placeholder="Ketik untuk menyaring dari seluruh data (A–Z)..."
+                           class="mb-2 w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15">
+                    <select id="kelompok_tani_id" name="kelompok_tani_id" x-model="kelompokTaniId" :required="role === 'poktan'"
+                            class="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition bg-white @error('kelompok_tani_id') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100 @else border-[#d6e0d9] focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15 @enderror">
+                        <option value="">— Pilih Kelompok Tani —</option>
+                        <option value="" disabled x-show="kelompokTaniLoading">Memuat opsi...</option>
+                        <template x-for="k in kelompokTaniHasil" :key="k.id">
+                            <option :value="String(k.id)" x-text="[k.nama, k.kode, [k.kecamatan, k.kabupaten].filter(Boolean).join(' · ')].filter(Boolean).join(' — ')"></option>
+                        </template>
+                    </select>
+                    <p x-show="kelompokTaniLoading" class="mt-1 text-xs text-[#77847c]">Mencari data kelompok tani...</p>
+                    <p x-show="!kelompokTaniLoading && kelompokTaniSearchError" class="mt-1 text-xs text-red-600">Data kelompok tani tidak tersedia. Silakan coba lagi.</p>
+                    <p x-show="!kelompokTaniLoading && !kelompokTaniSearchError" class="mt-1 text-xs text-[#77847c]">Menampilkan <span class="font-semibold" x-text="kelompokTaniHasil.length"></span> data.</p>
+                    <p x-show="!kelompokTaniLoading && !kelompokTaniSearchError && kelompokTaniHasil.length === 0" class="mt-1 text-xs text-amber-700">Data tidak tersedia untuk penyaringan ini.</p>
+                    @error('kelompok_tani_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    <template x-if="kelompokTaniTerpilih">
+                        <div class="mt-2 rounded-lg bg-[#f3f8f4] p-3 text-xs text-[#526159]">
+                            <p class="font-semibold text-[#173b29]" x-text="kelompokTaniTerpilih.nama"></p>
+                            <p class="mt-0.5">Kode: <span class="font-semibold text-[#176b45]" x-text="kelompokTaniTerpilih.kode"></span></p>
+                            <p x-show="kelompokTaniTerpilih.jenis_komoditi">Komoditas: <span x-text="kelompokTaniTerpilih.jenis_komoditi"></span></p>
+                            <p x-show="kelompokTaniTerpilih.kecamatan || kelompokTaniTerpilih.kabupaten">Wilayah: <span x-text="[kelompokTaniTerpilih.kecamatan, kelompokTaniTerpilih.kabupaten].filter(Boolean).join(', ')"></span></p>
+                        </div>
+                    </template>
                 </div>
 
                 {{-- Submit --}}

@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\KasusPenanganan;
+use App\Models\KeputusanPermohonan;
 use App\Models\PenugasanPopt;
 use App\Models\PermohonanPenanganan;
+use App\Models\RiwayatStatusPenanganan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -280,6 +282,127 @@ class KasusService
         return $kasus;
     }
 
+    /**
+     * Verifikasi penyelesaian kasus oleh Admin/Operator UPTD.
+     * Status `selesai` dari POPT belum final sampai diverifikasi.
+     */
+    public function verifikasiSelesai(KasusPenanganan $kasus, User $actor): KasusPenanganan
+    {
+        abort_unless($actor->hasAnyRole(['admin', 'operator_uptd']), 403, 'Hanya Admin/Operator UPTD yang dapat memverifikasi penyelesaian kasus.');
+
+        if ($kasus->current_status !== KasusPenanganan::STATUS_SELESAI) {
+            throw ValidationException::withMessages([
+                'kasus_id' => 'Hanya kasus berstatus selesai yang dapat diverifikasi.',
+            ]);
+        }
+
+        if ($kasus->verified_at !== null) {
+            throw ValidationException::withMessages([
+                'kasus_id' => 'Kasus ini sudah diverifikasi penyelesaiannya.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($kasus, $actor): KasusPenanganan {
+            $kasus->update([
+                'verified_by' => $actor->id,
+                'verified_at' => now(),
+            ]);
+
+            RiwayatStatusPenanganan::create([
+                'kasus_id' => $kasus->id,
+                'previous_status' => KasusPenanganan::STATUS_SELESAI,
+                'status' => KasusPenanganan::STATUS_SELESAI,
+                'catatan' => "Penyelesaian diverifikasi oleh {$actor->name}.",
+                'actor_id' => (int) $actor->id,
+                'created_at' => now(),
+            ]);
+
+            Log::info('Penyelesaian kasus diverifikasi.', [
+                'kasus_id' => $kasus->id,
+                'verified_by' => $actor->id,
+            ]);
+
+            return $kasus->fresh();
+        });
+    }
+
+    /**
+     * Intervensi Operator: pindahkan status kasus kerja mengikuti state
+     * machine yang sama dengan POPT (mis. menarik kembali kasus yang
+     * ditunda). Aktor tercatat di riwayat.
+     */
+    public function updateStatusOlehOperator(KasusPenanganan $kasus, string $tujuan, ?string $catatan, User $actor): KasusPenanganan
+    {
+        abort_unless($actor->hasAnyRole(['admin', 'operator_uptd']), 403, 'Hanya Admin/Operator UPTD yang dapat mengubah status kasus.');
+
+        return $this->transitionService->pindahkan(
+            kasus: $kasus,
+            tujuan: $tujuan,
+            catatan: $catatan ?? "Status diubah oleh {$actor->name}.",
+            actorId: (int) $actor->id,
+        );
+    }
+
+    /**
+     * Batalkan kasus yang salah terima (masih dini: diterima/ditugaskan).
+     * Penugasan aktif dicabut, permohonan kembali ke sedang_direview agar
+     * bisa diputuskan ulang, dan kasus diarsipkan (soft-delete).
+     */
+    public function batalkanKasus(KasusPenanganan $kasus, User $actor, string $alasan): KasusPenanganan
+    {
+        abort_unless($actor->hasAnyRole(['admin', 'operator_uptd']), 403, 'Hanya Admin/Operator UPTD yang dapat membatalkan kasus.');
+
+        if (! in_array($kasus->current_status, [KasusPenanganan::STATUS_DITERIMA, KasusPenanganan::STATUS_DITUGASKAN], true)) {
+            throw ValidationException::withMessages([
+                'kasus_id' => 'Hanya kasus yang belum dikerjakan (diterima/ditugaskan) yang dapat dibatalkan.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($kasus, $actor, $alasan): KasusPenanganan {
+            RiwayatStatusPenanganan::create([
+                'kasus_id' => $kasus->id,
+                'previous_status' => $kasus->current_status,
+                'status' => $kasus->current_status,
+                'catatan' => "Kasus dibatalkan oleh {$actor->name}: {$alasan}",
+                'actor_id' => (int) $actor->id,
+                'created_at' => now(),
+            ]);
+
+            PenugasanPopt::query()
+                ->where('kasus_id', $kasus->id)
+                ->where('status', PenugasanPopt::STATUS_AKTIF)
+                ->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+
+            $permohonan = $kasus->permohonan;
+            if ($permohonan !== null) {
+                $permohonan->update(['status' => PermohonanPenanganan::STATUS_SEDANG_DIREVIEW]);
+                KeputusanPermohonan::query()->where('permohonan_id', $permohonan->id)->delete();
+            }
+
+            $kasus->delete();
+
+            Log::info('Kasus dibatalkan oleh operator.', [
+                'kasus_id' => $kasus->id,
+                'actor_id' => $actor->id,
+            ]);
+
+            return $kasus;
+        });
+    }
+
+    /**
+     * Antrian kasus untuk POPT: kasus berstatus diterima yang menunggu
+     * penugasan Operator. Read-only — POPT tidak bisa self-assign.
+     */
+    public function kasusAntrian(array $filters = []): LengthAwarePaginator
+    {
+        $query = KasusPenanganan::query()
+            ->where('current_status', KasusPenanganan::STATUS_DITERIMA)
+            ->with($this->readContractRelations());
+
+        return $query->latest('id')->paginate($this->perPage($filters));
+    }
+
     /** @return array<int, string> */
     private function readContractRelations(): array
     {
@@ -291,6 +414,7 @@ class KasusService
             'riwayatStatus',
             'progressTerakhir',
             'finalReport',
+            'verifier',
         ];
     }
 

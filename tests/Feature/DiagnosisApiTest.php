@@ -323,4 +323,36 @@ class DiagnosisApiTest extends TestCase
         $this->assertDatabaseCount('diagnoses', 0);
         $this->assertDatabaseCount('diagnosis_results', 0);
     }
+
+    public function test_validasi_menolak_gejala_milik_komoditas_lain(): void
+    {
+        // Gejala 3 hanya milik komoditas 2: validasi memakai
+        // gejala(komoditas_id) sehingga id 3 ditolak untuk komoditas 1.
+        Http::fake([
+            self::BASE_URL.'/api/penyakit*' => Http::response(['data' => []], 200),
+            self::BASE_URL.'/api/gejala*' => function ($request) {
+                $semua = [
+                    ['id' => 1, 'kode' => 'GJ-001', 'nama' => 'Bercak jingga', 'deskripsi' => null],
+                    ['id' => 2, 'kode' => 'GJ-002', 'nama' => 'Daun menguning', 'deskripsi' => null],
+                    ['id' => 3, 'kode' => 'GJ-003', 'nama' => 'Batang layu', 'deskripsi' => null],
+                ];
+
+                parse_str(parse_url($request->url(), PHP_URL_QUERY) ?? '', $query);
+
+                if ((int) ($query['komoditas_id'] ?? 0) === 1) {
+                    return Http::response(['data' => [$semua[0], $semua[1]]], 200);
+                }
+
+                return Http::response(['data' => $semua], 200);
+            },
+        ]);
+        Sanctum::actingAs($this->createUser());
+
+        $this->postJson('/api/diagnosis', [
+            'commodity_id' => 1,
+            'symptom_ids' => [3],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['symptom_ids']);
+
+        $this->assertDatabaseCount('diagnoses', 0);
+    }
 }

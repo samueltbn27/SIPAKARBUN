@@ -119,11 +119,15 @@ final class DisbunReferenceSyncService
         }
 
         if ($payload !== []) {
-            RefKomoditas::upsert(
-                $payload,
-                ['id'],
-                ['disbun_record_id', 'source', 'kode', 'nama', 'nama_latin', 'source_is_active', 'is_verified', 'sync_status', 'quarantine_reason', 'last_synced_at', 'updated_at'],
-            );
+            // Chunk agar tidak melebihi batas variabel SQLite (upsert
+            // sekaligus ribuan baris × puluhan kolom meledak).
+            foreach (array_chunk($payload, 500) as $chunk) {
+                RefKomoditas::upsert(
+                    $chunk,
+                    ['id'],
+                    ['disbun_record_id', 'source', 'kode', 'nama', 'nama_latin', 'source_is_active', 'is_verified', 'sync_status', 'quarantine_reason', 'last_synced_at', 'updated_at'],
+                );
+            }
         }
 
         return ['upserted' => $upserted, 'updated' => $updated, 'local' => RefKomoditas::query()->where('source', RefKomoditas::SOURCE_DISBUN)->count()];
@@ -186,11 +190,15 @@ final class DisbunReferenceSyncService
         }
 
         if ($payload !== []) {
-            RefKelompokTani::upsert(
-                $payload,
-                ['source', 'disbun_record_id'],
-                ['kode', 'kode_kelompok', 'nama', 'ketua', 'kabupaten', 'kecamatan', 'desa', 'kelurahan', 'kode_kabupaten', 'kode_kecamatan', 'kode_desa', 'jenis_komoditi', 'latitude', 'longitude', 'status', 'deleted_at', 'external_commodity_id', 'external_commodity_code', 'external_commodity_name', 'commodity_ref_id', 'commodity_mapping_status', 'source_is_active', 'is_verified', 'sync_status', 'quarantine_reason', 'source_updated_at', 'last_synced_at', 'updated_at'],
-            );
+            // Chunk agar tidak melebihi batas variabel SQLite (~6000 baris
+            // × 31 kolom dalam satu query melebihi SQLITE_MAX_VARIABLE_NUMBER).
+            foreach (array_chunk($payload, 500) as $chunk) {
+                RefKelompokTani::upsert(
+                    $chunk,
+                    ['source', 'disbun_record_id'],
+                    ['kode', 'kode_kelompok', 'nama', 'ketua', 'kabupaten', 'kecamatan', 'desa', 'kelurahan', 'kode_kabupaten', 'kode_kecamatan', 'kode_desa', 'jenis_komoditi', 'latitude', 'longitude', 'status', 'deleted_at', 'external_commodity_id', 'external_commodity_code', 'external_commodity_name', 'commodity_ref_id', 'commodity_mapping_status', 'source_is_active', 'is_verified', 'sync_status', 'quarantine_reason', 'source_updated_at', 'last_synced_at', 'updated_at'],
+                );
+            }
         }
 
         return [

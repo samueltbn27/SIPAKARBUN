@@ -23,7 +23,8 @@ use Illuminate\Validation\Validator;
  *   - format & keunikan id gejala,
  *   - rentang nilai symptom_confidence dan hanya untuk gejala terpilih,
  *   - komoditas benar ada & aktif menurut Shared Integration,
- *   - gejala yang dikirim benar ada di Knowledge API Mahasiswa 1.
+ *   - gejala yang dikirim benar ada di Knowledge API Mahasiswa 1
+ *     dan terkait dengan komoditas yang dipilih.
  *
  * Mesin hitung CF (forward chaining / kombinasi certainty factor) bukan
  * bagian request ini — itu dilakukan service diagnosis pada tahap berikutnya.
@@ -61,7 +62,8 @@ class StoreDiagnosisRequest extends FormRequest
     /**
      * Validasi tambahan lewat client eksternal (bukan query tabel lokal):
      *   - komoditas_id: ada & aktif di referensi Shared Integration.
-     *   - tiap symptom_id: ada di Knowledge API Mahasiswa 1.
+     *   - tiap symptom_id: ada di Knowledge API Mahasiswa 1 dan terkait
+     *     dengan komoditas yang dipilih (bukan gejala milik komoditas lain).
      *
      * Semua panggilan eksternal dibungkus exception handling: kalau
      * Knowledge API / referensi sedang turun, user melihat pesan validasi
@@ -99,13 +101,16 @@ class StoreDiagnosisRequest extends FormRequest
             if ($symptomIds !== []) {
                 try {
                     $knowledge = app(KnowledgeApiClient::class);
-                    $validIds = $knowledge->gejala()->pluck('id')->map(fn ($id): int => (int) $id)->all();
+                    // Filter per komoditas: gejala aktif milik komoditas lain
+                    // tidak boleh lolos validasi untuk komoditas ini.
+                    $gejalaScope = $komoditasId !== null ? (int) $komoditasId : null;
+                    $validIds = $knowledge->gejala($gejalaScope)->pluck('id')->map(fn ($id): int => (int) $id)->all();
 
                     foreach ($symptomIds as $id) {
                         if (! in_array((int) $id, $validIds, true)) {
                             $validator->errors()->add(
                                 'symptom_ids',
-                                "Gejala dengan id {$id} tidak ditemukan di basis pengetahuan."
+                                "Gejala dengan id {$id} tidak ditemukan pada komoditas yang dipilih di basis pengetahuan."
                             );
                         }
                     }
