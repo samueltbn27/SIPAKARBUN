@@ -12,7 +12,7 @@ Nilai `cf_pakar` pada hubungan gejala–penyakit disimpan sebagai angka yang dik
 
 ## Expert Elicitation
 
-Pertanyaan disimpan pada master `cf_methods` dan dapat memakai `{gejala}` serta `{penyakit}`. SIPAKARBUN menampilkan pertanyaan setelah relasi dipilih. Penilai memilih tingkat keyakinan terhadap dukungan gejala bagi penyakit, bukan tingkat keparahan gejala.
+Pertanyaan disimpan pada master `cf_methods` dan dapat memakai `{gejala}` serta `{penyakit}`. SIPAKARBUN menampilkan pertanyaan setelah relasi dipilih. Penilai memilih tingkat dukungan positif gejala bagi penyakit, bukan tingkat keparahan gejala. Form Aturan CF memakai satu metode baku SIPAKARBUN dan tidak meminta pengguna memilih metode lain.
 
 Pakar adalah sumber expert judgment. Satu pakar tidak disebut memvalidasi penilaiannya sendiri. Label yang digunakan adalah “Penilaian Pakar” atau “CF hasil elicitation pakar”.
 
@@ -22,17 +22,13 @@ Metode bawaan `Expert Elicitation – Linguistic CF Scale`, versi `1.0`, memakai
 
 | Penilaian | CF |
 | --- | ---: |
-| Pasti Tidak | -1.0 |
-| Hampir Pasti Tidak | -0.8 |
-| Kemungkinan Tidak | -0.6 |
-| Mungkin Tidak | -0.4 |
-| Tidak Tahu / Netral | 0.0 |
-| Mungkin | 0.4 |
-| Kemungkinan Besar | 0.6 |
-| Hampir Pasti | 0.8 |
-| Pasti | 1.0 |
+| Sangat Lemah | 0.2 |
+| Lemah | 0.4 |
+| Cukup Kuat | 0.6 |
+| Kuat | 0.8 |
+| Sangat Kuat | 1.0 |
 
-Ini adalah konfigurasi metodologi yang diadopsi untuk penelitian dan sistem SIPAKARBUN, bukan klaim bahwa skala tersebut satu-satunya standar universal CF.
+Jika gejala netral atau tidak mendukung, hubungan penyakit–gejala tidak dibuat. Nilai 0 dan nilai negatif tidak tersedia untuk aturan elicitation baru. Nilai negatif pada data legacy tetap dipertahankan agar histori dan diagnosis lama tidak berubah.
 
 ## Conversion to Numeric CF
 
@@ -44,7 +40,7 @@ Master metode mempunyai judul, penulis, tahun, DOI/URL, dan status aktif. Data b
 
 ## Provenance
 
-Aturan berbasis expert elicitation menyimpan metode, istilah keyakinan, CF hasil pemetaan, rationale, nama pakar penilai, instansi bila ada, dan tanggal elicitation. Draft boleh belum lengkap. Sebelum aktif, metadata tersebut harus lengkap. Metode simulasi/UAT dan aturan legacy dipertahankan agar data demo serta histori tidak rusak.
+Aturan berbasis expert elicitation menyimpan metode baku, istilah keyakinan, CF hasil pemetaan, rationale per gejala, nama pakar penilai, instansi bila ada, dan tanggal elicitation. Beberapa gejala pendukung dapat disimpan dalam satu pengiriman, tetapi tetap menjadi rule terpisah di database. Sebelum aktif, metadata tersebut harus lengkap. Metode simulasi/UAT dan aturan legacy dipertahankan agar data demo serta histori tidak rusak.
 
 ## Why Expert Does Not Validate Himself
 
@@ -60,7 +56,7 @@ Aturan lama tanpa `cf_method_id` tetap menampilkan `Legacy / Belum tercatat`, me
 
 ## Example
 
-Untuk penyakit “Karat Daun Kopi” dan gejala “Bercak jingga”, penilai menjawab pertanyaan elicitation dan memilih “Hampir Pasti”. Server menyimpan `expert_term = Hampir Pasti` dan `cf_pakar = 0.800`, bersama rationale, identitas penilai, tanggal, dan method versi 1.0.
+Untuk penyakit “Karat Daun Kopi” dan gejala “Bercak jingga”, penilai menjawab pertanyaan elicitation dan memilih “Kuat”. Server menyimpan `expert_term = Kuat` dan `cf_pakar = 0.800`, bersama rationale, identitas penilai, tanggal, dan method versi 1.0.
 
 ## Future Multi-Expert Consensus
 

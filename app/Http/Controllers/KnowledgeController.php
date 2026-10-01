@@ -22,6 +22,7 @@ use App\Models\RefKomoditas;
 use App\Models\Solusi;
 use App\Services\KnowledgeImageService;
 use App\Support\CfProvenance;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -384,12 +385,43 @@ class KnowledgeController extends Controller
         $sourceTypes = AturanCf::SOURCE_LABELS;
         $validationStatuses = AturanCf::VALIDATION_LABELS;
         $cfMethods = CfMethod::aktifSaja()->orderBy('name')->orderByDesc('version')->get();
+        $cfMethod = $cfMethods->first(fn (CfMethod $method): bool => $method->isStandard());
 
-        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods'));
+        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods', 'cfMethod'));
     }
 
     public function aturanCfStore(StoreAturanCfRequest $request): RedirectResponse
     {
+        if ($request->filled('gejala_ids')) {
+            $validated = $request->validated();
+
+            DB::transaction(function () use ($validated): void {
+                foreach ($validated['gejala_ids'] as $index => $gejalaId) {
+                    $data = $validated;
+                    unset($data['gejala_ids'], $data['expert_terms'], $data['expert_rationales'], $data['cf_pakar_values']);
+                    $data['gejala_id'] = $gejalaId;
+                    $data['expert_term'] = $validated['expert_terms'][$index];
+                    $data['expert_rationale'] = $validated['expert_rationales'][$index];
+                    $data['cf_pakar'] = $validated['cf_pakar_values'][$index];
+                    $data['created_by'] = auth()->id();
+                    $data['updated_by'] = auth()->id();
+                    $data['status'] = $data['status'] ?? AturanCf::STATUS_DRAFT;
+                    $data = $this->forceDraftForPopt($data);
+
+                    $aturan = AturanCf::create($data);
+                    ActivityLog::record(
+                        'Aturan CF',
+                        'created',
+                        $aturan->penyakit?->nama . ' — ' . $aturan->gejala?->nama,
+                        $aturan->id,
+                        "Menambahkan aturan CF: Gejala \"{$aturan->gejala?->nama}\" pada Penyakit \"{$aturan->penyakit?->nama}\" (CF: {$aturan->cf_pakar})",
+                    );
+                }
+            });
+
+            return redirect()->route('knowledge.aturan-cf.index')->with('success', 'Semua aturan gejala berhasil disimpan.');
+        }
+
         $data = $this->forceDraftForPopt($request->validated());
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();

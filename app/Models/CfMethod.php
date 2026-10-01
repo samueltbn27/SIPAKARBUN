@@ -15,6 +15,8 @@ class CfMethod extends Model
 
     public const SIMULATION_METHOD_NAME = 'Simulation / UAT';
 
+    public const STANDARD_VERSION = '1.0';
+
     protected $table = 'cf_methods';
 
     protected $fillable = [
@@ -45,6 +47,19 @@ class CfMethod extends Model
     public function scopeAktifSaja(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeStandard(Builder $query): Builder
+    {
+        return $query
+            ->where('name', self::EXPERT_METHOD_NAME)
+            ->where('version', self::STANDARD_VERSION);
+    }
+
+    public function isStandard(): bool
+    {
+        return $this->name === self::EXPERT_METHOD_NAME
+            && $this->version === self::STANDARD_VERSION;
     }
 
     /** @return array<int, array{term:string, cf:float}> */

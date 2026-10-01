@@ -43,23 +43,70 @@ class CfExpertElicitationTest extends TestCase
 
         $this->actingAs($operator)->get(route('knowledge.aturan-cf.create'))
             ->assertOk()
-            ->assertSee('Tingkat Keyakinan Pakar')
-            ->assertSee('Nilai CF Hasil Konversi')
+            ->assertSee('Gejala Pendukung')
+            ->assertSee('Kekuatan dukungan')
+            ->assertSee('CF hasil konversi')
+            ->assertSee('Tambah Gejala')
             ->assertSee('type="radio"', false)
-            ->assertSee('Tidak Mendukung')
-            ->assertSee('Mendukung')
-            ->assertSee('Pilih tingkat keyakinan pakar. Nilai CF akan dihitung otomatis.')
-            ->assertDontSee('name="cf_pakar" type="number"', false);
+            ->assertSee('name="cf_method_id"', false)
+            ->assertDontSee('select id="cf_method_id"', false)
+            ->assertDontSee('Tidak Mendukung')
+            ->assertDontSee('Netral');
     }
 
-    public function test_mapping_dinamis_mendukung_nilai_negatif_dan_menolak_term_dari_metode_lain(): void
+    public function test_batch_menyimpan_beberapa_gejala_dengan_mapping_cf_baku(): void
+    {
+        $operator = $this->createOperator();
+        $method = CfMethod::factory()->create([
+            'name' => CfMethod::EXPERT_METHOD_NAME,
+            'version' => CfMethod::STANDARD_VERSION,
+            'scale_definition' => [
+                ['term' => 'Sangat Lemah', 'cf' => 0.2],
+                ['term' => 'Kuat', 'cf' => 0.8],
+                ['term' => 'Sangat Kuat', 'cf' => 1.0],
+            ],
+        ]);
+        $penyakit = Penyakit::factory()->create();
+        $gejalaPertama = Gejala::factory()->create();
+        $gejalaKedua = Gejala::factory()->create();
+
+        $this->actingAs($operator)->post(route('knowledge.aturan-cf.store'), [
+            'penyakit_id' => $penyakit->id,
+            'gejala_ids' => [$gejalaPertama->id, $gejalaKedua->id],
+            'cf_method_id' => $method->id,
+            'expert_terms' => ['Kuat', 'Sangat Kuat'],
+            'cf_pakar_values' => [0.1, 0.2],
+            'expert_rationales' => ['Bercak konsisten ditemukan.', 'Serbuk terlihat jelas.'],
+            'expert_name' => 'Pakar Uji',
+            'expert_institution' => 'Unit Uji',
+            'elicited_at' => '2026-09-28',
+            'status' => AturanCf::STATUS_DRAFT,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('aturan_cf', [
+            'penyakit_id' => $penyakit->id,
+            'gejala_id' => $gejalaPertama->id,
+            'cf_pakar' => '0.800',
+            'expert_term' => 'Kuat',
+        ]);
+        $this->assertDatabaseHas('aturan_cf', [
+            'penyakit_id' => $penyakit->id,
+            'gejala_id' => $gejalaKedua->id,
+            'cf_pakar' => '1.000',
+            'expert_term' => 'Sangat Kuat',
+        ]);
+    }
+
+    public function test_mapping_baku_menolak_nilai_tidak_mendukung_dan_netral(): void
     {
         Sanctum::actingAs($this->createOperator());
         $method = CfMethod::factory()->create([
+            'name' => CfMethod::EXPERT_METHOD_NAME,
+            'version' => CfMethod::STANDARD_VERSION,
             'scale_definition' => [
-                ['term' => 'Tidak Mendukung', 'cf' => -0.8],
-                ['term' => 'Netral', 'cf' => 0],
-                ['term' => 'Hampir Pasti', 'cf' => 0.8],
+                ['term' => 'Sangat Lemah', 'cf' => 0.2],
+                ['term' => 'Kuat', 'cf' => 0.8],
+                ['term' => 'Sangat Kuat', 'cf' => 1.0],
             ],
         ]);
         $penyakit = Penyakit::factory()->create();
@@ -69,16 +116,16 @@ class CfExpertElicitationTest extends TestCase
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
             'cf_method_id' => $method->id,
-            'expert_term' => 'Tidak Mendukung',
+            'expert_term' => 'Sangat Lemah',
             'cf_pakar' => 0.9,
             'status' => AturanCf::STATUS_DRAFT,
-        ])->assertCreated()->assertJsonPath('cf_pakar', '-0.800');
+        ])->assertCreated()->assertJsonPath('cf_pakar', '0.200');
 
         $this->postJson('/api/admin/aturan-cf', [
             'penyakit_id' => $penyakit->id,
             'gejala_id' => Gejala::factory()->create()->id,
             'cf_method_id' => $method->id,
-            'expert_term' => 'Istilah dari metode lain',
+            'expert_term' => 'Tidak Mendukung',
             'cf_pakar' => 0,
             'status' => AturanCf::STATUS_DRAFT,
         ])->assertUnprocessable()->assertJsonValidationErrors('expert_term');

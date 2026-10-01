@@ -10,19 +10,15 @@ class CfMethodSeeder extends Seeder
     public function run(): void
     {
         $scale = [
-            ['term' => 'Pasti Tidak', 'cf' => -1.0],
-            ['term' => 'Hampir Pasti Tidak', 'cf' => -0.8],
-            ['term' => 'Kemungkinan Tidak', 'cf' => -0.6],
-            ['term' => 'Mungkin Tidak', 'cf' => -0.4],
-            ['term' => 'Tidak Tahu / Netral', 'cf' => 0.0],
-            ['term' => 'Mungkin', 'cf' => 0.4],
-            ['term' => 'Kemungkinan Besar', 'cf' => 0.6],
-            ['term' => 'Hampir Pasti', 'cf' => 0.8],
-            ['term' => 'Pasti', 'cf' => 1.0],
+            ['term' => 'Sangat Lemah', 'cf' => 0.2],
+            ['term' => 'Lemah', 'cf' => 0.4],
+            ['term' => 'Cukup Kuat', 'cf' => 0.6],
+            ['term' => 'Kuat', 'cf' => 0.8],
+            ['term' => 'Sangat Kuat', 'cf' => 1.0],
         ];
 
         CfMethod::updateOrCreate(
-            ['name' => CfMethod::EXPERT_METHOD_NAME, 'version' => '1.0'],
+            ['name' => CfMethod::EXPERT_METHOD_NAME, 'version' => CfMethod::STANDARD_VERSION],
             [
                 'description' => 'Metode untuk memperoleh nilai CF dari tingkat keyakinan pakar terhadap hubungan gejala dan penyakit.',
                 'elicitation_question_template' => 'Jika gejala "{gejala}" ditemukan pada tanaman, seberapa kuat gejala tersebut mendukung diagnosis penyakit "{penyakit}"?',

@@ -42,6 +42,9 @@ class CfProvenance
             if ((float) $value('cf_pakar') !== (float) $mapped) {
                 $errors['cf_pakar'] = 'Nilai CF tidak sesuai dengan pemetaan metode dan tingkat keyakinan.';
             }
+            if ($method->isStandard() && (float) $mapped <= 0) {
+                $errors['expert_term'] = 'Metode CF baku hanya menerima dukungan positif. Jangan buat hubungan untuk gejala netral atau tidak mendukung.';
+            }
         }
 
         if ($status === AturanCf::STATUS_AKTIF) {
