@@ -9,13 +9,17 @@
     // Petakan tiap entity ke baris seragam: id, nama, sub.
     $mapPenyakit = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
     $mapGejala = fn ($item) => ['id' => $item->id, 'nama' => $item->nama, 'sub' => $item->kode ? "Kode {$item->kode}" : null];
-    $mapAturan = fn ($item) => ['id' => $item->id, 'nama' => ($item->penyakit?->nama ?? '-') . ' — ' . ($item->gejala?->nama ?? '-'), 'sub' => 'CF ' . number_format((float) $item->cf_pakar, 3)];
+    $mapAturan = fn ($item) => [
+        'id' => $item->id,
+        'nama' => ($item->penyakit?->nama ?? '-') . ' — ' . ($item->gejala?->nama ?? '-'),
+        'sub' => 'Penilaian ' . ($item->expert_term ?: 'belum tercatat') . ' · CF ' . number_format((float) $item->cf_pakar, 3) . ' · ' . ($item->cfMethod?->name ?? 'Legacy / Belum tercatat'),
+    ];
     $mapSolusi = fn ($item) => ['id' => $item->id, 'nama' => $item->judul, 'sub' => $item->penyakit?->nama];
 
     $entityDefs = [
         ['model' => 'Penyakit', 'label' => 'Penyakit'],
         ['model' => 'Gejala', 'label' => 'Gejala'],
-        ['model' => 'AturanCf', 'label' => 'Aturan CF'],
+        ['model' => 'AturanCf', 'label' => 'Aturan Penyakit'],
         ['model' => 'Solusi', 'label' => 'Solusi'],
     ];
 
@@ -39,8 +43,6 @@
 <div class="max-w-[1500px] mx-auto space-y-6">
     <div>
         <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Knowledge</span><span>/</span><span class="text-[#176b45]">Publikasi</span></div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#173b29]">Publikasi Knowledge</h1>
-        <p class="mt-1 text-sm text-[#77847c]">Kelola workflow knowledge: <strong class="text-[#b8860b]">Draft</strong> → <strong class="text-[#176b45]">Aktif</strong> → <strong class="text-[#8b9790]">Nonaktif</strong>.</p>
     </div>
 
     {{-- Statistik ringkas --}}

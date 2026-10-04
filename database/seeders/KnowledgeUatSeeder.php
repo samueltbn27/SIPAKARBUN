@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AturanCf;
+use App\Models\CfMethod;
 use App\Models\Gejala;
 use App\Models\Penyakit;
 use App\Models\PenyakitKomoditas;
@@ -21,6 +22,12 @@ class KnowledgeUatSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(CfMethodSeeder::class);
+        $simulationMethodId = CfMethod::query()
+            ->where('name', CfMethod::SIMULATION_METHOD_NAME)
+            ->where('version', '1.0')
+            ->value('id');
+
         $commodityIds = [
             'kopi' => $this->commodityId('KP-079', 'Kopi'),
             'kakao' => $this->commodityId('KP-017', 'Kakao'),
@@ -120,13 +127,25 @@ class KnowledgeUatSeeder extends Seeder
             foreach ($definition['symptoms'] as [$symptomCode, $symptomName, $cf]) {
                 $symptom = Gejala::updateOrCreate(
                     ['kode' => $symptomCode],
-                    ['nama' => $symptomName, 'deskripsi' => null, 'status' => Gejala::STATUS_AKTIF],
+                    [
+                        'nama' => $symptomName,
+                        'deskripsi' => null,
+                        'status' => Gejala::STATUS_AKTIF,
+                    ],
                 );
 
                 AturanCf::updateOrCreate(
                     ['penyakit_id' => $disease->id, 'gejala_id' => $symptom->id, 'version' => 1],
                     [
-                        'cf_pakar' => $cf, // SIMULATED UAT CF — NOT EXPERT VALIDATED
+                        'cf_pakar' => $cf,
+                        'cf_method_id' => $simulationMethodId,
+                        'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
+                        'pendekatan' => 'Simulation / Testing',
+                        'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
+                        'status_validasi' => AturanCf::VALIDATION_UNVALIDATED,
+                        'validator_nama' => null,
+                        'validator_instansi' => null,
+                        'tanggal_validasi' => null,
                         'status' => AturanCf::STATUS_AKTIF,
                         'created_by' => null,
                         'updated_by' => null,

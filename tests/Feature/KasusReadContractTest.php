@@ -10,8 +10,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Sanctum\Sanctum;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -69,6 +69,10 @@ class KasusReadContractTest extends TestCase
             ->assertJsonPath('data.0.request_status', PermohonanPenanganan::STATUS_DITERIMA)
             ->assertJsonPath('data.0.current_status', KasusPenanganan::STATUS_DALAM_PELAKSANAAN)
             ->assertJsonPath('data.0.handling_status', KasusPenanganan::STATUS_DALAM_PELAKSANAAN)
+            ->assertJsonPath('data.0.monitoring_status', 'dalam_penanganan')
+            ->assertJsonPath('data.0.monitoring_status_label', 'Dalam Penanganan')
+            ->assertJsonPath('data.0.is_overdue', false)
+            ->assertJsonPath('data.0.effective_deadline_at', null)
             ->assertJsonPath('data.0.penugasan_popt.id', $popt->id)
             ->assertJsonPath('data.0.penugasan_popt.nama', 'Budi')
             ->assertJsonPath('data.0.last_note', 'Penanganan sedang dilaksanakan.')

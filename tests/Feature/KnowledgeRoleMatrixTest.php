@@ -82,7 +82,7 @@ class KnowledgeRoleMatrixTest extends TestCase
         $this->actingAs($popt)->get('/knowledge/penyakit')->assertOk()->assertSee('Tambah Draft');
         $this->actingAs($popt)->get('/knowledge/gejala')->assertOk()->assertSee('Tambah Draft');
         $this->actingAs($popt)->get('/knowledge/solusi')->assertOk()->assertSee('Tambah Draft');
-        $this->actingAs($popt)->get('/knowledge/aturan-cf')->assertOk()->assertSee('Tambah Draft');
+        $this->actingAs($popt)->get('/knowledge/aturan-cf')->assertOk()->assertSee('Tambah Aturan Penyakit');
         $this->actingAs($popt)->get('/knowledge/penyakit/create')
             ->assertOk()
             ->assertSee('value="draft"', false)
@@ -138,7 +138,7 @@ class KnowledgeRoleMatrixTest extends TestCase
         $this->actingAs($operator)->get('/knowledge/penyakit')->assertOk()->assertSee('Tambah Penyakit');
         $this->actingAs($operator)->get('/knowledge/gejala')->assertOk()->assertSee('Tambah Gejala');
         $this->actingAs($operator)->get('/knowledge/solusi')->assertOk()->assertSee('Tambah Solusi');
-        $this->actingAs($operator)->get('/knowledge/aturan-cf')->assertOk()->assertSee('Tambah Aturan CF');
+        $this->actingAs($operator)->get('/knowledge/aturan-cf')->assertOk()->assertSee('Tambah Aturan Penyakit');
     }
 
     public function test_operator_memiliki_full_control_dan_dapat_mempublikasikan(): void

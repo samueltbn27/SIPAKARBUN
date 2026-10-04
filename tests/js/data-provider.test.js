@@ -111,6 +111,8 @@ test('ApiCaseProvider adapts the actual M2 case resource shape', async () => {
                         latitude_kasus: '-6.9123',
                         longitude_kasus: '107.6123',
                         status: 'dalam_pelaksanaan',
+                        monitoring_status: 'dalam_penanganan',
+                        monitoring_status_label: 'Dalam Penanganan',
                         kelompok_tani: { id: 9, nama: 'Tani Makmur' },
                         komoditas: { id: 5, kode: 'KP-045', nama: 'Karet' },
                         penyakit: { id: 4, kode: null, nama: 'Jamur Akar Putih' },
@@ -136,7 +138,7 @@ test('ApiCaseProvider adapts the actual M2 case resource shape', async () => {
     assert.equal(caseData.case_code, 'KS-20260820-0001');
     assert.equal(caseData.request_id, 12);
     assert.equal(caseData.request_status, 'diterima');
-    assert.equal(caseData.status, 'in_progress');
+    assert.equal(caseData.status, 'dalam_penanganan');
     assert.equal(caseData.latitude, -6.9123);
     assert.equal(caseData.longitude, 107.6123);
     assert.deepEqual(caseData.kelompok_tani, { id: 9, nama: 'Tani Makmur' });
@@ -144,7 +146,7 @@ test('ApiCaseProvider adapts the actual M2 case resource shape', async () => {
     assert.equal(caseData.penyakit.kode, null);
     assert.deepEqual(caseData.popt, { id: 33, nama: 'Budi' });
     assert.deepEqual(caseData.status_history, [{
-        status: 'assigned',
+        status: 'ditugaskan',
         note: 'POPT ditugaskan.',
         changed_at: '2026-08-19T08:00:00+07:00',
     }]);
@@ -162,6 +164,7 @@ test('ApiCaseProvider maps accepted handling status without assigning a POPT', a
                         kasus_id: 18,
                         request_status: 'diterima',
                         handling_status: 'diterima',
+                        monitoring_status: 'menunggu_penanganan',
                         penugasan_popt: null,
                         riwayat_status: [],
                     }],
@@ -172,16 +175,16 @@ test('ApiCaseProvider maps accepted handling status without assigning a POPT', a
 
     const [caseData] = await provider.getCases();
 
-    assert.equal(caseData.status, 'accepted');
+    assert.equal(caseData.status, 'menunggu_penanganan');
     assert.equal(caseData.request_status, 'diterima');
     assert.equal(caseData.popt, null);
     assert.deepEqual(caseData.status_history, []);
-    assert.equal(getStatusConfig('accepted').label, 'Diterima — Menunggu Penugasan');
-    assert.ok(getStatusOptions().some((option) => option.value === 'accepted'));
+    assert.equal(getStatusConfig('menunggu_penanganan').label, 'Menunggu Penanganan');
+    assert.ok(getStatusOptions().some((option) => option.value === 'menunggu_penanganan'));
 });
 
 test('unknown handling status is retained as a safe unknown status', () => {
-    assert.equal(normalizeCase({ handling_status: 'status-baru' }).status, 'unknown');
+    assert.equal(normalizeCase({ handling_status: 'status-baru' }).status, null);
 });
 
 test('ApiCaseProvider exposes HTTP and invalid response errors', async () => {

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AturanCf;
+use App\Models\CfMethod;
 use App\Models\Gejala;
 use App\Models\Penyakit;
 use Illuminate\Database\Seeder;
@@ -25,6 +26,12 @@ class AturanCfSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(CfMethodSeeder::class);
+        $simulationMethodId = CfMethod::query()
+            ->where('name', CfMethod::SIMULATION_METHOD_NAME)
+            ->where('version', '1.0')
+            ->value('id');
+
         // [kode_penyakit, kode_gejala, cf_pakar]
         $rules = [
             ['PY-001', 'GJ-001', 0.90], // Karat Daun Kopi - bercak jingga
@@ -60,7 +67,15 @@ class AturanCfSeeder extends Seeder
                 ],
                 [
                     'cf_pakar' => $cf,
-                    'status' => 'aktif',
+                    'cf_method_id' => $simulationMethodId,
+                    'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
+                    'pendekatan' => 'Simulation / Testing',
+                    'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
+                    'status_validasi' => AturanCf::VALIDATION_UNVALIDATED,
+                    'validator_nama' => null,
+                    'validator_instansi' => null,
+                    'tanggal_validasi' => null,
+                    'status' => AturanCf::STATUS_AKTIF,
                     'created_by' => null,
                     'updated_by' => null,
                 ]

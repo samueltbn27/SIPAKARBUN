@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignPoptRequest;
+use App\Http\Requests\BatalKasusRequest;
+use App\Http\Requests\OperatorKasusStatusRequest;
 use App\Http\Resources\KasusPenangananResource;
 use App\Models\KasusPenanganan;
 use App\Models\User;
@@ -81,6 +83,7 @@ class KasusController extends Controller
             popt: User::query()->findOrFail((int) $request->validated('popt_id')),
             operator: $request->user(),
             catatan: $request->validated('catatan'),
+            deadlineAt: $request->validated('deadline_at'),
         );
 
         return (new KasusPenangananResource(
@@ -96,6 +99,51 @@ class KasusController extends Controller
 
         return response()->json([
             'message' => 'Kasus selesai berhasil dihapus dari WebGIS.',
+            'data' => [
+                'kasus_id' => $id,
+            ],
+        ]);
+    }
+
+    public function updateStatus(OperatorKasusStatusRequest $request, int $id)
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $kasus = $this->service->updateStatusOlehOperator(
+            $kasus,
+            (string) $request->validated('status'),
+            $request->validated('catatan'),
+            $request->user(),
+        );
+
+        return (new KasusPenangananResource(
+            $kasus->load(['permohonan.diagnosis', 'penugasanAktif.popt', 'riwayatStatus.actor'])
+        ))->response($request);
+    }
+
+    public function verifikasi(Request $request, int $id)
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $kasus = $this->service->verifikasiSelesai($kasus, $request->user());
+
+        return (new KasusPenangananResource(
+            $kasus->load(['permohonan.diagnosis', 'penugasanAktif.popt', 'riwayatStatus.actor', 'verifier'])
+        ))->response($request);
+    }
+
+    public function batal(BatalKasusRequest $request, int $id)
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->service->batalkanKasus(
+            $kasus,
+            $request->user(),
+            (string) $request->validated('alasan'),
+        );
+
+        return response()->json([
+            'message' => 'Kasus dibatalkan. Permohonan kembali ke Sedang Direview.',
             'data' => [
                 'kasus_id' => $id,
             ],

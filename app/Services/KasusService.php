@@ -3,9 +3,15 @@
 namespace App\Services;
 
 use App\Models\KasusPenanganan;
+use App\Models\KeputusanPermohonan;
 use App\Models\PenugasanPopt;
+use App\Models\PermohonanPenanganan;
+use App\Models\RiwayatStatusPenanganan;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -25,17 +31,31 @@ class KasusService
 {
     public function __construct(
         private readonly StatusTransitionService $transitionService,
+        private readonly PerpanjanganPenugasanService $extensionService,
+        private readonly MonitoringStatusService $monitoringStatusService,
     ) {}
 
     /**
      * Tetapkan POPT ke kasus. Kembalikan kasus (fresh) setelah penugasan.
      */
-    public function assignPopt(KasusPenanganan $kasus, User $popt, User $operator, ?string $catatan): KasusPenanganan
-    {
+    public function assignPopt(
+        KasusPenanganan $kasus,
+        User $popt,
+        User $operator,
+        ?string $catatan,
+        string $deadlineAt,
+    ): KasusPenanganan {
         $valid = $popt->hasRole('popt') && $popt->is_active === true;
         if (! $valid) {
             throw ValidationException::withMessages([
                 'popt_id' => 'POPT yang dipilih tidak valid: harus ber-role popt dan berstatus aktif.',
+            ]);
+        }
+
+        $deadline = Carbon::parse($deadlineAt);
+        if (! $deadline->isAfter(now())) {
+            throw ValidationException::withMessages([
+                'deadline_at' => 'Target penyelesaian harus berada di masa depan.',
             ]);
         }
 
@@ -45,12 +65,17 @@ class KasusService
             ]);
         }
 
-        return DB::transaction(function () use ($kasus, $popt, $operator, $catatan): KasusPenanganan {
-            // Tutup penugasan aktif lama jika ada (reassignment).
-            PenugasanPopt::query()
+        return DB::transaction(function () use ($kasus, $popt, $operator, $catatan, $deadline): KasusPenanganan {
+            $activeAssignment = PenugasanPopt::query()
                 ->where('kasus_id', $kasus->id)
                 ->where('status', PenugasanPopt::STATUS_AKTIF)
-                ->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+                ->lockForUpdate()
+                ->first();
+
+            if ($activeAssignment !== null) {
+                $this->extensionService->cancelPendingForAssignment($activeAssignment, $operator);
+                $activeAssignment->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+            }
 
             PenugasanPopt::create([
                 'kasus_id' => $kasus->id,
@@ -59,6 +84,8 @@ class KasusService
                 'status' => PenugasanPopt::STATUS_AKTIF,
                 'catatan' => $catatan,
                 'assigned_at' => now(),
+                'accepted_at' => null,
+                'deadline_at' => $deadline,
             ]);
 
             // Kasus yang masih menunggu penugasan pertama berpindah ke
@@ -76,6 +103,7 @@ class KasusService
                 'kasus_id' => $kasus->id,
                 'popt_id' => $popt->id,
                 'assigned_by' => $operator->id,
+                'deadline_at' => $deadline->toIso8601String(),
             ]);
 
             return $kasus->fresh();
@@ -125,6 +153,67 @@ class KasusService
     }
 
     /**
+     * Read-only, server-side report query for leadership monitoring.
+     * The model's SoftDeletes scope keeps archived cases out automatically.
+     */
+    public function monitoringReport(array $filters = []): LengthAwarePaginator
+    {
+        return $this->monitoringQuery($filters)
+            ->with(['permohonan', 'penugasanAktif.popt', 'penugasanTerakhir.popt'])
+            ->latest('kasus_penanganan.created_at')
+            ->latest('kasus_penanganan.id')
+            ->paginate(15)
+            ->withQueryString();
+    }
+
+    /** @return array{total: int, active: int, completed: int, overdue: int} */
+    public function monitoringSummary(array $filters = []): array
+    {
+        $query = $this->monitoringQuery($filters);
+
+        $total = (clone $query)->count();
+        $completedQuery = clone $query;
+        $this->monitoringStatusService->applyFilter($completedQuery, MonitoringStatusService::STATUS_SELESAI);
+        $completed = $completedQuery->count();
+        $overdueQuery = clone $query;
+        $this->monitoringStatusService->applyFilter($overdueQuery, MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU);
+        $overdue = $overdueQuery->count();
+
+        return [
+            'total' => $total,
+            'active' => $total - $completed,
+            'completed' => $completed,
+            'overdue' => $overdue,
+        ];
+    }
+
+    /** @return array{regencies: Collection, commodities: Collection, diseases: Collection} */
+    public function monitoringFilterOptions(): array
+    {
+        return [
+            'regencies' => PermohonanPenanganan::query()
+                ->whereHas('kasus')
+                ->whereNotNull('kabupaten')
+                ->where('kabupaten', '!=', '')
+                ->distinct()
+                ->orderBy('kabupaten')
+                ->pluck('kabupaten'),
+            'commodities' => KasusPenanganan::query()
+                ->whereNotNull('komoditas_name_snapshot')
+                ->where('komoditas_name_snapshot', '!=', '')
+                ->distinct()
+                ->orderBy('komoditas_name_snapshot')
+                ->pluck('komoditas_name_snapshot'),
+            'diseases' => KasusPenanganan::query()
+                ->whereNotNull('penyakit_name_snapshot')
+                ->where('penyakit_name_snapshot', '!=', '')
+                ->distinct()
+                ->orderBy('penyakit_name_snapshot')
+                ->pluck('penyakit_name_snapshot'),
+        ];
+    }
+
+    /**
      * Daftar kasus yang pernah ditugaskan kepada seorang POPT.
      *
      * Assignment yang sudah selesai tetap menjadi bagian dari riwayat baca;
@@ -149,7 +238,13 @@ class KasusService
     public function detailKasus(int $id): KasusPenanganan
     {
         return KasusPenanganan::query()
-            ->with([...$this->readContractRelations(), 'creator'])
+            ->with([
+                ...$this->readContractRelations(),
+                'creator',
+                'extensionRequests.requester',
+                'extensionRequests.reviewer',
+                'extensionRequests.penugasanPopt.popt',
+            ])
             ->findOrFail($id);
     }
 
@@ -187,19 +282,173 @@ class KasusService
         return $kasus;
     }
 
+    /**
+     * Verifikasi penyelesaian kasus oleh Admin/Operator UPTD.
+     * Status `selesai` dari POPT belum final sampai diverifikasi.
+     */
+    public function verifikasiSelesai(KasusPenanganan $kasus, User $actor): KasusPenanganan
+    {
+        abort_unless($actor->hasAnyRole(['admin', 'operator_uptd']), 403, 'Hanya Admin/Operator UPTD yang dapat memverifikasi penyelesaian kasus.');
+
+        if ($kasus->current_status !== KasusPenanganan::STATUS_SELESAI) {
+            throw ValidationException::withMessages([
+                'kasus_id' => 'Hanya kasus berstatus selesai yang dapat diverifikasi.',
+            ]);
+        }
+
+        if ($kasus->verified_at !== null) {
+            throw ValidationException::withMessages([
+                'kasus_id' => 'Kasus ini sudah diverifikasi penyelesaiannya.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($kasus, $actor): KasusPenanganan {
+            $kasus->update([
+                'verified_by' => $actor->id,
+                'verified_at' => now(),
+            ]);
+
+            RiwayatStatusPenanganan::create([
+                'kasus_id' => $kasus->id,
+                'previous_status' => KasusPenanganan::STATUS_SELESAI,
+                'status' => KasusPenanganan::STATUS_SELESAI,
+                'catatan' => "Penyelesaian diverifikasi oleh {$actor->name}.",
+                'actor_id' => (int) $actor->id,
+                'created_at' => now(),
+            ]);
+
+            Log::info('Penyelesaian kasus diverifikasi.', [
+                'kasus_id' => $kasus->id,
+                'verified_by' => $actor->id,
+            ]);
+
+            return $kasus->fresh();
+        });
+    }
+
+    /**
+     * Intervensi Operator: pindahkan status kasus kerja mengikuti state
+     * machine yang sama dengan POPT (mis. menarik kembali kasus yang
+     * ditunda). Aktor tercatat di riwayat.
+     */
+    public function updateStatusOlehOperator(KasusPenanganan $kasus, string $tujuan, ?string $catatan, User $actor): KasusPenanganan
+    {
+        abort_unless($actor->hasAnyRole(['admin', 'operator_uptd']), 403, 'Hanya Admin/Operator UPTD yang dapat mengubah status kasus.');
+
+        return $this->transitionService->pindahkan(
+            kasus: $kasus,
+            tujuan: $tujuan,
+            catatan: $catatan ?? "Status diubah oleh {$actor->name}.",
+            actorId: (int) $actor->id,
+        );
+    }
+
+    /**
+     * Batalkan kasus yang salah terima (masih dini: diterima/ditugaskan).
+     * Penugasan aktif dicabut, permohonan kembali ke sedang_direview agar
+     * bisa diputuskan ulang, dan kasus diarsipkan (soft-delete).
+     */
+    public function batalkanKasus(KasusPenanganan $kasus, User $actor, string $alasan): KasusPenanganan
+    {
+        abort_unless($actor->hasAnyRole(['admin', 'operator_uptd']), 403, 'Hanya Admin/Operator UPTD yang dapat membatalkan kasus.');
+
+        if (! in_array($kasus->current_status, [KasusPenanganan::STATUS_DITERIMA, KasusPenanganan::STATUS_DITUGASKAN], true)) {
+            throw ValidationException::withMessages([
+                'kasus_id' => 'Hanya kasus yang belum dikerjakan (diterima/ditugaskan) yang dapat dibatalkan.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($kasus, $actor, $alasan): KasusPenanganan {
+            RiwayatStatusPenanganan::create([
+                'kasus_id' => $kasus->id,
+                'previous_status' => $kasus->current_status,
+                'status' => $kasus->current_status,
+                'catatan' => "Kasus dibatalkan oleh {$actor->name}: {$alasan}",
+                'actor_id' => (int) $actor->id,
+                'created_at' => now(),
+            ]);
+
+            PenugasanPopt::query()
+                ->where('kasus_id', $kasus->id)
+                ->where('status', PenugasanPopt::STATUS_AKTIF)
+                ->update(['status' => PenugasanPopt::STATUS_DICABUT]);
+
+            $permohonan = $kasus->permohonan;
+            if ($permohonan !== null) {
+                $permohonan->update(['status' => PermohonanPenanganan::STATUS_SEDANG_DIREVIEW]);
+                KeputusanPermohonan::query()->where('permohonan_id', $permohonan->id)->delete();
+            }
+
+            $kasus->delete();
+
+            Log::info('Kasus dibatalkan oleh operator.', [
+                'kasus_id' => $kasus->id,
+                'actor_id' => $actor->id,
+            ]);
+
+            return $kasus;
+        });
+    }
+
+    /**
+     * Antrian kasus untuk POPT: kasus berstatus diterima yang menunggu
+     * penugasan Operator. Read-only — POPT tidak bisa self-assign.
+     */
+    public function kasusAntrian(array $filters = []): LengthAwarePaginator
+    {
+        $query = KasusPenanganan::query()
+            ->where('current_status', KasusPenanganan::STATUS_DITERIMA)
+            ->with($this->readContractRelations());
+
+        return $query->latest('id')->paginate($this->perPage($filters));
+    }
+
     /** @return array<int, string> */
     private function readContractRelations(): array
     {
         return [
             'permohonan',
             'penugasanAktif.popt',
+            'penugasanTerakhir.popt',
             'penugasanPopt.popt',
             'riwayatStatus',
+            'progressTerakhir',
+            'finalReport',
+            'verifier',
         ];
     }
 
     private function perPage(array $filters): int
     {
         return max(1, min((int) ($filters['per_page'] ?? 15), 100));
+    }
+
+    private function monitoringQuery(array $filters = []): Builder
+    {
+        $query = KasusPenanganan::query();
+
+        if (! empty($filters['date_from'])) {
+            $query->whereDate('kasus_penanganan.created_at', '>=', $filters['date_from']);
+        }
+
+        if (! empty($filters['date_to'])) {
+            $query->whereDate('kasus_penanganan.created_at', '<=', $filters['date_to']);
+        }
+
+        if (! empty($filters['regency'])) {
+            $query->whereHas('permohonan', fn (Builder $relation) => $relation->where('kabupaten', $filters['regency']));
+        }
+
+        if (! empty($filters['commodity'])) {
+            $query->where('komoditas_name_snapshot', $filters['commodity']);
+        }
+
+        if (! empty($filters['disease'])) {
+            $query->where('penyakit_name_snapshot', $filters['disease']);
+        }
+
+        $this->monitoringStatusService->applyFilter($query, $filters['status'] ?? null);
+
+        return $query;
     }
 }

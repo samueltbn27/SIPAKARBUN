@@ -248,7 +248,7 @@ class DisbunReferenceSyncTest extends TestCase
             ->assertSuccessful();
     }
 
-    public function test_internal_selector_mencari_seluruh_reference_dengan_limit_server_side(): void
+    public function test_internal_selector_mencari_seluruh_reference_tanpa_menghilangkan_data(): void
     {
         Role::findOrCreate('poktan');
         $user = User::factory()->create();
@@ -287,7 +287,7 @@ class DisbunReferenceSyncTest extends TestCase
         $this->actingAs($user);
         $this->getJson('/internal/references/kelompok-tani?q=Bandung')
             ->assertOk()
-            ->assertJsonCount(25, 'data')
+            ->assertJsonCount(60, 'data')
             ->assertJsonPath('data.0.latitude', -6.9123)
             ->assertJsonPath('data.0.longitude', 107.6123)
             ->assertJsonMissingPath('data.0.ketua')

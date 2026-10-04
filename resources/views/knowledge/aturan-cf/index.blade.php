@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Aturan CF')
+@section('title', 'Aturan Penyakit')
+@section('subtitle', 'Kelola hubungan antara penyakit dan gejala pendukung berdasarkan penilaian pakar.')
 
 @section('content')
     @php
@@ -8,14 +9,10 @@
         $isPopt = auth()->user()?->hasRole('popt') ?? false;
         $canCreateKnowledge = $canManageKnowledge || $isPopt;
         $canEditRecord = fn ($record) => $canManageKnowledge || ($isPopt && $record->status === 'draft');
-        $createLabel = $isPopt ? 'Tambah Draft' : 'Tambah Aturan CF';
+        $createLabel = 'Tambah Aturan Penyakit';
     @endphp
     <div class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Aturan CF</h1>
-                <p class="mt-1 text-sm text-gray-500">Kelola aturan certainty factor antara penyakit dan gejala.</p>
-            </div>
+        <div class="flex flex-wrap justify-end gap-3">
             @if($canCreateKnowledge)<a href="{{ route('knowledge.aturan-cf.create') }}"
                class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,17 +22,11 @@
             </a>@endif
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <form method="GET" action="{{ route('knowledge.aturan-cf.index') }}" class="flex flex-col sm:flex-row sm:items-end gap-4">
                 <div class="flex-1">
                     <label for="penyakit_id" class="block text-sm font-medium text-gray-700 mb-1">Penyakit</label>
-                    <select id="penyakit_id" name="penyakit_id"
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                        <option value="">Semua Penyakit</option>
-                        @foreach($penyakitList as $id => $nama)
-                            <option value="{{ $id }}" @selected((string) request('penyakit_id') === (string) $id)>{{ $nama }}</option>
-                        @endforeach
-                    </select>
+                    <x-search-select name="penyakit_id" :options="$penyakitList" :selected="request('penyakit_id')" placeholder="Cari penyakit..." />
                 </div>
                 <div class="flex items-center h-[38px]">
                     <input type="checkbox" id="aktif_saja" name="aktif_saja" value="1"
@@ -56,16 +47,17 @@
             </form>
         </div>
 
-        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Penyakit</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gejala</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CF Pakar</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Versi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kekuatan Hubungan</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nilai CF</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pakar Penilai</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Knowledge</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
@@ -74,14 +66,18 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->penyakit?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format($aturan->cf_pakar, 3) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-700">
+                                    {{ $aturan->expert_term ?: 'Belum tercatat' }}
+                                    @if($aturan->jenis_sumber === \App\Models\AturanCf::SOURCE_SIMULATION)<div class="mt-1 text-xs text-amber-700">Simulasi / UAT</div>@endif
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900 font-mono">{{ number_format((float) $aturan->cf_pakar, 3) }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600">{{ $aturan->expert_name ?: 'Belum tersedia' }}<div class="mt-1 text-xs text-gray-500">{{ $aturan->statusValidasiLabel() }}</div></td>
                                 <td class="px-4 py-3">
                                     <x-knowledge.status-badge :status="$aturan->status" />
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $aturan->version }}</td>
                                 <td class="px-4 py-3 text-right text-sm font-medium space-x-2">
-                                    @if($canEditRecord($aturan))<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}"
-                                       class="text-green-600 hover:text-green-900">Edit</a>
+                                    <a href="{{ route('knowledge.aturan-cf.show', $aturan) }}" class="text-gray-700 hover:text-gray-900">Detail</a>
+                                    @if($canEditRecord($aturan))<a href="{{ route('knowledge.aturan-cf.edit', $aturan) }}" class="text-green-600 hover:text-green-900">Edit</a>
                                         @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.aturan-cf.destroy', $aturan) }}"
                                               class="inline"
                                               data-confirm-title="Hapus aturan CF?"
@@ -99,12 +95,12 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-12 text-center">
+                                <td colspan="7" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                         </svg>
-                                        <p class="text-sm text-gray-500">Belum ada aturan CF yang tersimpan.</p>
+                                        <p class="text-sm text-gray-500">Belum ada aturan penyakit yang tersimpan.</p>
                                     </div>
                                 </td>
                             </tr>

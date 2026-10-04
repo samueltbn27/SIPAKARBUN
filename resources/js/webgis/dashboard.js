@@ -120,7 +120,7 @@ function updateKpis(summary) {
         total: summary.total,
         active: summary.active,
         completed: summary.completed,
-        postponed: summary.postponed,
+        overdue: summary.overdue,
     };
 
     Object.entries(kpis).forEach(([key, value]) => {

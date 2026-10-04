@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\RefKelompokTani;
 use App\Services\DisbunReferenceSyncService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,10 @@ class DisbunSyncReferences extends Command
     public function handle(DisbunReferenceSyncService $sync): int
     {
         $this->info('Disbun Reference Sync');
+        $localKelompokTaniBefore = RefKelompokTani::query()
+            ->where('source', RefKelompokTani::SOURCE_DISBUN)
+            ->count();
+        $this->line('Local Disbun Kelompok Tani before: '.$localKelompokTaniBefore);
         $this->line('Fetching Komoditas...');
 
         try {
@@ -45,6 +50,7 @@ class DisbunSyncReferences extends Command
                 $this->line('API reported count_all: '.($stats['count_all'] ?? 0));
                 $this->line('Raw fetched: '.($stats['fetched'] ?? 0));
                 $this->line('Unique records: '.($stats['unique_external_ids'] ?? 0));
+                $this->line('Pages fetched: '.($stats['pages'] ?? 0));
                 $this->line('Duplicate external IDs: '.($stats['duplicate_external_id_count'] ?? 0));
                 $this->line('Exact duplicate occurrences: '.($stats['exact_duplicate_occurrences'] ?? 0));
                 $this->line('Conflicting duplicates: '.($stats['conflicting_duplicate_ids'] ?? 0));
@@ -72,8 +78,8 @@ class DisbunSyncReferences extends Command
                 $this->line("  {$reason}: {$count}");
             }
             $this->line('Upserted: '.($stats['upserted'] ?? 0));
-            $this->line('Updated: '.($stats['updated'] ?? 0));
-            $this->line('Unchanged: '.max(0, (int) ($stats['upserted'] ?? 0) - (int) ($stats['updated'] ?? 0)));
+            $this->line('Created: '.max(0, (int) ($stats['upserted'] ?? 0) - (int) ($stats['updated'] ?? 0)));
+            $this->line('Existing rows reconciled: '.($stats['updated'] ?? 0));
             if (($stats['unresolved_commodity'] ?? 0) > 0) {
                 $this->line('Unresolved commodity mapping: '.$stats['unresolved_commodity']);
             }

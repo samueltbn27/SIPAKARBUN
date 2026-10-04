@@ -71,6 +71,10 @@ class WebOperationalWorkflowTest extends TestCase
         $caseLongitude = $permohonan->longitude_kasus;
 
         $this->actingAs($operator)
+            ->post(route('operator.permohonan.review', $permohonan->id))
+            ->assertRedirect();
+
+        $this->actingAs($operator)
             ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'Layak ditangani'])
             ->assertRedirect(route('operator.permohonan.show', $permohonan->id));
 
@@ -80,7 +84,7 @@ class WebOperationalWorkflowTest extends TestCase
         $this->assertSame($caseLongitude, $kasus->longitude_kasus);
 
         $this->actingAs($operator)
-            ->post(route('operator.kasus.assign', $kasus->id), ['popt_id' => $popt->id, 'catatan' => 'Mohon ditindaklanjuti'])
+            ->post(route('operator.kasus.assign', $kasus->id), ['popt_id' => $popt->id, 'deadline_at' => now()->addDays(7)->toDateTimeString(), 'catatan' => 'Mohon ditindaklanjuti'])
             ->assertRedirect(route('operator.kasus.show', $kasus->id));
 
         $this->assertDatabaseHas('penugasan_popt', ['kasus_id' => $kasus->id, 'popt_id' => $popt->id, 'status' => 'aktif']);
@@ -107,12 +111,14 @@ class WebOperationalWorkflowTest extends TestCase
         $pertama = $this->permohonan($poktan);
         $kedua = $this->permohonan($poktan);
 
+        $this->actingAs($operator)->post(route('operator.permohonan.review', $pertama->id));
+        $this->actingAs($operator)->post(route('operator.permohonan.review', $kedua->id));
         $this->actingAs($operator)->post(route('operator.permohonan.accept', $pertama->id));
         $this->actingAs($operator)->post(route('operator.permohonan.accept', $kedua->id));
         $kasusSaya = $pertama->fresh('kasus')->kasus;
         $kasusLain = $kedua->fresh('kasus')->kasus;
-        $this->actingAs($operator)->post(route('operator.kasus.assign', $kasusSaya->id), ['popt_id' => $poptSaya->id]);
-        $this->actingAs($operator)->post(route('operator.kasus.assign', $kasusLain->id), ['popt_id' => $poptLain->id]);
+        $this->actingAs($operator)->post(route('operator.kasus.assign', $kasusSaya->id), ['popt_id' => $poptSaya->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()]);
+        $this->actingAs($operator)->post(route('operator.kasus.assign', $kasusLain->id), ['popt_id' => $poptLain->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()]);
 
         $this->actingAs($poptSaya)->get(route('popt.penugasan'))->assertOk()->assertSee($kasusSaya->kasus_code)->assertDontSee($kasusLain->kasus_code);
         $this->actingAs($poptSaya)->get(route('popt.penugasan.show', $kasusLain->id))->assertForbidden();

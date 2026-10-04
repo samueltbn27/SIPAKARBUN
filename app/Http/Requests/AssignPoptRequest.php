@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,7 +24,30 @@ class AssignPoptRequest extends FormRequest
     {
         return [
             'popt_id' => ['required', 'integer', Rule::exists('users', 'id')],
+            'deadline_at' => [
+                'required',
+                'date',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    try {
+                        $deadline = Carbon::parse($value);
+                    } catch (\Throwable) {
+                        return;
+                    }
+
+                    if (! $deadline->isAfter(now())) {
+                        $fail('Target penyelesaian harus berada di masa depan.');
+                    }
+                },
+            ],
             'catatan' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'deadline_at.required' => 'Target penyelesaian wajib diisi saat menugaskan POPT.',
+            'deadline_at.date' => 'Target penyelesaian harus berupa tanggal dan waktu yang valid.',
         ];
     }
 }

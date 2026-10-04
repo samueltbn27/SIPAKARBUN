@@ -11,6 +11,25 @@ class LocalKelompokTaniReferensiClientTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_reference_list_does_not_truncate_available_rows(): void
+    {
+        foreach (range(1, 60) as $number) {
+            RefKelompokTani::create([
+                'disbun_record_id' => 'all-'.$number,
+                'source' => RefKelompokTani::SOURCE_DISBUN,
+                'nama' => 'Poktan '.$number,
+                'source_is_active' => true,
+                'is_verified' => true,
+                'sync_status' => RefKelompokTani::SYNC_SYNCED,
+            ]);
+        }
+
+        $rows = (new LocalKelompokTaniReferensiClient)->all();
+
+        $this->assertCount(60, $rows);
+        $this->assertSame('Poktan 60', collect($rows)->firstWhere('nama', 'Poktan 60')['nama']);
+    }
+
     public function test_reference_list_keeps_case_location_coordinates(): void
     {
         $poktan = RefKelompokTani::create([

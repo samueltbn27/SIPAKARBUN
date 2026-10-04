@@ -66,6 +66,18 @@ class PermohonanService
      */
     public function buatPermohonan(array $data, int $userId): PermohonanPenanganan
     {
+        // Akun Poktan yang sudah tertaut hanya boleh memakai kelompok
+        // taninya sendiri (form dikunci, tapi tetap diverifikasi server
+        // anti-tamper). Staf (admin/operator) boleh atas nama Poktan mana pun.
+        $actor = User::query()->find($userId);
+
+        if ($actor !== null && $actor->hasRole('poktan') && $actor->kelompok_tani_id !== null
+            && (int) ($data['kelompok_tani_id'] ?? 0) !== (int) $actor->kelompok_tani_id) {
+            throw ValidationException::withMessages([
+                'kelompok_tani_id' => 'Kelompok tani harus sesuai dengan akun Poktan Anda.',
+            ]);
+        }
+
         // Diagnosis harus milik user yang login, agar permohonan tidak
         // bisa dibangun dari transaksi orang lain.
         $diagnosis = Diagnosis::query()
@@ -145,12 +157,13 @@ class PermohonanService
 
     /**
      * Terima permohonan: catat keputusan DITERIMA lalu lahirkan
-     * KasusPenanganan (satu transaksi).
+     * KasusPenanganan (satu transaksi). Wajib sudah direview dulu.
      */
     public function terima(PermohonanPenanganan $permohonan, User $operator, ?string $catatan): KasusPenanganan
     {
         return DB::transaction(function () use ($permohonan, $operator, $catatan): KasusPenanganan {
             $this->pastikanBelumDiputuskan($permohonan);
+            $this->pastikanSudahDireview($permohonan);
 
             $permohonan->update([
                 'status' => PermohonanPenanganan::STATUS_DITERIMA,
@@ -181,11 +194,13 @@ class PermohonanService
 
     /**
      * Tolak permohonan: catat keputusan DITOLAK (catatan wajib).
+     * Wajib sudah direview dulu.
      */
     public function tolak(PermohonanPenanganan $permohonan, User $operator, string $catatan): PermohonanPenanganan
     {
         return DB::transaction(function () use ($permohonan, $operator, $catatan): PermohonanPenanganan {
             $this->pastikanBelumDiputuskan($permohonan);
+            $this->pastikanSudahDireview($permohonan);
 
             $permohonan->update([
                 'status' => PermohonanPenanganan::STATUS_DITOLAK,
@@ -216,7 +231,14 @@ class PermohonanService
     public function permohonanPemohon(int $userId, array $filters = []): LengthAwarePaginator
     {
         $query = PermohonanPenanganan::query()
-            ->with(['diagnosis.results', 'diagnosis.symptoms', 'keputusan', 'kasus', 'evidences'])
+            ->with([
+                'diagnosis.results',
+                'diagnosis.symptoms',
+                'keputusan',
+                'kasus.penugasanAktif.popt',
+                'kasus.penugasanTerakhir.popt',
+                'evidences',
+            ])
             ->where('created_by', $userId);
 
         return $this->filterQuery($query, $filters)->latest('id')->paginate($this->perPage($filters));
@@ -279,6 +301,15 @@ class PermohonanService
         }
     }
 
+    private function pastikanSudahDireview(PermohonanPenanganan $permohonan): void
+    {
+        if ($permohonan->status !== PermohonanPenanganan::STATUS_SEDANG_DIREVIEW) {
+            throw ValidationException::withMessages([
+                'permohonan_id' => 'Permohonan harus direview terlebih dahulu sebelum diputuskan.',
+            ]);
+        }
+    }
+
     private function buatKasusDariPermohonan(PermohonanPenanganan $permohonan, User $operator): KasusPenanganan
     {
         $diagnosis = $permohonan->diagnosis;
@@ -316,7 +347,10 @@ class PermohonanService
 
     private function generateKasusCode(): string
     {
+        // withTrashed: kode kasus batal (soft-delete) tetap menempati
+        // nomor urut agar tidak tabrakan saat permohonan diputuskan ulang.
         $urutanHariIni = KasusPenanganan::query()
+            ->withTrashed()
             ->whereDate('created_at', now()->toDateString())
             ->count() + 1;
 

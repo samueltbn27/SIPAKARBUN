@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApprovePerpanjanganRequest;
 use App\Http\Requests\AssignPoptRequest;
+use App\Http\Requests\BatalKasusRequest;
+use App\Http\Requests\OperatorKasusStatusRequest;
+use App\Http\Requests\RejectPerpanjanganRequest;
 use App\Http\Requests\TerimaPermohonanRequest;
 use App\Http\Requests\TolakPermohonanRequest;
 use App\Models\KasusPenanganan;
 use App\Models\PermohonanPenanganan;
+use App\Models\PerpanjanganPenugasan;
 use App\Models\User;
 use App\Services\KasusService;
+use App\Services\MonitoringStatusService;
 use App\Services\PermohonanService;
+use App\Services\PerpanjanganPenugasanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,6 +29,8 @@ class OperatorWorkflowController extends Controller
     public function __construct(
         private readonly PermohonanService $permohonanService,
         private readonly KasusService $kasusService,
+        private readonly MonitoringStatusService $monitoringStatusService,
+        private readonly PerpanjanganPenugasanService $extensionService,
     ) {}
 
     public function permohonanIndex(Request $request): View
@@ -87,8 +96,9 @@ class OperatorWorkflowController extends Controller
     {
         $kasus = $this->kasusService->detailKasus($id);
         $popts = User::role('popt')->where('is_active', true)->orderBy('name')->get();
+        $monitoring = $this->monitoringStatusService->resolve($kasus);
 
-        return view('operator.kasus.show', compact('kasus', 'popts'));
+        return view('operator.kasus.show', compact('kasus', 'popts', 'monitoring'));
     }
 
     public function assignPopt(AssignPoptRequest $request, int $id): RedirectResponse
@@ -101,9 +111,83 @@ class OperatorWorkflowController extends Controller
             $popt,
             $request->user(),
             $request->validated('catatan'),
+            $request->validated('deadline_at'),
         );
 
         return redirect()->route('operator.kasus.show', $id)
             ->with('success', 'POPT berhasil ditugaskan ke kasus.');
+    }
+
+    public function approveExtension(ApprovePerpanjanganRequest $request, int $id, int $extensionId): RedirectResponse
+    {
+        $extension = PerpanjanganPenugasan::query()
+            ->whereKey($extensionId)
+            ->where('kasus_id', $id)
+            ->firstOrFail();
+
+        $this->extensionService->approve(
+            $extension,
+            $request->user(),
+            $request->validated('review_note'),
+        );
+
+        return redirect()->route('operator.kasus.show', $id)
+            ->with('success', 'Permintaan perpanjangan disetujui dan deadline penugasan diperbarui.');
+    }
+
+    public function rejectExtension(RejectPerpanjanganRequest $request, int $id, int $extensionId): RedirectResponse
+    {
+        $extension = PerpanjanganPenugasan::query()
+            ->whereKey($extensionId)
+            ->where('kasus_id', $id)
+            ->firstOrFail();
+
+        $this->extensionService->reject(
+            $extension,
+            $request->user(),
+            $request->validated('review_note'),
+        );
+
+        return redirect()->route('operator.kasus.show', $id)
+            ->with('success', 'Permintaan perpanjangan ditolak dan riwayatnya tersimpan.');
+    }
+
+    public function updateStatus(OperatorKasusStatusRequest $request, int $id): RedirectResponse
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->kasusService->updateStatusOlehOperator(
+            $kasus,
+            (string) $request->validated('status'),
+            $request->validated('catatan'),
+            $request->user(),
+        );
+
+        return redirect()->route('operator.kasus.show', $id)
+            ->with('success', 'Status kasus berhasil diperbarui.');
+    }
+
+    public function verifikasi(int $id, Request $request): RedirectResponse
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->kasusService->verifikasiSelesai($kasus, $request->user());
+
+        return redirect()->route('operator.kasus.show', $id)
+            ->with('success', 'Penyelesaian kasus telah diverifikasi.');
+    }
+
+    public function batal(BatalKasusRequest $request, int $id): RedirectResponse
+    {
+        $kasus = KasusPenanganan::query()->findOrFail($id);
+
+        $this->kasusService->batalkanKasus(
+            $kasus,
+            $request->user(),
+            (string) $request->validated('alasan'),
+        );
+
+        return redirect()->route('operator.kasus.index')
+            ->with('success', "Kasus {$kasus->kasus_code} dibatalkan. Permohonan kembali ke Sedang Direview.");
     }
 }

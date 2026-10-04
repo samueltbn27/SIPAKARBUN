@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Permohonan Penanganan')
+@section('subtitle', 'Review, terima, atau tolak pengajuan Poktan.')
 
 @php
     $statusLabels = ['diajukan' => 'Diajukan', 'sedang_direview' => 'Sedang Direview', 'diterima' => 'Diterima', 'ditolak' => 'Ditolak'];
@@ -8,8 +9,7 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div><h1 class="text-2xl font-bold text-[#173b29]">Permohonan Penanganan</h1><p class="mt-1 text-sm text-[#77847c]">Review, terima, atau tolak pengajuan Poktan.</p></div>
+    <div class="flex justify-end">
         <a href="{{ route('operator.kasus.index') }}" class="rounded-lg border border-[#cfe2d5] px-4 py-2 text-sm font-semibold text-[#176b45]">Monitoring Kasus</a>
     </div>
 

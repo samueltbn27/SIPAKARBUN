@@ -36,6 +36,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Label tampilan status (sumber tunggal untuk badge/filter/timeline).
+    |--------------------------------------------------------------------------
+    | Blade memakai komponen x-kasus.status-badge / x-kasus.status-options
+    | agar tidak ada lagi map label yang di-hardcode per view.
+    */
+    'labels' => [
+        'diterima' => 'Diterima',
+        'ditugaskan' => 'Ditugaskan',
+        'sedang_direview' => 'Sedang Direview',
+        'ditunda' => 'Ditunda',
+        'siap_dieksekusi' => 'Siap Dieksekusi',
+        'dalam_pelaksanaan' => 'Dalam Pelaksanaan',
+        'selesai' => 'Selesai',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | State machine transisi (current_status → allowed next status).
     |
     | 'diterima' hanya bertransisi via penugasan POPT (ditugaskan).
@@ -45,9 +62,9 @@ return [
     'transitions' => [
         'diterima' => ['ditugaskan'],
         'ditugaskan' => ['sedang_direview'],
-        'sedang_direview' => ['ditunda', 'siap_dieksekusi', 'selesai'],
-        'ditunda' => ['sedang_direview', 'selesai'],
-        'siap_dieksekusi' => ['dalam_pelaksanaan', 'selesai'],
+        'sedang_direview' => ['ditunda', 'siap_dieksekusi'],
+        'ditunda' => ['sedang_direview'],
+        'siap_dieksekusi' => ['dalam_pelaksanaan'],
         'dalam_pelaksanaan' => ['selesai'],
         'selesai' => [],
     ],

@@ -9,20 +9,8 @@
         'diterima' => ['Diterima', 'bg-[#e8f4ed] text-[#176b45]'],
         'ditolak' => ['Ditolak', 'bg-red-50 text-red-700'],
     ];
-    $penangananLabels = [
-        'diterima' => ['Diterima — Menunggu Penugasan', 'bg-[#eef3ef] text-[#66746c]'],
-        'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
-        'ditugaskan' => ['Ditugaskan', 'bg-blue-50 text-blue-700'],
-        'ditunda' => ['Ditunda', 'bg-orange-50 text-orange-700'],
-        'siap_dieksekusi' => ['Siap Dieksekusi', 'bg-[#e8f4ed] text-[#176b45]'],
-        'dalam_pelaksanaan' => ['Dalam Pelaksanaan', 'bg-[#176b45] text-white'],
-        'selesai' => ['Selesai', 'bg-[#173b29] text-white'],
-    ];
     $komoditasNama = fn (int $commodityId): string => $komoditasMap[$commodityId] ?? ('Komoditas #'.$commodityId);
     $status = fn (string $value): array => $statusLabels[$value] ?? [\Illuminate\Support\Str::headline($value), 'bg-[#eef3ef] text-[#66746c]'];
-    $penangananStatus = fn (?object $kasus): array => $kasus === null
-        ? ['Belum Ditugaskan', 'bg-[#eef3ef] text-[#66746c]']
-        : ($penangananLabels[$kasus->current_status] ?? [\Illuminate\Support\Str::headline((string) $kasus->current_status), 'bg-[#eef3ef] text-[#66746c]']);
     $hasFilter = $statusFilter !== '' || $tanggalDari !== '' || $tanggalSampai !== '';
 @endphp
 
@@ -131,7 +119,9 @@
                             @php
                                 $primary = $item->diagnosis?->results?->first();
                                 [$statusLabel, $statusClass] = $status((string) $item->status);
-                                [$penangananLabel, $penangananClass] = $penangananStatus($item->kasus);
+                                $handling = $handlingStatuses[$item->id] ?? null;
+                                $penangananLabel = $handling['label'] ?? 'Belum tersedia';
+                                $penangananClass = $handling['badge_class'] ?? 'bg-[#eef3ef] text-[#66746c]';
                             @endphp
                             <tr class="transition-colors hover:bg-[#fafcfb]">
                                 <td class="px-5 py-4">
@@ -177,7 +167,9 @@
                 @php
                     $primary = $item->diagnosis?->results?->first();
                     [$statusLabel, $statusClass] = $status((string) $item->status);
-                    [$penangananLabel, $penangananClass] = $penangananStatus($item->kasus);
+                    $handling = $handlingStatuses[$item->id] ?? null;
+                    $penangananLabel = $handling['label'] ?? 'Belum tersedia';
+                    $penangananClass = $handling['badge_class'] ?? 'bg-[#eef3ef] text-[#66746c]';
                 @endphp
                 <x-card class="p-4">
                     <div class="flex items-start justify-between gap-3">
