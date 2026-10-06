@@ -48,12 +48,27 @@ class PermohonanService
     /**
      * Buat permohonan penanganan baru untuk user (Poktan/staf).
      *
+     * Identitas Poktan:
+     *   - User ber-role `poktan` TIDAK mengirim `kelompok_tani_id`
+     *     (dilarang di Request) — id selalu diambil dari akun login.
+     *     Akun Poktan yang belum tertaut kelompok tani DITOLAK dengan
+     *     pesan yang mengarahkan ke Admin (tidak ada fallback pilihan
+     *     manual di form).
+     *   - Staf (admin/operator) membuat atas nama Poktan mana pun lewat
+     *     `kelompok_tani_id` yang dikirim.
+     *
+     * Data Poktan, wilayah, dan referensi Disbun diambil otomatis dari
+     * hasil `KelompokTaniReferensiClient::find()` dan disimpan sebagai
+     * snapshot (nama + wilayah + kode), sehingga riwayat tetap utuh
+     * walau referensi berubah kemudian.
+     *
      * @param  array{
      *     diagnosis_id:int,
-     *     kelompok_tani_id:int,
+     *     kelompok_tani_id?:int,
      *     latitude_kasus:?float,
      *     longitude_kasus:?float,
      *     alamat_kasus:?string,
+     *     lokasi_dikonfirmasi:mixed,
      *     kode_kabupaten:?string,
      *     kabupaten:?string,
      *     kode_kecamatan:?string,
@@ -66,15 +81,21 @@ class PermohonanService
      */
     public function buatPermohonan(array $data, int $userId): PermohonanPenanganan
     {
-        // Akun Poktan yang sudah tertaut hanya boleh memakai kelompok
-        // taninya sendiri (form dikunci, tapi tetap diverifikasi server
-        // anti-tamper). Staf (admin/operator) boleh atas nama Poktan mana pun.
         $actor = User::query()->find($userId);
+        $isPoktan = $actor !== null && $actor->hasRole('poktan');
 
-        if ($actor !== null && $actor->hasRole('poktan') && $actor->kelompok_tani_id !== null
-            && (int) ($data['kelompok_tani_id'] ?? 0) !== (int) $actor->kelompok_tani_id) {
+        if ($isPoktan) {
+            if ($actor->kelompok_tani_id === null) {
+                throw ValidationException::withMessages([
+                    'kelompok_tani_id' => 'Akun Poktan Anda belum terikat Kelompok Tani. Hubungi Admin untuk aktivasi akun.',
+                ]);
+            }
+
+            // Kunci dari akun login — abaikan apa pun yang dikirim client.
+            $data['kelompok_tani_id'] = (int) $actor->kelompok_tani_id;
+        } elseif (empty($data['kelompok_tani_id'])) {
             throw ValidationException::withMessages([
-                'kelompok_tani_id' => 'Kelompok tani harus sesuai dengan akun Poktan Anda.',
+                'kelompok_tani_id' => 'Kelompok tani wajib dipilih.',
             ]);
         }
 
@@ -98,6 +119,23 @@ class PermohonanService
         }
 
         return DB::transaction(function () use ($data, $userId, $diagnosis, $kelompokTani): PermohonanPenanganan {
+            // Konfirmasi lokasi sudah divalidasi `accepted` di Request —
+            // di sini disimpan sebagai flag. Kesamaan titik dengan referensi
+            // Poktan dihitung server-side (bukan dari client): true bila
+            // sama persis, false bila disesuaikan, null bila referensi
+            // tidak punya koordinat.
+            $samaDenganPoktan = $this->titikSamaDenganPoktan(
+                latitudeKasus: (float) ($data['latitude_kasus'] ?? 0),
+                longitudeKasus: (float) ($data['longitude_kasus'] ?? 0),
+                kelompokTani: $kelompokTani,
+            );
+
+            // Wilayah & identitas Poktan diambil otomatis dari referensi
+            // Disbun. Nilai eksplisit dari $data (jalur staf/API) dihormati
+            // bila ada; selebihnya dilengkapi dari referensi agar snapshot
+            // selalu terisi. Klien referensi memakai kunci `desa` untuk
+            // level desa pada sebagian implementasi, sehingga dijadikan
+            // fallback `kelurahan`.
             $permohonan = PermohonanPenanganan::create([
                 'permohonan_code' => $this->generatePermohonanCode(),
                 'diagnosis_id' => $diagnosis->id,
@@ -106,12 +144,14 @@ class PermohonanService
                 'latitude_kasus' => $data['latitude_kasus'] ?? null,
                 'longitude_kasus' => $data['longitude_kasus'] ?? null,
                 'alamat_kasus' => $data['alamat_kasus'] ?? null,
-                'kode_kabupaten' => $data['kode_kabupaten'] ?? null,
-                'kabupaten' => $data['kabupaten'] ?? null,
-                'kode_kecamatan' => $data['kode_kecamatan'] ?? null,
-                'kecamatan' => $data['kecamatan'] ?? null,
-                'kode_desa' => $data['kode_desa'] ?? null,
-                'kelurahan' => $data['kelurahan'] ?? null,
+                'lokasi_dikonfirmasi' => true,
+                'lokasi_sama_dengan_poktan' => $samaDenganPoktan,
+                'kode_kabupaten' => $data['kode_kabupaten'] ?? $kelompokTani['kode_kabupaten'] ?? null,
+                'kabupaten' => $data['kabupaten'] ?? $kelompokTani['kabupaten'] ?? null,
+                'kode_kecamatan' => $data['kode_kecamatan'] ?? $kelompokTani['kode_kecamatan'] ?? null,
+                'kecamatan' => $data['kecamatan'] ?? $kelompokTani['kecamatan'] ?? null,
+                'kode_desa' => $data['kode_desa'] ?? $kelompokTani['kode_desa'] ?? null,
+                'kelurahan' => $data['kelurahan'] ?? $kelompokTani['kelurahan'] ?? $kelompokTani['desa'] ?? null,
                 'catatan_pemohon' => $data['catatan_pemohon'] ?? null,
                 'status' => PermohonanPenanganan::STATUS_DIAJUKAN,
                 'created_by' => $userId,
@@ -127,6 +167,8 @@ class PermohonanService
                 'user_id' => $userId,
                 'diagnosis_id' => $diagnosis->id,
                 'kelompok_tani_id' => $kelompokTani['id'],
+                'lokasi_dikonfirmasi' => $permohonan->lokasi_dikonfirmasi,
+                'lokasi_sama_dengan_poktan' => $permohonan->lokasi_sama_dengan_poktan,
             ]);
 
             return $permohonan;
@@ -334,6 +376,24 @@ class PermohonanService
             'longitude_kasus' => $permohonan->longitude_kasus,
             'created_by' => $operator->getKey(),
         ]);
+    }
+
+    /**
+     * Bandingkan titik kasus dengan koordinat referensi Poktan.
+     *
+     * @param  array<string, mixed>  $kelompokTani
+     */
+    private function titikSamaDenganPoktan(float $latitudeKasus, float $longitudeKasus, array $kelompokTani): ?bool
+    {
+        $refLat = $kelompokTani['latitude'] ?? null;
+        $refLng = $kelompokTani['longitude'] ?? null;
+
+        if (! is_numeric($refLat) || ! is_numeric($refLng)) {
+            return null;
+        }
+
+        return abs($latitudeKasus - (float) $refLat) < 1e-6
+            && abs($longitudeKasus - (float) $refLng) < 1e-6;
     }
 
     private function generatePermohonanCode(): string

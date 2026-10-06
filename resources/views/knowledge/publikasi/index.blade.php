@@ -161,5 +161,34 @@
         </div>
         <p class="text-xs text-[#b0bab3] mt-4">Untuk menonaktifkan atau mengembalikan ke draft, gunakan tombol Edit pada masing-masing daftar.</p>
     </div>
+
+    {{-- Antrean gejala baru: rantai Laporan → Kajian POPT → Review Operator → Relasi CF → Publish --}}
+    <div class="soft-card rounded-xl border border-[#e6eee8] bg-white p-6 sm:p-7">
+        <h2 class="text-base font-bold text-[#173b29]">Antrean Gejala Baru</h2>
+        <p class="text-xs text-[#89968e] mt-1 mb-4">Laporan Poktan yang sudah dikaji POPT menjadi draft gejala, beserta tahapnya dalam rantai validasi.</p>
+        @if ($antreanGejalaBaru->isNotEmpty())
+        <div class="rounded-lg border border-[#eef3ef] divide-y divide-[#f0f4f1] overflow-hidden">
+            @foreach ($antreanGejalaBaru as $item)
+            <div class="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-[#f7faf8] transition">
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-semibold text-[#173b29]">{{ $item->gejala?->nama ?? '—' }}</div>
+                    <div class="text-xs text-[#9aa59e]">{{ $item->report_code }} · {{ $item->reporter?->name ?? '—' }}</div>
+                </div>
+                @if ($item->operator_review === \App\Models\LaporanGejala::REVIEW_SETUJU)
+                    <span class="inline-flex rounded-full bg-[#e8f4ed] px-2.5 py-1 text-xs font-semibold text-[#176b45]">Siap direlasikan</span>
+                    @if($canManageKnowledge)<a href="{{ route('knowledge.aturan-cf.create', ['gejala_id' => $item->gejala_id]) }}" class="inline-flex items-center gap-1.5 rounded-lg bg-[#176b45] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#115a39] transition">Buat relasi CF</a>@endif
+                @elseif ($item->operator_review === \App\Models\LaporanGejala::REVIEW_DITOLAK)
+                    <span class="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">Ditolak Operator</span>
+                @else
+                    <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Menunggu review Operator</span>
+                    @if($canManageKnowledge)<a href="{{ route('operator.laporan-gejala.show', $item) }}" class="inline-flex items-center gap-1.5 rounded-lg border border-[#d6e0d9] bg-white px-3 py-1.5 text-xs font-semibold text-[#176b45] hover:bg-[#f3f8f4] transition">Review</a>@endif
+                @endif
+            </div>
+            @endforeach
+        </div>
+        @else
+        <p class="text-xs text-[#b0bab3] px-1">Tidak ada gejala baru dalam antrean.</p>
+        @endif
+    </div>
 </div>
 @endsection

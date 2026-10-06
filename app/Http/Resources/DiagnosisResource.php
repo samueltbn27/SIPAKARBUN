@@ -45,6 +45,15 @@ class DiagnosisResource extends JsonResource
             ])->values(),
             'status' => $this->status,
             'created_at' => $this->created_at?->toIso8601String(),
+            // Laporan gejala baru yang dikirim bersamaan — konteks kajian
+            // POPT, TIDAK memengaruhi hasil CF di atas.
+            'laporan_gejala_baru' => $this->whenLoaded('laporanGejalaBaru', fn () => $this->laporanGejalaBaru->map(fn ($laporan) => [
+                'id' => $laporan->id,
+                'report_code' => $laporan->report_code,
+                'status' => $laporan->status,
+                'description' => $laporan->description,
+                'gejala_existing_ids' => $laporan->gejala_existing_ids ?? [],
+            ])->values()),
             'results' => $this->results->map(fn ($result) => [
                 'disease_id' => $result->disease_id,
                 'disease_name' => $result->disease_name_snapshot,

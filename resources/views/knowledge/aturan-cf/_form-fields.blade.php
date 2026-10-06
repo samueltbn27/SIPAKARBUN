@@ -42,9 +42,13 @@
             <h2 class="text-base font-bold text-[#173b29]">Gejala Pendukung</h2>
             <div class="mt-4">
                 <label for="gejala_id" class="mb-1 block text-sm font-medium text-gray-700">Gejala <span class="text-red-500">*</span></label>
-                <x-search-select name="gejala_id" :options="$gejalaList" selected="{{ old('gejala_id', $record?->gejala_id) }}" placeholder="Cari nama atau kode gejala..." required />
+                <x-search-select name="gejala_id" :options="$gejalaOptions ?? $gejalaList" selected="{{ old('gejala_id', $record?->gejala_id ?? ($gejalaDipilih ?? null)) }}" placeholder="Cari nama atau kode gejala..." required />
                 <p class="mt-1 text-xs text-gray-500">Ketik nama atau kode gejala untuk mencari dengan cepat.</p>
                 @error('gejala_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                @php($kodeLaporanAsal = ($laporanAsal ?? [])[old('gejala_id', $record?->gejala_id ?? ($gejalaDipilih ?? null))] ?? null)
+                @if($kodeLaporanAsal !== null)
+                    <p class="mt-1.5 rounded-lg bg-[#e8f4ed] px-3 py-2 text-xs font-medium text-[#176b45]">Draft dari laporan {{ $kodeLaporanAsal }} — kajian POPT sudah disetujui Operator.</p>
+                @endif
             </div>
             <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                 <span class="font-semibold">Aturan lama ini belum memiliki data tingkat keyakinan pakar.</span>
@@ -68,9 +72,13 @@
             </div>
             <div class="mb-5">
                 <label for="gejala_id" class="mb-1 block text-sm font-medium text-gray-700">Gejala <span class="text-red-500">*</span></label>
-                <x-search-select name="gejala_id" :options="$gejalaList" selected="{{ old('gejala_id', $record?->gejala_id) }}" placeholder="Cari nama atau kode gejala..." required />
+                <x-search-select name="gejala_id" :options="$gejalaOptions ?? $gejalaList" selected="{{ old('gejala_id', $record?->gejala_id ?? ($gejalaDipilih ?? null)) }}" placeholder="Cari nama atau kode gejala..." required />
                 <p class="mt-1 text-xs text-gray-500">Ketik nama atau kode gejala untuk mencari dengan cepat.</p>
                 @error('gejala_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                @php($kodeLaporanAsalBaru = ($laporanAsal ?? [])[old('gejala_id', $record?->gejala_id ?? ($gejalaDipilih ?? null))] ?? null)
+                @if($kodeLaporanAsalBaru !== null)
+                    <p class="mt-1.5 rounded-lg bg-[#e8f4ed] px-3 py-2 text-xs font-medium text-[#176b45]">Draft dari laporan {{ $kodeLaporanAsalBaru }} — kajian POPT sudah disetujui Operator.</p>
+                @endif
             </div>
             <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 @foreach($scaleOptions as $option)

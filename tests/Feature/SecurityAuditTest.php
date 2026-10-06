@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use Tests\Traits\MenautkanPoktan;
 
 /**
  * Test audit keamanan modul Diagnosis & Permohonan (Mahasiswa 2).
@@ -34,6 +35,7 @@ use Tests\TestCase;
  */
 class SecurityAuditTest extends TestCase
 {
+    use MenautkanPoktan;
     use RefreshDatabase;
 
     private const BASE_URL = 'http://knowledge.test';
@@ -83,6 +85,11 @@ class SecurityAuditTest extends TestCase
 
     private function createUser(string $role): User
     {
+        // Akun Poktan selalu tertaut (identitas permohonan dari akun).
+        if ($role === 'poktan') {
+            return $this->buatPoktanTertaut();
+        }
+
         $user = User::factory()->create();
         $user->assignRole($role);
 
@@ -112,9 +119,9 @@ class SecurityAuditTest extends TestCase
     {
         return [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
+            'lokasi_dikonfirmasi' => '1',
         ];
     }
 
@@ -336,7 +343,6 @@ class SecurityAuditTest extends TestCase
 
         $this->postJson('/api/permohonan', [
             'diagnosis_id' => '1 OR 1=1; --',
-            'kelompok_tani_id' => 1,
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['diagnosis_id']);
 
@@ -353,9 +359,9 @@ class SecurityAuditTest extends TestCase
 
         $this->postJson('/api/permohonan', [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
+            'lokasi_dikonfirmasi' => '1',
             'catatan_pemohon' => $payload,
         ])->assertCreated()
             ->assertJsonPath('data.catatan_pemohon', $payload);

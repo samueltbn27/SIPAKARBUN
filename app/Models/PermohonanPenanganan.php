@@ -21,6 +21,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *   disimpan sebagai snapshot (kelompok_tani_name_snapshot).
  * - `latitude_kasus`/`longitude_kasus` adalah koordinat KASUS/serangan
  *   (BUKAN koordinat kelompok tani — kontrak §10).
+ * - `lokasi_dikonfirmasi` wajib true: pemohon mencentang bahwa titik
+ *   lokasi sudah benar. `lokasi_sama_dengan_poktan` dicatat server-side
+ *   (true = sama dengan titik referensi Poktan, false = disesuaikan,
+ *   null = referensi tanpa koordinat / data lama).
  * - `catatan_pemohon` adalah catatan Poktan; `reviewed_by`/`reviewed_at`
  *   diisi Operator saat mulai review.
  *
@@ -48,6 +52,8 @@ class PermohonanPenanganan extends Model
         'latitude_kasus',
         'longitude_kasus',
         'alamat_kasus',
+        'lokasi_dikonfirmasi',
+        'lokasi_sama_dengan_poktan',
         'kode_kabupaten',
         'kabupaten',
         'kode_kecamatan',
@@ -66,6 +72,8 @@ class PermohonanPenanganan extends Model
         'kelompok_tani_id' => 'integer',
         'latitude_kasus' => 'float',
         'longitude_kasus' => 'float',
+        'lokasi_dikonfirmasi' => 'boolean',
+        'lokasi_sama_dengan_poktan' => 'boolean',
         'reviewed_by' => 'integer',
         'reviewed_at' => 'datetime',
         'created_by' => 'integer',

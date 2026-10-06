@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use Tests\Traits\MenautkanPoktan;
 
 /**
  * Test endpoint permohonan penanganan untuk PEMOHON (Poktan):
@@ -29,6 +30,7 @@ use Tests\TestCase;
  */
 class PermohonanApiTest extends TestCase
 {
+    use MenautkanPoktan;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -46,6 +48,13 @@ class PermohonanApiTest extends TestCase
     }
 
     private function buatUserPoktan(): User
+    {
+        // Akun Poktan selalu tertaut (baris ref asli + test double) —
+        // identitas permohonan diambil dari akun, bukan dari payload.
+        return $this->buatPoktanTertaut();
+    }
+
+    private function buatUserPoktanTanpaTautan(): User
     {
         $user = User::factory()->create();
         $user->assignRole('poktan');
@@ -74,18 +83,13 @@ class PermohonanApiTest extends TestCase
 
     private function payloadDasar(Diagnosis $diagnosis): array
     {
+        // Tanpa kelompok_tani_id: identitas Poktan diambil dari akun login.
         return [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
             'alamat_kasus' => 'Dusun Cibeureum',
-            'kode_kabupaten' => '3201',
-            'kabupaten' => 'Bogor',
-            'kode_kecamatan' => '320101',
-            'kecamatan' => 'Ciawi',
-            'kode_desa' => '320101001',
-            'kelurahan' => 'Ciawi',
+            'lokasi_dikonfirmasi' => '1',
             'catatan_pemohon' => 'Banyak daun menguning, mohon ditindaklanjuti.',
         ];
     }
@@ -117,9 +121,19 @@ class PermohonanApiTest extends TestCase
 
         $this->assertDatabaseHas('permohonan_penanganan', [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
+            'kelompok_tani_id' => $user->kelompok_tani_id,
+            'kelompok_tani_name_snapshot' => 'Poktan Kopi Sejahtera',
             'status' => PermohonanPenanganan::STATUS_DIAJUKAN,
             'created_by' => $user->id,
+        ]);
+
+        // Data Poktan & wilayah diambil otomatis dari referensi Disbun
+        // (mock id 1) walau tidak dikirim di payload.
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis->id,
+            'kabupaten' => 'Kabupaten Bandung',
+            'kecamatan' => 'Pangalengan',
+            'kelurahan' => 'Margamukti',
         ]);
 
         $permohonan = PermohonanPenanganan::first();
@@ -138,14 +152,16 @@ class PermohonanApiTest extends TestCase
         $this->assertDatabaseCount('permohonan_penanganan', 0);
     }
 
-    public function test_kelompok_tani_tidak_valid_ditolak(): void
+    public function test_poktan_tidak_perlu_mengirim_kelompok_tani_id(): void
     {
+        // Mengirim kelompok_tani_id sebagai Poktan DITOLAK (prohibited) —
+        // identitas selalu diambil dari akun login, anti-tamper.
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
         Sanctum::actingAs($user);
 
         $payload = array_replace($this->payloadDasar($diagnosis), [
-            'kelompok_tani_id' => 99,
+            'kelompok_tani_id' => 2,
         ]);
 
         $this->postJson('/api/permohonan', $payload)
@@ -153,6 +169,97 @@ class PermohonanApiTest extends TestCase
             ->assertJsonValidationErrors(['kelompok_tani_id']);
 
         $this->assertDatabaseCount('permohonan_penanganan', 0);
+    }
+
+    public function test_poktan_tanpa_tautan_kelompok_tani_ditolak_dengan_arahan_admin(): void
+    {
+        $user = $this->buatUserPoktanTanpaTautan();
+        $diagnosis = $this->buatDiagnosis($user);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/permohonan', $this->payloadDasar($diagnosis))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['kelompok_tani_id']);
+
+        $this->assertDatabaseCount('permohonan_penanganan', 0);
+    }
+
+    public function test_admin_bisa_membuat_permohonan_atas_nama_poktan(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $diagnosisAdmin = $this->buatDiagnosis($admin);
+        Sanctum::actingAs($admin);
+
+        // Staf membuat atas nama Poktan lewat kelompok_tani_id eksplisit.
+        $payload = array_replace($this->payloadDasar($diagnosisAdmin), [
+            'kelompok_tani_id' => 2,
+        ]);
+
+        $this->postJson('/api/permohonan', $payload)->assertCreated();
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosisAdmin->id,
+            'kelompok_tani_id' => 2,
+            'kelompok_tani_name_snapshot' => 'Gapoktan Tani Makmur',
+            'created_by' => $admin->id,
+        ]);
+    }
+
+    public function test_tanpa_konfirmasi_lokasi_ditolak(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+        Sanctum::actingAs($user);
+
+        $payload = $this->payloadDasar($diagnosis);
+        unset($payload['lokasi_dikonfirmasi']);
+
+        $this->postJson('/api/permohonan', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['lokasi_dikonfirmasi']);
+
+        $this->postJson('/api/permohonan', array_replace($this->payloadDasar($diagnosis), [
+            'lokasi_dikonfirmasi' => '0',
+        ]))->assertUnprocessable()
+            ->assertJsonValidationErrors(['lokasi_dikonfirmasi']);
+
+        $this->assertDatabaseCount('permohonan_penanganan', 0);
+    }
+
+    public function test_flag_konfirmasi_tersimpan_dan_kesamaan_titik_terdeteksi(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+        Sanctum::actingAs($user);
+
+        // Koordinat payload dasar (-6.921, 107.6169) BERBEDA dari titik
+        // referensi Poktan (-6.90, 107.80) → disesuaikan.
+        $this->postJson('/api/permohonan', $this->payloadDasar($diagnosis))
+            ->assertCreated()
+            ->assertJsonPath('data.lokasi_kasus.dikonfirmasi', true)
+            ->assertJsonPath('data.lokasi_kasus.sama_dengan_poktan', false);
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis->id,
+            'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => false,
+        ]);
+
+        // Titik sama persis dengan referensi → sama_dengan_poktan true.
+        $diagnosis2 = $this->buatDiagnosis($user);
+
+        $this->postJson('/api/permohonan', array_replace($this->payloadDasar($diagnosis2), [
+            'latitude_kasus' => -6.9,
+            'longitude_kasus' => 107.8,
+        ]))->assertCreated()
+            ->assertJsonPath('data.lokasi_kasus.sama_dengan_poktan', true);
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis2->id,
+            'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => true,
+        ]);
     }
 
     public function test_koordinat_di_luar_rentang_ditolak(): void

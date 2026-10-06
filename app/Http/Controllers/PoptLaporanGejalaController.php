@@ -42,7 +42,7 @@ class PoptLaporanGejalaController extends Controller
 
     public function show(LaporanGejala $laporanGejala): View
     {
-        $laporanGejala->load(['reporter', 'reviewer', 'gejala']);
+        $laporanGejala->load(['reporter', 'reviewer', 'gejala', 'operatorReviewer']);
 
         return view('popt.laporan-gejala.show', ['laporan' => $laporanGejala]);
     }
@@ -117,7 +117,7 @@ class PoptLaporanGejalaController extends Controller
         $message = match ($action) {
             LaporanGejala::STATUS_PERLU_INFORMASI => 'Permintaan informasi tambahan dikirim ke Poktan.',
             LaporanGejala::STATUS_DUPLIKAT => 'Laporan ditandai sebagai duplikat.',
-            default => 'Draft gejala berhasil dibuat. Draft menunggu publikasi Admin atau Operator UPTD.',
+            default => 'Draft gejala berhasil dibuat. Draft menunggu review Operator UPTD sebelum bisa direlasikan dan dipublish.',
         };
 
         return to_route('popt.laporan-gejala.show', $laporanGejala)->with('success', $message);

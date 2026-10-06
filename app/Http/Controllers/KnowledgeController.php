@@ -15,6 +15,7 @@ use App\Models\AturanCf;
 use App\Models\CfMethod;
 use App\Models\Gejala;
 use App\Models\KasusPenanganan;
+use App\Models\LaporanGejala;
 use App\Models\Penyakit;
 use App\Models\PenyakitKomoditas;
 use App\Models\PermohonanPenanganan;
@@ -26,6 +27,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class KnowledgeController extends Controller
@@ -378,16 +380,43 @@ class KnowledgeController extends Controller
         return view('knowledge.aturan-cf.index', compact('aturanCf', 'penyakitList', 'sourceTypes', 'validationStatuses'));
     }
 
-    public function aturanCfCreate(): View
+    public function aturanCfCreate(Request $request): View
     {
         $penyakitList = Penyakit::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
         $gejalaList = Gejala::aktifSaja()->orderBy('nama')->get(['id', 'kode', 'nama']);
+        // Draft asal laporan yang SUDAH disetujui Operator boleh dipilih
+        // agar relasi CF dibuat sebelum publish (alur Poin 5).
+        $draftDisetujui = Gejala::draftSaja()
+            ->whereIn('id', $this->gejalaDisetujuiOperatorIds())
+            ->orderBy('nama')
+            ->get(['id', 'kode', 'nama']);
+        // Peta gejala_id => kode laporan asal (untuk info di form).
+        $laporanAsal = LaporanGejala::query()
+            ->where('status', LaporanGejala::STATUS_DRAFT_DIBUAT)
+            ->whereNotNull('gejala_id')
+            ->pluck('report_code', 'gejala_id');
+        $gejalaDipilih = $request->integer('gejala_id') ?: null;
+        // Opsi select: gejala aktif + draft yang sudah disetujui Operator
+        // (boleh direlasikan sebelum publish, alur Poin 5).
+        $gejalaOptions = $gejalaList
+            ->map(fn ($gejala): array => ['value' => $gejala->id, 'label' => $gejala->nama])
+            ->all();
+        foreach ($draftDisetujui as $draft) {
+            $kode = $laporanAsal[$draft->id] ?? null;
+            $gejalaOptions[] = [
+                'value' => $draft->id,
+                'label' => $draft->nama.' (draft disetujui'.($kode !== null ? ' · '.$kode : '').')',
+            ];
+        }
         $sourceTypes = AturanCf::SOURCE_LABELS;
         $validationStatuses = AturanCf::VALIDATION_LABELS;
         $cfMethods = CfMethod::aktifSaja()->orderBy('name')->orderByDesc('version')->get();
         $cfMethod = $cfMethods->first(fn (CfMethod $method): bool => $method->isStandard());
 
-        return view('knowledge.aturan-cf.create', compact('penyakitList', 'gejalaList', 'sourceTypes', 'validationStatuses', 'cfMethods', 'cfMethod'));
+        return view('knowledge.aturan-cf.create', compact(
+            'penyakitList', 'gejalaList', 'gejalaOptions', 'laporanAsal', 'gejalaDipilih',
+            'sourceTypes', 'validationStatuses', 'cfMethods', 'cfMethod'
+        ));
     }
 
     public function aturanCfStore(StoreAturanCfRequest $request): RedirectResponse
@@ -426,6 +455,8 @@ class KnowledgeController extends Controller
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
         $data['status'] = $data['status'] ?? AturanCf::STATUS_DRAFT;
+
+        $this->pastikanGejalaLolosReviewOperator((int) $data['gejala_id']);
 
         $aturan = AturanCf::create($data);
 
@@ -466,6 +497,9 @@ class KnowledgeController extends Controller
     {
         $data = $this->forceDraftForPopt($request->validated());
         $data['updated_by'] = auth()->id();
+
+        $gejalaEfektif = (int) ($data['gejala_id'] ?? $aturanCf->gejala_id);
+        $this->pastikanGejalaLolosReviewOperator($gejalaEfektif);
 
         $oldCf = $aturanCf->cf_pakar;
         $aturanCf->update($data);
@@ -586,10 +620,19 @@ class KnowledgeController extends Controller
             'nonaktif' => $penyakitNonaktif->count() + $gejalaNonaktif->count() + $aturanCfNonaktif->count() + $solusiNonaktif->count(),
         ];
 
+        // Antrean gejala baru (Poin 5): kajian POPT yang sudah menjadi draft,
+        // beserta tahapnya — menunggu review Operator / siap direlasikan /
+        // ditolak.
+        $antreanGejalaBaru = LaporanGejala::query()
+            ->with(['gejala', 'reporter'])
+            ->where('status', LaporanGejala::STATUS_DRAFT_DIBUAT)
+            ->latest('id')
+            ->get();
+
         return view('knowledge.publikasi.index', compact(
             'penyakitDraft', 'gejalaDraft', 'aturanCfDraft', 'solusiDraft',
             'penyakitNonaktif', 'gejalaNonaktif', 'aturanCfNonaktif', 'solusiNonaktif',
-            'statistik',
+            'statistik', 'antreanGejalaBaru',
         ));
     }
 
@@ -623,6 +666,23 @@ class KnowledgeController extends Controller
             $statusUpdate['reviewed_at'] = now();
             $statusUpdate['reviewed_by'] = auth()->id();
         }
+
+        if ($record instanceof Gejala && $request->status === Gejala::STATUS_AKTIF) {
+            $laporanAsal = LaporanGejala::query()
+                ->where('gejala_id', $record->id)
+                ->where('status', LaporanGejala::STATUS_DRAFT_DIBUAT)
+                ->first();
+
+            if ($laporanAsal !== null && $laporanAsal->operator_review !== LaporanGejala::REVIEW_SETUJU) {
+                return back()->with('error', "Gejala \"{$entityName}\" berasal dari laporan {$laporanAsal->report_code} yang belum disetujui Operator. Selesaikan Review Operator terlebih dahulu.");
+            }
+
+            if ($laporanAsal !== null
+                && (trim((string) $record->kriteria_observasi) === '' || trim((string) $record->metode_pengamatan) === '')) {
+                return back()->with('error', "Gejala \"{$entityName}\" berasal dari laporan gejala baru. Lengkapi kriteria observasi dan metode pengamatan (menu Gejala → Edit) sebelum publish.");
+            }
+        }
+
         $record->update($statusUpdate);
 
         $labelStatus = ['draft' => 'Draft', 'aktif' => 'Aktif', 'nonaktif' => 'Nonaktif'];
@@ -649,6 +709,43 @@ class KnowledgeController extends Controller
         $riwayat = ActivityLog::latest('created_at')->paginate(20);
 
         return view('knowledge.riwayat.index', compact('riwayat'));
+    }
+
+    /**
+     * Id gejala draft asal laporan gejala yang SUDAH disetujui Operator.
+     *
+     * @return array<int, int>
+     */
+    private function gejalaDisetujuiOperatorIds(): array
+    {
+        return LaporanGejala::query()
+            ->where('status', LaporanGejala::STATUS_DRAFT_DIBUAT)
+            ->where('operator_review', LaporanGejala::REVIEW_SETUJU)
+            ->whereNotNull('gejala_id')
+            ->pluck('gejala_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Gate Poin 5: gejala asal laporan gejala baru HANYA boleh direlasikan
+     * bila kajian POPT-nya sudah DISETUJUI Operator. Gejala tanpa laporan
+     * asal (dibuat manual) tidak terpengaruh.
+     */
+    private function pastikanGejalaLolosReviewOperator(int $gejalaId): void
+    {
+        $terhalang = LaporanGejala::query()
+            ->where('gejala_id', $gejalaId)
+            ->where('status', LaporanGejala::STATUS_DRAFT_DIBUAT)
+            ->where(fn ($q) => $q->whereNull('operator_review')
+                ->orWhere('operator_review', '!=', LaporanGejala::REVIEW_SETUJU))
+            ->exists();
+
+        if ($terhalang) {
+            throw ValidationException::withMessages([
+                'gejala_id' => 'Gejala ini berasal dari laporan gejala baru yang belum disetujui Operator. Selesaikan Review Operator terlebih dahulu.',
+            ]);
+        }
     }
 
     private function canManageKnowledge(): bool

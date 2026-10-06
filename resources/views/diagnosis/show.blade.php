@@ -56,6 +56,21 @@
                 </div>
             @endif
 
+            @if ($diagnosis->laporanGejalaBaru->isNotEmpty())
+                <div class="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <div>
+                        <p class="font-semibold">Gejala baru terlampir ({{ $diagnosis->laporanGejalaBaru->count() }}) — menunggu validasi POPT.</p>
+                        <p class="mt-0.5 text-amber-700">Laporan ini belum ikut perhitungan CF di atas dan baru dipakai diagnosis berikutnya setelah divalidasi dan dipublish.</p>
+                        <ul class="mt-2 space-y-1">
+                            @foreach ($diagnosis->laporanGejalaBaru as $laporan)
+                                <li><a href="{{ route('diagnosis.reports.show', $laporan) }}" class="font-mono text-xs font-bold text-[#176b45] hover:underline">{{ $laporan->report_code }}</a> <span class="text-xs text-amber-700">· {{ $laporan->statusLabel() }}</span></li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
+
     {{-- Meta ringkasan --}}
     <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <x-card class="p-4">
@@ -227,6 +242,7 @@
                                 @if (! empty($solution['deskripsi']))
                                     <p class="mt-1 text-sm leading-relaxed text-[#66746c]">{{ $solution['deskripsi'] }}</p>
                                 @endif
+
                             </div>
                         @empty
                             <p class="text-sm text-[#8a9990]">Tidak ada rekomendasi untuk penyakit ini.</p>
@@ -263,4 +279,14 @@
     @endif
         </div>
     </div>
+    {{-- Diagnosis sudah diproses sampai akhir: hapus draf wizard milik user ini
+        agar kunjungan berikutnya mulai dari kosong. Draf sengaja TIDAK dihapus
+        saat submit (create.blade.php) supaya tetap pulih bila validasi gagal
+        lalu pengguna sempat pindah halaman. --}}
+    <script>
+        try {
+            const s = window.SipakarbunDiagnosisDraft;
+            if (s) s.clearDraft(localStorage, s.draftStorageKey({{ auth()->id() }}));
+        } catch (e) { /* abaikan: draft hanya kenyamanan */ }
+    </script>
 @endsection

@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -70,7 +71,12 @@ class DiagnosisController extends Controller
                 symptomIds: $request->validated('symptom_ids'),
                 userId: $user?->id,
                 cfUser: $request->validated('symptom_confidence', []),
+                laporanGejalaIds: $request->validated('laporan_gejala_ids', []),
             );
+        } catch (ValidationException $e) {
+            // Error penautan laporan — kembalikan sebagai field error,
+            // bukan pesan generik.
+            throw $e;
         } catch (KnowledgeApiException $e) {
             Log::warning('Web diagnosis gagal: knowledge tidak tersedia.', [
                 'user_id' => $user?->id,
@@ -187,7 +193,7 @@ class DiagnosisController extends Controller
 
         $diagnosis = Diagnosis::query()
             ->untukUser($user->id)
-            ->with(['symptoms', 'results'])
+            ->with(['symptoms', 'results', 'laporanGejalaBaru'])
             ->findOrFail($id);
 
         [$komoditas, $komoditasError] = $this->muatKomoditasUntukShow((int) $diagnosis->commodity_id);

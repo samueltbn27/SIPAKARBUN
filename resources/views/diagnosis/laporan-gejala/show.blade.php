@@ -43,6 +43,29 @@
             @endif
 
             <p class="border-t border-[#eef3ef] pt-4 text-xs text-[#8a9990]">Dikirim {{ $laporan->created_at?->format('d M Y, H:i') }}</p>
+
+            @if ($laporan->diagnosis_id !== null)
+                <p class="rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
+                    Dilaporkan bersamaan dengan diagnosis
+                    <a href="{{ route('diagnosis.show', $laporan->diagnosis_id) }}" class="font-bold text-[#176b45] hover:underline">{{ $laporan->diagnosis?->kode ?? 'Diagnosis #'.$laporan->diagnosis_id }}</a>.
+                    Laporan ini tidak memengaruhi hasil CF diagnosis tersebut.
+                </p>
+            @endif
+
+            @php
+                $tahapKajian = $laporan->reviewed_at !== null;
+                $tahapReview = $laporan->status === \App\Models\LaporanGejala::STATUS_DRAFT_DIBUAT ? ($laporan->operator_review ?? 'menunggu') : null;
+                $tahapRilis = $laporan->gejala?->status;
+            @endphp
+            <div class="rounded-xl border border-[#e4ece7] p-4">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Tahapan validasi</h3>
+                <ol class="mt-2 space-y-1.5 text-xs text-[#66746c]">
+                    <li class="flex items-center gap-2"><span class="text-[#176b45]">✓</span> Laporan dikirim</li>
+                    <li class="flex items-center gap-2"><span class="{{ $tahapKajian ? 'text-[#176b45]' : 'text-[#b9c4bd]' }}">{{ $tahapKajian ? '✓' : '○' }}</span> Kajian POPT{{ $tahapKajian ? '' : ' — menunggu' }}</li>
+                    <li class="flex items-center gap-2"><span class="{{ $tahapReview === 'setuju' ? 'text-[#176b45]' : 'text-[#b9c4bd]' }}">{{ $tahapReview === 'setuju' ? '✓' : '○' }}</span> Review Operator{{ $tahapReview === null ? ' — belum sampai tahap ini' : ($tahapReview === 'menunggu' ? ' — menunggu' : ($tahapReview === 'setuju' ? ' — disetujui' : ' — ditolak')) }}</li>
+                    <li class="flex items-center gap-2"><span class="{{ $tahapRilis === 'aktif' ? 'text-[#176b45]' : 'text-[#b9c4bd]' }}">{{ $tahapRilis === 'aktif' ? '✓' : '○' }}</span> Relasi CF & publish{{ $tahapRilis === 'aktif' ? ' — dipakai diagnosis' : ' — menunggu' }}</li>
+                </ol>
+            </div>
         </x-card>
 
         <div class="space-y-5">

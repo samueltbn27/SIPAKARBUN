@@ -22,6 +22,13 @@
             ]"
         />
 
+        @if ($akunPoktanBermasalah)
+            <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p class="font-semibold">Akun Poktan Anda belum dapat mengajukan permohonan.</p>
+                <p class="mt-0.5 text-xs">{{ $alasanBlokir === 'belum_terikat' ? 'Akun Anda belum terikat Kelompok Tani. Hubungi Admin untuk aktivasi akun.' : 'Data Kelompok Tani akun Anda tidak tersedia pada referensi Disbun. Hubungi Admin.' }}</p>
+            </div>
+        @endif
+
         @if ($diagnoses->isEmpty())
             <x-card class="flex flex-col items-center justify-center px-6 py-16 text-center">
                 <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e8f4ed] text-[#176b45]">
@@ -79,62 +86,37 @@
             ]"
         />
 
+        @if ($akunPoktanBermasalah)
+            <x-card class="mx-auto max-w-xl p-8 text-center">
+                <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                    <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                </span>
+                <h2 class="mt-4 text-lg font-bold text-[#173b29]">Permohonan belum dapat dibuat</h2>
+                <p class="mt-1 text-sm text-[#66746c]">
+                    @if ($alasanBlokir === 'belum_terikat')
+                        Akun Poktan Anda belum terikat Kelompok Tani. Hubungi Admin untuk aktivasi akun sebelum mengajukan permohonan.
+                    @else
+                        Data Kelompok Tani akun Anda tidak tersedia pada referensi Disbun saat ini. Silakan coba lagi nanti atau hubungi Admin.
+                    @endif
+                </p>
+                <a href="{{ route('permohonan.index') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+                    Kembali ke Permohonan Saya
+                </a>
+            </x-card>
+        @else
         <div x-data="{
             step: {{ $errors->any() ? 1 : $initialStep }},
             submitting: false,
-            kelompokTaniList: {{ Js::from($kelompokTaniList) }},
-            kelompokTaniId: {{ Js::from(old('kelompok_tani_id', $kelompokTaniTerkunci ? $poktanMilik['id'] : null)) }},
-            kelompokTaniQuery: '',
-            kelompokTaniLoading: false,
-            kelompokTaniSearchError: false,
             locationError: false,
+            konfirmasiError: false,
+            lokasiDikonfirmasi: {{ Js::from((bool) old('lokasi_dikonfirmasi')) }},
             latitudeKasus: {{ Js::from(old('latitude_kasus', $lokasiAwal['latitude'])) }},
             longitudeKasus: {{ Js::from(old('longitude_kasus', $lokasiAwal['longitude'])) }},
             alamatKasus: {{ Js::from(old('alamat_kasus')) }},
             catatanPemohon: {{ Js::from(old('catatan_pemohon')) }},
-            pilihKelompokTani(event) {
-                const selectedId = event.target.value;
-                const selected = this.kelompokTaniList.find((k) => String(k.id) === String(selectedId)) || null;
-
-                this.kelompokTaniId = selectedId;
-                this.$nextTick(() => window.dispatchEvent(new CustomEvent('poktan-location-selected', {
-                    detail: selected,
-                })));
-            },
-            async cariKelompokTani() {
-                const query = this.kelompokTaniQuery.trim();
-                this.kelompokTaniLoading = true;
-                this.kelompokTaniSearchError = false;
-                try {
-                    const params = new URLSearchParams({ q: query });
-                    if (this.kelompokTaniId) params.set('selected', this.kelompokTaniId);
-                    const response = await fetch('{{ route('references.kelompok-tani') }}?' + params.toString(), {
-                        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    });
-                    if (! response.ok) throw new Error('reference-search-failed');
-                    const payload = await response.json();
-                    this.kelompokTaniList = Array.isArray(payload.data) ? payload.data : [];
-                } catch (error) {
-                    this.kelompokTaniList = [];
-                    this.kelompokTaniSearchError = true;
-                } finally {
-                    this.kelompokTaniLoading = false;
-                }
-            },
             files: [],
             onFiles(e) {
                 this.files = Array.from(e.target.files || []);
-            },
-            get kelompokTaniTerpilih() {
-                return this.kelompokTaniList.find((k) => String(k.id) === String(this.kelompokTaniId)) || null;
-            },
-            get kelompokTaniHasil() {
-                const query = this.kelompokTaniQuery.trim().toLowerCase();
-                if (! query) return this.kelompokTaniList;
-
-                return this.kelompokTaniList.filter((k) => [k.nama, k.kode, k.kode_kelompok, k.kabupaten, k.kecamatan, k.kelurahan, k.desa]
-                    .filter(Boolean)
-                    .some((value) => String(value).toLowerCase().includes(query)));
             },
             fmtBytes(b) {
                 if (! b) return '0 B';
@@ -147,7 +129,8 @@
                 const hasLatitude = this.$refs.lat && this.$refs.lat.value.trim() !== '';
                 const hasLongitude = this.$refs.lng && this.$refs.lng.value.trim() !== '';
                 this.locationError = ! hasLatitude || ! hasLongitude;
-                if (this.locationError) return;
+                this.konfirmasiError = ! this.lokasiDikonfirmasi;
+                if (this.locationError || this.konfirmasiError) return;
                 this.step = 2;
             },
             prev() { this.step = 1; },
@@ -216,82 +199,36 @@
                         </dl>
                     </x-card>
 
-                    {{-- Kelompok Tani --}}
+                    {{-- Kelompok Tani (otomatis dari akun, read-only) --}}
                     <x-card class="p-5 lg:col-start-1 lg:row-start-2">
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Kelompok Tani</h3>
-                        <p class="mb-3 text-xs text-[#8a9990]">Kelompok tani yang mengajukan permohonan ini.</p>
+                        <p class="mb-3 text-xs text-[#8a9990]">Kelompok tani pengaju mengikuti akun Anda secara otomatis.</p>
 
-                        @if ($kelompokTaniTerkunci)
-                            <input type="hidden" name="kelompok_tani_id" value="{{ old('kelompok_tani_id', $poktanMilik['id']) }}">
-                            <div class="rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
-                                <p class="font-semibold text-[#173b29]">{{ $poktanMilik['nama'] }}</p>
-                                <p class="mt-0.5">Kode: <span class="font-semibold text-[#176b45]">{{ ($poktanMilik['kode_kelompok'] ?? null) ?: $poktanMilik['kode'] }}</span></p>
-                                @if(!empty($poktanMilik['jenis_komoditi']))<p>Komoditas: {{ $poktanMilik['jenis_komoditi'] }}</p>@endif
-                                @if(!empty($poktanMilik['kecamatan']) || !empty($poktanMilik['kabupaten']))
-                                    <p>Wilayah: {{ collect([$poktanMilik['kecamatan'] ?? null, $poktanMilik['kabupaten'] ?? null])->filter()->join(', ') }}</p>
-                                @endif
-                                <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#e8f4ed] px-2 py-0.5 font-semibold text-[#176b45]">
-                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                    Terkunci mengikuti akun Anda
-                                </p>
-                            </div>
-                            @error('kelompok_tani_id')
-                                <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
-                            @enderror
-                        @elseif ($kelompokTaniError)
-                            <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-                                <p class="font-semibold">Data Kelompok Tani belum tersedia.</p>
-                                <p class="mt-1">Referensi kelompok tani tidak dapat dimuat. Silakan lakukan sinkronisasi data Disbun lalu coba kembali.</p>
-                            </div>
-                        @else
-                            @if ($poktanTakTersedia)
-                                <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-                                    <p class="font-semibold">Kelompok tani akun Anda tidak tersedia.</p>
-                                    <p class="mt-1">Referensi Disbun untuk Poktan Anda sedang tidak aktif. Silakan pilih manual atau hubungi Admin.</p>
-                                </div>
+                        <div class="rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
+                            <p class="font-semibold text-[#173b29]">{{ $poktanMilik['nama'] }}</p>
+                            <p class="mt-0.5">Kode: <span class="font-semibold text-[#176b45]">{{ ($poktanMilik['kode_kelompok'] ?? null) ?: $poktanMilik['kode'] }}</span></p>
+                            @if(!empty($poktanMilik['jenis_komoditi']))<p>Komoditas: {{ $poktanMilik['jenis_komoditi'] }}</p>@endif
+                            @if(!empty($poktanMilik['kecamatan']) || !empty($poktanMilik['kabupaten']))
+                                <p>Wilayah: {{ collect([$poktanMilik['kecamatan'] ?? null, $poktanMilik['kabupaten'] ?? null])->filter()->join(', ') }}</p>
                             @endif
-                            <label for="kelompok-tani-search" class="sr-only">Cari kelompok tani</label>
-                            <input type="search" id="kelompok-tani-search" x-model="kelompokTaniQuery"
-                                   @input.debounce.300ms="cariKelompokTani()"
-                                   placeholder="Cari nama, kode, kabupaten, kecamatan, atau kelurahan..."
-                                   class="mb-2 w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
-                            <select name="kelompok_tani_id" id="kelompok-tani" x-model="kelompokTaniId" @change="pilihKelompokTani($event)" required
-                                    class="w-full rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
-                                <option value="">Pilih Kelompok Tani</option>
-                                <option value="" disabled x-show="kelompokTaniLoading">Memuat opsi...</option>
-                                <template x-for="k in kelompokTaniHasil" :key="k.id">
-                                    <option :value="String(k.id)" :data-latitude="k.latitude ?? ''" :data-longitude="k.longitude ?? ''" x-text="[k.nama, k.jenis_komoditi, [k.kecamatan, k.kabupaten].filter(Boolean).join(' · ')].filter(Boolean).join(' — ')"></option>
-                                </template>
-                            </select>
-                            <p x-show="kelompokTaniLoading" class="mt-2 text-xs text-[#66746c]">Mencari data kelompok tani...</p>
-                            <p x-show="!kelompokTaniLoading && kelompokTaniSearchError" class="mt-2 text-xs text-red-600">Data Kelompok Tani tidak tersedia. Sinkronisasi data Disbun mungkin gagal.</p>
-                            <p x-show="!kelompokTaniLoading && !kelompokTaniSearchError && kelompokTaniHasil.length === 0" class="mt-2 text-xs text-amber-700">Data tidak tersedia untuk pencarian ini.</p>
-                            @error('kelompok_tani_id')
-                                <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
-                            @enderror
-
-                            <template x-if="kelompokTaniTerpilih">
-                                <div class="mt-3 rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
-                                    <p class="font-semibold text-[#173b29]" x-text="kelompokTaniTerpilih.nama"></p>
-                                    <p class="mt-0.5">Kode: <span class="font-semibold text-[#176b45]" x-text="kelompokTaniTerpilih.kode"></span></p>
-                                    <p x-show="kelompokTaniTerpilih.jenis_komoditi">Komoditas: <span x-text="kelompokTaniTerpilih.jenis_komoditi"></span></p>
-                                    <p x-show="kelompokTaniTerpilih.kecamatan || kelompokTaniTerpilih.kabupaten">Wilayah: <span x-text="[kelompokTaniTerpilih.kecamatan, kelompokTaniTerpilih.kabupaten].filter(Boolean).join(', ')"></span></p>
-                                </div>
-                            </template>
-                        @endif
+                            <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#e8f4ed] px-2 py-0.5 font-semibold text-[#176b45]">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Terkunci mengikuti akun Anda
+                            </p>
+                        </div>
                     </x-card>
 
                     {{-- Lokasi Kasus --}}
                     <x-card class="p-5 lg:col-start-2 lg:row-start-1 lg:row-span-2">
                         <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Lokasi Kasus</h3>
                         <p class="mb-3 text-xs text-[#8a9990]">
-                            Lokasi kasus otomatis mengikuti lokasi Kelompok Tani yang dipilih. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.
+                            Lokasi kasus otomatis mengikuti lokasi Kelompok Tani Anda. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.
                         </p>
                         <div class="mb-4 overflow-hidden rounded-2xl border border-[#dbe5df] bg-[#f3f8f4]">
                             <div id="case-location-map" data-case-location-map class="h-[280px] w-full sm:h-[320px] lg:h-[380px]" aria-label="Peta untuk memilih lokasi kasus"></div>
                             <div class="flex items-center gap-2 border-t border-[#dbe5df] bg-white px-3 py-2.5 text-xs text-[#66746c]">
                                 <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#176b45]"></span>
-                                <span data-case-location-help>Lokasi kasus otomatis mengikuti lokasi Kelompok Tani yang dipilih. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.</span>
+                                <span data-case-location-help>Lokasi kasus otomatis mengikuti lokasi Kelompok Tani Anda. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.</span>
                             </div>
                         </div>
                         <p data-case-location-status class="mb-3 hidden rounded-lg bg-[#e8f4ed] px-3 py-2 text-xs font-semibold text-[#176b45]" role="status">Lokasi kasus telah dipilih.</p>
@@ -335,6 +272,20 @@
                                 @enderror
                             </div>
                         </div>
+                        <label class="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-[#f3f8f4] p-3">
+                            <input type="checkbox" name="lokasi_dikonfirmasi" id="lokasi_dikonfirmasi" value="1"
+                                   x-model="lokasiDikonfirmasi"
+                                   @checked(old('lokasi_dikonfirmasi'))
+                                   class="mt-0.5 h-4 w-4 shrink-0 rounded border-[#dbe5df] text-[#176b45] focus:ring-2 focus:ring-[#176b45]/30">
+                            <span class="text-xs leading-relaxed text-[#173b29]">
+                                <span class="font-semibold">Saya menyatakan titik lokasi kasus di atas sudah benar.</span>
+                                <span class="text-[#66746c]"> Centang setelah memastikan marker sesuai dengan lokasi serangan di lapangan.</span>
+                            </span>
+                        </label>
+                        <p x-show="konfirmasiError" x-cloak class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700" role="alert">Centang konfirmasi lokasi sebelum melanjutkan.</p>
+                        @error('lokasi_dikonfirmasi')
+                            <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
+                        @enderror
                     </x-card>
 
                     {{-- Catatan + Foto --}}
@@ -410,10 +361,7 @@
                             </div>
                             <div class="flex justify-between gap-4">
                                 <dt class="text-[#8a9990]">Kelompok Tani</dt>
-                                <dd class="text-right font-semibold text-[#173b29]">
-                                    <template x-if="kelompokTaniTerpilih"><span x-text="kelompokTaniTerpilih.nama"></span></template>
-                                    <template x-if="! kelompokTaniTerpilih"><span class="text-red-600">Belum dipilih</span></template>
-                                </dd>
+                                <dd class="text-right font-semibold text-[#173b29]">{{ $poktanMilik['nama'] }}</dd>
                             </div>
                         </dl>
 
@@ -425,6 +373,11 @@
                             </p>
                             <p class="mt-1 text-sm text-[#66746c]" x-text="alamatKasus"></p>
                             <p class="mt-2 text-[11px] text-[#8a9990]">Lokasi kasus = titik serangan OPT di lapangan, terpisah dari lokasi kelompok tani.</p>
+                            <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#e8f4ed] px-2.5 py-1 text-[11px] font-semibold text-[#176b45]">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                <span x-show="lokasiDikonfirmasi">Lokasi sudah saya konfirmasi</span>
+                                <span x-show="! lokasiDikonfirmasi" class="text-red-600">Belum dikonfirmasi</span>
+                            </p>
                         </div>
 
                         <div class="mt-4 border-t border-[#eef3ef] pt-4">
@@ -492,5 +445,6 @@
                 </div>
             </form>
         </div>
+        @endif
     @endif
 @endsection

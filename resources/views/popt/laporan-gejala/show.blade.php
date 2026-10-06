@@ -29,6 +29,20 @@
             @if ($laporan->imageUrl())<div><h3 class="mb-2 text-xs font-bold uppercase tracking-wide text-[#8a9990]">Foto bukti</h3><img src="{{ $laporan->imageUrl() }}" alt="Foto gejala {{ $laporan->report_code }}" class="max-h-[520px] w-full rounded-xl border border-[#e4ece7] bg-[#fafcfb] object-contain" loading="lazy"></div>@endif
             @if ($laporan->review_note)<div class="rounded-xl border border-amber-200 bg-amber-50 p-4"><h3 class="text-xs font-bold uppercase tracking-wide text-amber-900">Catatan tinjauan terakhir</h3><p class="mt-2 whitespace-pre-line text-sm leading-6 text-amber-900">{{ $laporan->review_note }}</p></div>@endif
             @if ($laporan->gejala)<div class="rounded-xl border border-green-200 bg-green-50 p-4"><p class="text-sm font-bold text-green-900">Draft gejala: {{ $laporan->gejala->nama }}</p><p class="mt-1 text-xs leading-5 text-green-800">Status {{ $laporan->gejala->status }}. Aktivasi hanya dapat dilakukan Admin atau Operator UPTD melalui Publikasi Knowledge.</p></div>@endif
+            @if ($laporan->status === \App\Models\LaporanGejala::STATUS_DRAFT_DIBUAT)
+                <div class="rounded-xl border border-[#e4ece7] p-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Review Operator</h3>
+                    @if ($laporan->operator_review === \App\Models\LaporanGejala::REVIEW_SETUJU)
+                        <p class="mt-2 inline-flex rounded-full bg-[#e8f4ed] px-3 py-1 text-xs font-semibold text-[#176b45]">Disetujui — relasi CF dapat dibuat</p>
+                    @elseif ($laporan->operator_review === \App\Models\LaporanGejala::REVIEW_DITOLAK)
+                        <p class="mt-2 inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">Ditolak — rantai dihentikan</p>
+                    @else
+                        <p class="mt-2 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Menunggu review Operator UPTD</p>
+                    @endif
+                    @if ($laporan->operator_review_note)<p class="mt-2 whitespace-pre-line text-sm leading-6 text-[#34483b]">{{ $laporan->operator_review_note }}</p>@endif
+                    @if ($laporan->operator_reviewed_at)<p class="mt-2 text-xs text-[#8a9990]">Oleh {{ $laporan->operatorReviewer?->name ?? '—' }} · {{ $laporan->operator_reviewed_at->format('d M Y, H:i') }}</p>@endif
+                </div>
+            @endif
         </x-card>
 
         @if ($laporan->status === \App\Models\LaporanGejala::STATUS_DIAJUKAN)
