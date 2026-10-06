@@ -25,7 +25,7 @@
             <div class="flex flex-wrap gap-2"><x-knowledge.status-badge :status="$aturanCf->status" /><span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ $aturanCf->statusValidasiLabel() }}</span></div>
         </div>
         <dl class="mt-6 grid gap-5 sm:grid-cols-2">
-            <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nilai CF Pakar</dt><dd class="mt-1 font-mono text-xl font-bold text-[#176b45]">{{ number_format((float) $aturanCf->cf_pakar, 3) }}</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nilai CF Pakar</dt><dd class="mt-1 text-xl font-bold text-[#176b45]">{{ $aturanCf->cfPakarLabel() }}</dd></div>
             <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jenis Sumber</dt><dd class="mt-1 text-sm font-semibold text-gray-800">{{ $aturanCf->jenisSumberLabel() }}</dd></div>
             <div><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Metode Penentuan</dt><dd class="mt-1 break-words text-sm text-gray-800">{{ $aturanCf->pendekatan ?: 'Belum tersedia' }}</dd></div>
             <div class="sm:col-span-2"><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Dasar Penentuan</dt><dd class="mt-1 whitespace-pre-line break-words text-sm text-gray-800">{{ $aturanCf->dasar_penentuan ?: 'Belum tersedia' }}</dd></div>

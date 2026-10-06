@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AturanCf;
 use App\Models\CfMethod;
+use Database\Seeders\CfMethodSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\CreatesUsersWithRoles;
@@ -43,6 +44,24 @@ class CfMethodologyGuideTest extends TestCase
             ->assertSee('Sangat Lemah')
             ->assertSee('0,20')
             ->assertDontSee('select id="cf_method_id"', false);
+    }
+
+    public function test_seeder_metode_baku_memakai_referensi_jurnal_intecoms(): void
+    {
+        $this->seed(CfMethodSeeder::class);
+
+        $method = CfMethod::query()->standard()->firstOrFail();
+
+        $this->assertSame(
+            'https://journal.ipm2kpe.or.id/index.php/INTECOM/article/view/2461',
+            $method->reference_url,
+        );
+        $this->assertSame('10.31539/intecoms.v4i1.2461', $method->reference_doi);
+        $this->assertSame(2021, $method->reference_year);
+
+        $this->actingAs($this->createOperator())->get(route('knowledge.aturan-cf.create'))
+            ->assertOk()
+            ->assertSee('https://journal.ipm2kpe.or.id/index.php/INTECOM/article/view/2461', false);
     }
 
     public function test_aturan_penyakit_menggunakan_istilah_baru_di_daftar_detail_dan_edit(): void

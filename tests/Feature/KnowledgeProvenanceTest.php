@@ -180,7 +180,7 @@ class KnowledgeProvenanceTest extends TestCase
         $this->actingAs($popt)->post('/knowledge/aturan-cf', [
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
-            'cf_pakar' => 0.65,
+            'cf_pakar' => 0.6,
             'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
             'pendekatan' => 'Simulation / Testing',
             'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
@@ -211,7 +211,7 @@ class KnowledgeProvenanceTest extends TestCase
         $this->actingAs($popt)->post('/knowledge/aturan-cf', [
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
-            'cf_pakar' => 0.7,
+            'cf_pakar' => 0.6,
             'jenis_sumber' => AturanCf::SOURCE_EXPERT,
             'pendekatan' => 'Expert Elicitation',
             'dasar_penentuan' => 'Draft penilaian untuk ditinjau Operator UPTD.',
@@ -235,7 +235,7 @@ class KnowledgeProvenanceTest extends TestCase
         $this->actingAs($operator)->post('/knowledge/aturan-cf', [
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
-            'cf_pakar' => 0.7,
+            'cf_pakar' => 0.6,
             'jenis_sumber' => AturanCf::SOURCE_EXPERT,
             'pendekatan' => 'Expert Elicitation',
             'dasar_penentuan' => 'Penilaian telah ditinjau dan dicatat.',

@@ -14,6 +14,11 @@
             </div>
             <x-knowledge.status-badge :status="$gejala->status" />
         </div>
+        @if ($gejala->image_path)
+            <figure class="mt-5">
+                <img src="{{ \App\Support\PublicStorageUrl::make($gejala->image_path) }}" alt="Foto gejala {{ $gejala->nama }}" class="max-h-96 w-full rounded-xl border border-gray-200 bg-gray-50 object-contain">
+            </figure>
+        @endif
         <dl class="mt-5 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2"><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Deskripsi</dt><dd class="mt-1 whitespace-pre-line text-sm text-gray-800">{{ $gejala->deskripsi ?: 'Belum tersedia' }}</dd></div>
             <div class="sm:col-span-2"><dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Kriteria Observasi</dt><dd class="mt-1 whitespace-pre-line break-words text-sm text-gray-800">{{ $gejala->kriteria_observasi ?: 'Belum tersedia' }}</dd></div>

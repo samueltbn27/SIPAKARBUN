@@ -103,7 +103,7 @@ class AturanCfCrudTest extends TestCase
         ]);
 
         $this->putJson("/api/admin/aturan-cf/{$rule->id}", [
-            'cf_pakar' => 0.9,
-        ])->assertOk()->assertJsonPath('cf_pakar', '0.900');
+            'cf_pakar' => 0.8,
+        ])->assertOk()->assertJsonPath('cf_pakar', '0.800');
     }
 }

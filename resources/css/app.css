@@ -2,6 +2,17 @@
 @import 'tailwindcss';
 
 [x-cloak] { display: none !important; }
+.cf-card { border: 1px solid #e1eae3; background: #fff; }
+.cf-card:hover { border-color: #a8c9b2; background: #f8fbf9; }
+.cf-card:has(input:checked) { border: 2px solid #176b45; background: #f1f8f3; }
+.cf-card .cf-check { border: 1px dashed #c9d6cd; color: transparent; }
+.cf-card:has(input:checked) .cf-check { border: 1px solid #176b45; background: #176b45; color: #fff; }
+.cf-seg { background: #e3ebe5; box-shadow: inset 0 0 0 1px #d3ded7; }
+.cf-card[data-segmen="1"]:has(input:checked) .cf-seg:nth-child(-n+1),
+.cf-card[data-segmen="2"]:has(input:checked) .cf-seg:nth-child(-n+2),
+.cf-card[data-segmen="3"]:has(input:checked) .cf-seg:nth-child(-n+3),
+.cf-card[data-segmen="4"]:has(input:checked) .cf-seg:nth-child(-n+4),
+.cf-card[data-segmen="5"]:has(input:checked) .cf-seg:nth-child(-n+5) { background: #176b45; box-shadow: none; }
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

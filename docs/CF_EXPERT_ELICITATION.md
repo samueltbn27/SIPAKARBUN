@@ -36,7 +36,7 @@ Saat `expert_term` tersedia, server mencari term pada `scale_definition` metode 
 
 ## Method Reference
 
-Master metode mempunyai judul, penulis, tahun, DOI/URL, dan status aktif. Data bawaan sengaja tidak mengisi bibliografi karena referensi metodologi CF yang dipakai harus diverifikasi oleh pemilik penelitian terlebih dahulu. UI menampilkan “Belum tersedia” sampai data tersebut terverifikasi. Referensi metodologi ini berbeda dari referensi penyakit.
+Master metode mempunyai judul, penulis, tahun, DOI/URL, dan status aktif. Metode baku SIPAKARBUN saat ini merujuk artikel “Sistem Pakar Deteksi Dini HIV/AIDS Dengan Metode Forward Chaining Dan Certainty Factor” (Pamungkas, Voutama, Sari, dan Susilawati, 2021), DOI 10.31539/intecoms.v4i1.2461, dengan URL https://journal.ipm2kpe.or.id/index.php/INTECOM/article/view/2461. Referensi metodologi ini berbeda dari referensi penyakit.
 
 ## Provenance
 

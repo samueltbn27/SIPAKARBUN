@@ -26,7 +26,7 @@ class StoreGejalaRequest extends FormRequest
             'referensi_penulis' => ['nullable', 'string', 'max:150'],
             'referensi_tahun' => ['nullable', 'integer', 'between:1800,'.((int) date('Y'))],
             'referensi_url' => ['nullable', 'url', 'max:500'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
         ];
     }

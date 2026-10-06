@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Support\PublicStorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Resource untuk kontrak API M1 -> M2 (GET /api/gejala).
@@ -29,20 +29,6 @@ class GejalaKnowledgeResource extends JsonResource
 
     private function imageUrl(Request $request): ?string
     {
-        if (! $this->image_path) {
-            return null;
-        }
-
-        $storageUrl = Storage::disk('public')->url($this->image_path);
-        $storagePath = parse_url($storageUrl, PHP_URL_PATH);
-
-        if (! is_string($storagePath) || $storagePath === '') {
-            return $storageUrl;
-        }
-
-        // The public disk is local storage. Rebuild its URL from the current
-        // request origin so APP_URL=localhost cannot break a 127.0.0.1:8000
-        // browser session (or another local development port).
-        return rtrim($request->getSchemeAndHttpHost(), '/').'/'.ltrim($storagePath, '/');
+        return PublicStorageUrl::make($this->image_path, $request);
     }
 }

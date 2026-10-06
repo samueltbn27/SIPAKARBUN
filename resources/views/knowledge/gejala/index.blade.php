@@ -48,7 +48,14 @@
                 @forelse ($gejala as $g)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-mono text-gray-700">{{ $g->kode }}</td>
-                    <td class="px-4 py-3 font-medium text-gray-900">{{ $g->nama }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">
+                        <div class="flex items-center gap-3">
+                            @if ($g->image_path)
+                                <img src="{{ \App\Support\PublicStorageUrl::make($g->image_path) }}" alt="Foto {{ $g->nama }}" class="h-11 w-14 shrink-0 rounded object-cover">
+                            @endif
+                            <span>{{ $g->nama }}</span>
+                        </div>
+                    </td>
                     <td class="px-4 py-3 text-gray-600">
                         <div>{{ \Illuminate\Support\Str::limit($g->kriteria_observasi ?: $g->deskripsi, 70) ?: 'Belum tersedia' }}</div>
                         @if($g->metode_pengamatan)<div class="mt-1 text-xs text-gray-400">{{ $g->metode_pengamatan }}</div>@endif

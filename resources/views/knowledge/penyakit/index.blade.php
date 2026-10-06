@@ -53,7 +53,14 @@
                 @forelse ($penyakit as $p)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-mono text-gray-700">{{ $p->kode }}</td>
-                    <td class="px-4 py-3 font-medium text-gray-900">{{ $p->nama }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">
+                        <div class="flex items-center gap-3">
+                            @if ($p->image_path)
+                                <img src="{{ \App\Support\PublicStorageUrl::make($p->image_path) }}" alt="Foto {{ $p->nama }}" class="h-11 w-14 shrink-0 rounded object-cover">
+                            @endif
+                            <span>{{ $p->nama }}</span>
+                        </div>
+                    </td>
                     <td class="px-4 py-3 max-w-[220px] text-gray-600">
                         {{ \Illuminate\Support\Str::limit($p->deskripsi, 60) }}
                     </td>

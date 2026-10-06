@@ -20,7 +20,7 @@ class StorePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')],
             'nama' => ['required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
 
             // Opsional: assign komoditas terkait sekalian saat bikin penyakit.
@@ -63,7 +63,7 @@ class StorePenyakitRequest extends FormRequest
                 ->all();
 
             foreach ($komoditasIds as $id) {
-                if (!in_array((int) $id, $validIds, true)) {
+                if (! in_array((int) $id, $validIds, true)) {
                     $validator->errors()->add(
                         'komoditas_id',
                         "Komoditas dengan id {$id} tidak ditemukan, belum terverifikasi, atau dikarantina."

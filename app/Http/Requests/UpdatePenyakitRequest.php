@@ -17,6 +17,7 @@ class UpdatePenyakitRequest extends FormRequest
         }
 
         $penyakit = $this->route('penyakit');
+
         return $user?->hasRole('popt') === true
             && is_object($penyakit)
             && $penyakit->status === 'draft';
@@ -32,7 +33,7 @@ class UpdatePenyakitRequest extends FormRequest
             'kode' => ['nullable', 'string', 'max:50', Rule::unique('penyakit', 'kode')->ignore($penyakitId)],
             'nama' => ['sometimes', 'required', 'string', 'max:150'],
             'deskripsi' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'status' => ['sometimes', 'in:draft,aktif,nonaktif'],
             'komoditas_id' => ['sometimes', 'array'],
             'komoditas_id.*' => ['integer', 'min:1'],
@@ -66,7 +67,7 @@ class UpdatePenyakitRequest extends FormRequest
                 ->all();
 
             foreach ($komoditasIds as $id) {
-                if (!in_array((int) $id, $validIds, true)) {
+                if (! in_array((int) $id, $validIds, true)) {
                     $validator->errors()->add(
                         'komoditas_id',
                         "Komoditas dengan id {$id} tidak ditemukan, belum terverifikasi, atau dikarantina."

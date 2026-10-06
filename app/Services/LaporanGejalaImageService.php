@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class LaporanGejalaImageService
 {
@@ -14,7 +15,17 @@ class LaporanGejalaImageService
 
     public function store(?UploadedFile $file): ?string
     {
-        return $file?->store('laporan-gejala', self::PRIVATE_DISK);
+        if ($file === null || ! $file->isValid()) {
+            return null;
+        }
+
+        $path = $file->store('laporan-gejala', self::PRIVATE_DISK);
+
+        if (! is_string($path) || $path === '') {
+            throw new RuntimeException('Foto laporan gagal disimpan ke penyimpanan privat.');
+        }
+
+        return $path;
     }
 
     public function delete(?string $path): void

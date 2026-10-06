@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\KasusPenanganan;
 use App\Models\PerpanjanganPenugasan;
+use App\Support\PublicStorageUrl;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Read model for the Poktan case detail page.
@@ -163,7 +163,7 @@ class PoktanHandlingViewService
             ->map(fn ($evidence): array => [
                 'file_name' => $evidence->file_name,
                 'mime_type' => $evidence->mime_type,
-                'url' => Storage::disk('public')->url($evidence->file_path),
+                'url' => PublicStorageUrl::make($evidence->file_path),
             ])
             ->values()
             ->all() ?? [];

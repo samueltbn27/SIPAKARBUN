@@ -20,7 +20,7 @@ class StoreLaporanGejalaRequest extends FormRequest
             'commodity_id' => ['required', 'integer', 'min:1'],
             'description' => ['required', 'string', 'min:10', 'max:2000'],
             'location_description' => ['nullable', 'string', 'max:500'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 
@@ -31,6 +31,7 @@ class StoreLaporanGejalaRequest extends FormRequest
             'description.required' => 'Ceritakan gejala yang Anda amati.',
             'description.min' => 'Deskripsi gejala minimal 10 karakter agar dapat ditinjau.',
             'image.image' => 'File bukti harus berupa gambar.',
+            'image.uploaded' => 'Foto gagal diunggah. Periksa ukuran file dan coba lagi.',
             'image.mimes' => 'Foto harus berformat JPG, PNG, atau WebP.',
             'image.max' => 'Ukuran foto maksimal 5 MB.',
         ];

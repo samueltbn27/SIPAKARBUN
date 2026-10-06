@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TingkatKeyakinan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -149,6 +150,24 @@ class AturanCf extends Model
     {
         return self::VALIDATION_LABELS[$this->status_validasi ?? self::VALIDATION_UNVALIDATED]
             ?? 'Belum Divalidasi';
+    }
+
+    public function cfPakarKeyakinan(): ?TingkatKeyakinan
+    {
+        return TingkatKeyakinan::fromNilai((float) $this->cf_pakar);
+    }
+
+    public function cfPakarLabel(): string
+    {
+        $tingkat = $this->cfPakarKeyakinan();
+        if ($tingkat) {
+            return "{$tingkat->label()} ({$tingkat->nilaiFormatted()})";
+        }
+
+        $nilai = number_format((float) $this->cf_pakar, 3, ',', '.');
+        $nilai = rtrim(rtrim($nilai, '0'), ',');
+
+        return "Kustom ({$nilai})";
     }
 
     /**

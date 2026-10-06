@@ -95,7 +95,12 @@
         </div>
         <div>
             <label for="image" class="mb-1 block text-sm font-medium text-gray-700">Foto Gejala <span class="text-gray-400">(opsional)</span></label>
-            @if ($record?->image_path)<p class="mb-2 text-xs text-gray-500">Foto saat ini tersedia. Pilih file baru untuk menggantinya.</p>@endif
+            @if ($record?->image_path)
+                <div class="mb-2 flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                    <img src="{{ \App\Support\PublicStorageUrl::make($record->image_path) }}" alt="Foto {{ $record->nama }}" class="h-20 w-24 rounded object-cover">
+                    <p class="text-xs text-gray-500">Foto saat ini tersimpan. Pilih file baru untuk menggantinya.</p>
+                </div>
+            @endif
             <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/webp" class="{{ $fieldClass }}">
             <p class="mt-1 text-xs text-gray-500">JPG, PNG, atau WebP; maksimal 5 MB.</p>
             @error('image')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
