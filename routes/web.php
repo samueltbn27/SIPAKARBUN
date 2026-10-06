@@ -164,6 +164,10 @@ Route::middleware(['auth', 'role:admin|operator_uptd'])->prefix('operator')->nam
     Route::post('/kasus/{id}/status', [OperatorWorkflowController::class, 'updateStatus'])->whereNumber('id')->name('kasus.status');
     Route::post('/kasus/{id}/verifikasi', [OperatorWorkflowController::class, 'verifikasi'])->whereNumber('id')->name('kasus.verifikasi');
     Route::post('/kasus/{id}/batal', [OperatorWorkflowController::class, 'batal'])->whereNumber('id')->name('kasus.batal');
+    // Review Operator atas kajian POPT — gate alur gejala baru (Poin 5).
+    Route::get('/laporan-gejala', [\App\Http\Controllers\OperatorLaporanGejalaController::class, 'index'])->name('laporan-gejala.index');
+    Route::get('/laporan-gejala/{laporanGejala}', [\App\Http\Controllers\OperatorLaporanGejalaController::class, 'show'])->whereNumber('laporanGejala')->name('laporan-gejala.show');
+    Route::post('/laporan-gejala/{laporanGejala}/review', [\App\Http\Controllers\OperatorLaporanGejalaController::class, 'review'])->whereNumber('laporanGejala')->name('laporan-gejala.review');
 });
 
 Route::get('/kasus', [OperatorWorkflowController::class, 'kasusIndex'])

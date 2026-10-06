@@ -6,7 +6,6 @@ use App\Contracts\KelompokTaniReferensiClient;
 use App\Contracts\KomoditasReferensiClient;
 use App\Models\Diagnosis;
 use App\Models\DiagnosisResult;
-use App\Models\KasusPenanganan;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
 use App\Services\MockKelompokTaniReferensiClient;
@@ -15,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use Tests\Traits\MenautkanPoktan;
 
 /**
  * Integrasi E2E frontend Poktan (TAHAP 8).
@@ -29,6 +29,7 @@ use Tests\TestCase;
  */
 class PoktanWorkflowE2ETest extends TestCase
 {
+    use MenautkanPoktan;
     use RefreshDatabase;
 
     private const BASE_URL = 'http://knowledge.test';
@@ -77,10 +78,7 @@ class PoktanWorkflowE2ETest extends TestCase
 
     private function buatPoktan(): User
     {
-        $user = User::factory()->create(['is_active' => true]);
-        $user->assignRole('poktan');
-
-        return $user;
+        return $this->buatPoktanTertaut(['is_active' => true]);
     }
 
     public function test_alur_lengkap_poktan_terhubung_end_to_end(): void
@@ -127,12 +125,13 @@ class PoktanWorkflowE2ETest extends TestCase
             ->assertSee('Kopi Arabika');
 
         // 6) Simpan permohonan → redirect ke detail.
+        // Identitas Poktan diambil dari akun (tanpa kelompok_tani_id).
         $storeResponse = $this->post('/permohonan', [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
             'alamat_kasus' => 'Blok Cibeureum, Dusun Satu, Ciawi',
+            'lokasi_dikonfirmasi' => '1',
             'catatan_pemohon' => 'Banyak daun menguning, mohon ditindaklanjuti.',
         ]);
 
@@ -194,9 +193,9 @@ class PoktanWorkflowE2ETest extends TestCase
         // Diagnosis yatim tidak bisa dijadikan acuan permohonan sama sekali.
         $this->post('/permohonan', [
             'diagnosis_id' => $orphan->id,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
+            'lokasi_dikonfirmasi' => '1',
         ])->assertSessionHas('error', 'Diagnosis tidak ditemukan atau bukan milik Anda.');
 
         $this->assertDatabaseCount('permohonan_penanganan', 0);

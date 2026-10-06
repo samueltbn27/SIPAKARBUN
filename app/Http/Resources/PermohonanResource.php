@@ -38,6 +38,8 @@ class PermohonanResource extends JsonResource
                 'latitude' => $this->latitude_kasus,
                 'longitude' => $this->longitude_kasus,
                 'alamat' => $this->alamat_kasus,
+                'dikonfirmasi' => (bool) $this->lokasi_dikonfirmasi,
+                'sama_dengan_poktan' => $this->lokasi_sama_dengan_poktan,
                 'kode_kabupaten' => $this->kode_kabupaten,
                 'kabupaten' => $this->kabupaten,
                 'kode_kecamatan' => $this->kode_kecamatan,

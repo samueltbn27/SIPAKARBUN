@@ -190,7 +190,29 @@ class LaporanGejalaTest extends TestCase
             'model' => 'Gejala', 'id' => $draft->id, 'status' => Gejala::STATUS_AKTIF,
         ])->assertForbidden();
 
-        foreach ([$this->createOperator(), $this->createAdmin()] as $manager) {
+        // Rantai Poin 5: tanpa persetujuan Operator, publish ditolak.
+        $operator = $this->createOperator();
+
+        $this->actingAs($operator)->post('/knowledge/publikasi/toggle', [
+            'model' => 'Gejala', 'id' => $draft->id, 'status' => Gejala::STATUS_AKTIF,
+        ])->assertRedirect()->assertSessionHas('error');
+        $this->assertSame(Gejala::STATUS_DRAFT, $draft->fresh()->status);
+
+        // Setelah disetujui + observasi dilengkapi, Admin/Operator bisa publish.
+        $this->actingAs($operator)->post('/operator/laporan-gejala/'.$report->id.'/review', [
+            'keputusan' => 'setuju',
+        ])->assertRedirect();
+
+        $this->actingAs($operator)->post('/knowledge/publikasi/toggle', [
+            'model' => 'Gejala', 'id' => $draft->id, 'status' => Gejala::STATUS_AKTIF,
+        ])->assertRedirect()->assertSessionHas('error');
+
+        $this->actingAs($this->createAdmin())->put('/knowledge/gejala/'.$draft->id, [
+            'kriteria_observasi' => 'Bercak putih berdiameter 2-5 mm pada daun muda.',
+            'metode_pengamatan' => 'Visual langsung di lapangan pagi hari.',
+        ])->assertRedirect();
+
+        foreach ([$operator, $this->createAdmin()] as $manager) {
             $this->actingAs($manager)->post('/knowledge/publikasi/toggle', [
                 'model' => 'Gejala', 'id' => $draft->id, 'status' => Gejala::STATUS_AKTIF,
             ])->assertRedirect();

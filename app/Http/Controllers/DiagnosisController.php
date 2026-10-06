@@ -10,6 +10,7 @@ use App\Services\DiagnosisService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -51,8 +52,13 @@ class DiagnosisController extends Controller
                     symptomIds: $request->validated('symptom_ids'),
                     userId: $user?->id,
                     cfUser: $request->validated('symptom_confidence', []),
+                    laporanGejalaIds: $request->validated('laporan_gejala_ids', []),
                 )
             );
+        } catch (ValidationException $e) {
+            // Error penautan laporan (bukan milik user / komoditas beda /
+            // sudah tertaut) — teruskan sebagai 422, bukan 500.
+            throw $e;
         } catch (KnowledgeApiException $e) {
             Log::error('Knowledge API gagal saat menjalankan diagnosis.', [
                 'user_id' => $user?->id,
@@ -86,7 +92,7 @@ class DiagnosisController extends Controller
             ], 200);
         }
 
-        $model = Diagnosis::with(['symptoms', 'results'])->findOrFail($diagnosisId);
+        $model = Diagnosis::with(['symptoms', 'results', 'laporanGejalaBaru'])->findOrFail($diagnosisId);
 
         Log::info('Diagnosis selesai dijalankan.', [
             'user_id' => $user?->id,
@@ -112,7 +118,7 @@ class DiagnosisController extends Controller
         // Authorization: user hanya boleh melihat diagnosis miliknya sendiri.
         $diagnosis = Diagnosis::query()
             ->untukUser($request->user()->id)
-            ->with(['symptoms', 'results'])
+            ->with(['symptoms', 'results', 'laporanGejalaBaru'])
             ->findOrFail($id);
 
         return new DiagnosisResource($diagnosis);

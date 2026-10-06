@@ -44,6 +44,7 @@
             'items' => [
                 ['route' => 'operator.permohonan', 'label' => 'Permohonan Penanganan', 'icon' => 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4', 'match' => 'operator.permohonan'],
                 ['route' => 'operator.kasus.index', 'label' => 'Monitoring Kasus', 'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'match' => 'operator.kasus'],
+                ['route' => 'operator.laporan-gejala.index', 'label' => 'Review Gejala Baru', 'icon' => 'M12 8v4m0 4h.01M5.07 19H19a2 2 0 001.73-3L13.73 4a2 2 0 00-3.46 0l-7 12A2 2 0 005.07 19z', 'match' => 'operator.laporan-gejala'],
             ],
         ];
     }

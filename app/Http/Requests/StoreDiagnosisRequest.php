@@ -18,6 +18,11 @@ use Illuminate\Validation\Validator;
  *   symptom_confidence: array<gejala_id => float> OPSIONAL — tingkat
  *                       keyakinan user per gejala (0.0 s.d. 1.0).
  *                       Gejala tanpa nilai dianggap 1.0 ("yakin").
+ *   laporan_gejala_ids: array<int> OPSIONAL — id laporan gejala baru
+ *                       milik user yang dikirim BERSAMAAN dengan diagnosis
+ *                       ini. Laporan hanya ditautkan (konteks kajian POPT),
+ *                       TIDAK ikut perhitungan CF. Kepemilikan, status, dan
+ *                       kesamaan komoditas diverifikasi di DiagnosisService.
  *
  * Validasi "dasar" di sini (tahap #3):
  *   - format & keunikan id gejala,
@@ -46,6 +51,8 @@ class StoreDiagnosisRequest extends FormRequest
             'symptom_ids.*' => ['required', 'integer', 'distinct', 'min:1'],
             'symptom_confidence' => ['sometimes', 'array'],
             'symptom_confidence.*' => ['numeric', 'between:0,1'],
+            'laporan_gejala_ids' => ['sometimes', 'array', 'max:10'],
+            'laporan_gejala_ids.*' => ['integer', 'distinct', 'min:1'],
         ];
     }
 

@@ -88,7 +88,7 @@ class LaporanGejalaController extends Controller
     {
         $report = LaporanGejala::query()
             ->where('created_by', auth()->id())
-            ->with(['gejala', 'reviewer'])
+            ->with(['gejala', 'reviewer', 'diagnosis'])
             ->findOrFail($laporanGejala);
 
         return view('diagnosis.laporan-gejala.show', ['laporan' => $report]);

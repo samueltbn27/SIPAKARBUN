@@ -1,9 +1,18 @@
 @php
     $fieldClass = 'w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200';
-    $symptomOptions = $gejalaList->map(fn ($gejala) => [
-        'id' => (string) $gejala->id,
-        'label' => trim(($gejala->kode ? $gejala->kode . ' — ' : '') . $gejala->nama),
-    ])->values();
+    // Sumber opsi: gejala aktif + draft asal laporan yang sudah disetujui
+    // Operator (controller menyediakan $gejalaOptions; fallback ke $gejalaList).
+    $sumberOpsiGejala = collect($gejalaOptions ?? $gejalaList);
+    $symptomOptions = $sumberOpsiGejala->map(fn ($gejala) => is_array($gejala)
+        ? ['id' => (string) ($gejala['value'] ?? ''), 'label' => (string) ($gejala['label'] ?? '')]
+        : [
+            'id' => (string) $gejala->id,
+            'label' => trim(($gejala->kode ? $gejala->kode . ' — ' : '') . $gejala->nama),
+        ])->values();
+    $opsiGejalaIds = $symptomOptions->pluck('id')->map(fn ($id): string => (string) $id)->all();
+    // Prefill dari ?gejala_id= (alur draft disetujui) bila valid dan belum ada old().
+    $gejalaPrefill = in_array((string) ($gejalaDipilih ?? ''), $opsiGejalaIds, true) ? (string) $gejalaDipilih : '';
+    $kodeLaporanPrefill = ($laporanAsal ?? [])[(int) ($gejalaDipilih ?? 0)] ?? null;
     $scaleOptions = collect($cfMethod?->scaleOptions() ?? [])
         ->filter(fn (array $option): bool => (float) $option['cf'] > 0)
         ->values();
@@ -17,7 +26,7 @@
             'term' => (string) ($oldTerms[$index] ?? ''),
             'rationale' => (string) ($oldRationales[$index] ?? ''),
         ])->values()
-        : collect([['key' => 'new-0', 'gejalaId' => '', 'term' => '', 'rationale' => '']]);
+        : collect([['key' => 'new-0', 'gejalaId' => $gejalaPrefill, 'term' => '', 'rationale' => '']]);
 @endphp
 
 <div
@@ -73,6 +82,9 @@
             </div>
             <span class="rounded-full bg-[#eaf6ee] px-3 py-1 text-xs font-semibold text-[#176b45]">Metode CF baku · 0–1</span>
         </div>
+        @if($kodeLaporanPrefill !== null)
+            <p class="mt-3 rounded-lg bg-[#e8f4ed] px-3 py-2 text-xs font-medium text-[#176b45]">Draft dari laporan {{ $kodeLaporanPrefill }} — kajian POPT sudah disetujui Operator.</p>
+        @endif
 
         <input type="hidden" name="cf_method_id" value="{{ $cfMethod?->id }}">
         @error('cf_method_id')<p class="mb-4 text-sm text-red-600">{{ $message }}</p>@enderror
@@ -91,7 +103,7 @@
 
                     <label :for="'gejala-' + index" class="mb-1 block text-sm font-medium text-gray-700">Pilih gejala <span class="text-red-500">*</span></label>
                     <x-search-select
-                        :options="$gejalaList"
+                        :options="$gejalaOptions ?? $gejalaList"
                         model="row.gejalaId"
                         name-expression="'gejala_ids[' + index + ']'"
                         id-expression="'gejala-' + index"

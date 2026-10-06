@@ -74,47 +74,139 @@
                 reportErrors: {},
                 reportCode: '',
                 reportImagePreview: '',
+                laporanTerkait: [],
                 gejalaLoading: false,
                 error: '',
                 userId: {{ auth()->id() }},
                 draftTersedia: null,
+                draftDipulihkan: false,
                 draftInfo: '',
                 simpanTimer: null,
+                flushTerpasang: false,
+                riwayatKomoditas: {},
 
                 init() {
-                    this.selected = this.selected.map(Number);
-                    this.selected.forEach(id => { if (!(id in this.confidences)) this.confidences[id] = 0.8; });
-                    const hasOld = Boolean(this.commodityId) || this.selected.length > 0;
-                    if (!hasOld) {
-                        const d = this.muatDraft();
-                        if (d !== null) {
-                            this.draftTersedia = d;
-                            const s = window.SipakarbunDiagnosisDraft;
-                            this.draftInfo = s ? s.formatDraftDateTime(d.updatedAt) : '';
+                    this.pasangFlushDraft();
+                    try {
+                        this.selected = Array.isArray(this.selected) ? this.selected.map(Number) : [];
+                        this.selected.forEach(id => { if (!(id in this.confidences)) this.confidences[id] = 0.8; });
+                        const hasOld = Boolean(this.commodityId) || this.selected.length > 0;
+                        if (!hasOld) {
+                            this.pulihkanDraftOtomatis();
                         }
+                    } catch {
+                        // Jangan biarkan satu state tak terduga mematikan wizard;
+                        // flush-listener sudah terpasang di atas sehingga
+                        // perubahan berikutnya tetap tersimpan.
                     }
+                },
+                pulihkanDraftOtomatis() {
+                    let d = null;
+                    try {
+                        d = this.muatDraft();
+                    } catch {
+                        d = null;
+                    }
+                    if (d === null) {
+                        return false;
+                    }
+                    this.commodityId = d.commodityId;
+                    this.selected = d.selected;
+                    this.confidences = d.confidences;
+                    this.riwayatKomoditas = d.perKomoditas ?? {};
+                    this.laporanTerkait = Array.isArray(d.laporanTerkait) ? d.laporanTerkait : [];
+                    this.step = d.step;
+                    this.maxVisited = d.maxVisited;
+                    this.error = '';
+                    const s = window.SipakarbunDiagnosisDraft;
+                    const kapan = s ? s.formatDraftDateTime(d.updatedAt) : '';
+                    this.draftInfo = 'Draf dipulihkan otomatis' + (kapan ? ' · ' + kapan : '');
+                    this.draftDipulihkan = true;
+                    return true;
+                },
+                pasangFlushDraft() {
+                    if (this.flushTerpasang) {
+                        return;
+                    }
+                    this.flushTerpasang = true;
+                    const flush = () => { this.tulisDraftSegera(); };
+                    window.addEventListener('pagehide', flush);
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'hidden') flush();
+                    });
+                    window.addEventListener('beforeunload', flush);
+                    // Kembali dari bfcache (tombol Back) tidak selalu menjalankan
+                    // init() ulang; pulihkan draft bila state masih kosong agar
+                    // centang komoditas/gejala/keyakinan tidak hilang.
+                    window.addEventListener('pageshow', (event) => {
+                        try {
+                            if (event.persisted && !this.commodityId && this.selected.length === 0) {
+                                this.pulihkanDraftOtomatis();
+                            }
+                        } catch { /* abaikan */ }
+                    });
+                    // Tangkap klik navigasi internal sedini mungkin (capture)
+                    // agar draft tersimpan sinkron sebelum browser pindah halaman.
+                    document.addEventListener('click', (event) => {
+                        if (event.defaultPrevented || event.button !== 0
+                            || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            return;
+                        }
+                        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                        if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) {
+                            return;
+                        }
+                        const href = anchor.getAttribute('href');
+                        if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                            return;
+                        }
+                        try {
+                            if (new URL(anchor.href, window.location.href).origin !== window.location.origin) {
+                                return;
+                            }
+                        } catch {
+                            return;
+                        }
+                        flush();
+                    }, true);
                 },
                 draftKey() {
                     const s = window.SipakarbunDiagnosisDraft;
                     return s ? s.draftStorageKey(this.userId) : ('sipakarbun.diagnosis.v1:' + this.userId);
                 },
-                konteksDraft() { return { komoditas: this.komoditas, gejala: this.gejala }; },
-                simpanDraft() {
+                konteksDraft() { return { komoditas: this.komoditas, gejala: this.gejala, gejalaMap: this.gejalaMap }; },
+                tulisDraftSegera() {
+                    // Sengaja TIDAK melewati penyimpanan saat submitting:
+                    // draft harus tetap ada bila server mengembalikan validasi
+                    // gagal (old() hanya hidup 1 request). Draft baru dihapus
+                    // di halaman hasil setelah diagnosis sukses diproses.
                     clearTimeout(this.simpanTimer);
-                    this.simpanTimer = setTimeout(() => {
-                        const s = window.SipakarbunDiagnosisDraft;
-                        if (!s) return;
-                        const hasil = s.saveDraft(localStorage, this.draftKey(), {
-                            commodityId: this.commodityId,
-                            selected: this.selected,
-                            confidences: this.confidences,
-                            step: this.step,
-                            maxVisited: this.maxVisited,
-                        });
-                        if (hasil === 'saved') {
-                            this.draftInfo = 'Tersimpan otomatis ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                        }
-                    }, 400);
+                    const s = window.SipakarbunDiagnosisDraft;
+                    if (!s) return 'failed';
+                    const hasil = s.saveDraft(localStorage, this.draftKey(), {
+                        commodityId: this.commodityId,
+                        selected: this.selected,
+                        confidences: this.confidences,
+                        perKomoditas: this.riwayatKomoditas,
+                        laporanTerkait: this.laporanTerkait,
+                        step: this.step,
+                        maxVisited: this.maxVisited,
+                    });
+                    if (hasil === 'saved') {
+                        this.draftInfo = 'Tersimpan otomatis ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    return hasil;
+                },
+                simpanDraft() {
+                    // Simpan SINKRON setiap ada perubahan (write localStorage
+                    // hanya ~KB sehingga murah). Debounce dihapus agar tidak
+                    // ada jeda 400ms: pengguna boleh pindah halaman kapan pun
+                    // dan draft tetap tersimpan. Jaring pengaman tambahan:
+                    // pagehide / visibilitychange / beforeunload / klik
+                    // navigasi internal (lihat pasangFlushDraft()).
+                    clearTimeout(this.simpanTimer);
+                    this.simpanTimer = null;
+                    this.tulisDraftSegera();
                 },
                 muatDraft() {
                     const s = window.SipakarbunDiagnosisDraft;
@@ -122,20 +214,25 @@
                     return s.loadDraft(localStorage, this.draftKey(), this.konteksDraft());
                 },
                 terapkanDraft() {
-                    const d = this.draftTersedia;
+                    const d = this.draftTersedia ?? this.muatDraft();
                     if (!d) return;
                     this.commodityId = d.commodityId;
                     this.selected = d.selected;
                     this.confidences = d.confidences;
+                    this.riwayatKomoditas = d.perKomoditas ?? {};
+                    this.laporanTerkait = Array.isArray(d.laporanTerkait) ? d.laporanTerkait : [];
                     this.step = d.step;
                     this.maxVisited = d.maxVisited;
                     this.draftTersedia = null;
+                    this.draftDipulihkan = true;
                     this.error = '';
                     this.simpanDraft();
                 },
                 buangDraft() {
                     this.hapusDraft();
                     this.draftTersedia = null;
+                    this.draftDipulihkan = false;
+                    this.draftInfo = '';
                 },
                 hapusDraft() {
                     const s = window.SipakarbunDiagnosisDraft;
@@ -192,6 +289,10 @@
                     this.reportImagePreview = '';
                     if (this.$refs.reportImage) this.$refs.reportImage.value = '';
                 },
+                hapusLaporanTerkait(id) {
+                    this.laporanTerkait = this.laporanTerkait.filter((l) => Number(l.id) !== Number(id));
+                    this.simpanDraft();
+                },
                 async submitReport(event) {
                     this.reportSubmitting = true;
                     this.reportError = '';
@@ -210,6 +311,10 @@
                         }
                         this.reportSuccess = true;
                         this.reportCode = payload.data.report_code;
+                        if (payload.data?.id && !this.laporanTerkait.some((l) => Number(l.id) === Number(payload.data.id))) {
+                            this.laporanTerkait.push({ id: payload.data.id, report_code: payload.data.report_code });
+                            this.simpanDraft();
+                        }
                         this.reportError = '';
                         event.currentTarget.reset();
                         this.clearReportImage();
@@ -235,8 +340,30 @@
                 prev() { if (this.step > 1) { this.step--; this.simpanDraft(); } },
                 reset() {
                     this.commodityId = ''; this.selected = []; this.confidences = {};
+                    this.riwayatKomoditas = {};
+                    this.laporanTerkait = [];
                     this.error = ''; this.step = 1; this.maxVisited = 1;
                     this.hapusDraft(); this.draftTersedia = null;
+                    this.draftDipulihkan = false; this.draftInfo = '';
+                },
+                gejalaValidKomoditas(id) {
+                    return new Set((this.gejalaMap[Number(id)] || []).map(Number));
+                },
+                pulihkanPilihanTersimpan(id) {
+                    const tersimpan = this.riwayatKomoditas[Number(id)];
+                    if (!tersimpan) {
+                        this.selected = [];
+                        this.confidences = {};
+                        return;
+                    }
+                    const valid = this.gejalaValidKomoditas(id);
+                    const dipulihkan = (tersimpan.selected || []).map(Number).filter((g) => valid.has(g));
+                    this.selected = dipulihkan;
+                    this.confidences = {};
+                    dipulihkan.forEach((g) => {
+                        const v = Number(tersimpan.confidences?.[g] ?? 0.8);
+                        this.confidences[g] = this.levels.some((l) => l.value === v) ? v : 0.8;
+                    });
                 },
                 pilihKomoditas(id) {
                     id = Number(id);
@@ -247,11 +374,19 @@
                         this.simpanDraft();
                         return;
                     }
-                    // Komoditas berubah → reset gejala/keyakinan sebelumnya,
-                    // tampilkan loading gejala, lalu lanjut ke Step 2.
+                    // Simpan pilihan komoditas lama agar tidak hilang diam-diam;
+                    // dipulihkan otomatis bila pengguna kembali ke komoditas itu.
+                    const lama = Number(this.commodityId);
+                    if (lama && this.selected.length > 0) {
+                        this.riwayatKomoditas[lama] = {
+                            selected: [...this.selected],
+                            confidences: { ...this.confidences },
+                        };
+                    }
+                    // Komoditas berubah → pakai pilihan tersimpan komoditas
+                    // baru bila ada, jika tidak mulai dari kosong.
                     this.commodityId = id;
-                    this.selected = [];
-                    this.confidences = {};
+                    this.pulihkanPilihanTersimpan(id);
                     this.gejalaSearch = '';
                     this.error = '';
                     this.gejalaLoading = true;
@@ -262,10 +397,13 @@
                 },
             }"
         >
-            <form method="POST" action="{{ route('diagnosis.store') }}" @submit="submitting = true; hapusDraft()">
+            <form method="POST" action="{{ route('diagnosis.store') }}" @submit="tulisDraftSegera(); submitting = true">
                 @csrf
 
                 <input type="hidden" name="commodity_id" :value="commodityId || ''">
+                <template x-for="lap in laporanTerkait" :key="'lap' + lap.id">
+                    <input type="hidden" name="laporan_gejala_ids[]" :value="lap.id">
+                </template>
 
                 <template x-for="id in selected" :key="'s' + id">
                     <input type="hidden" name="symptom_ids[]" :value="id">
@@ -299,27 +437,25 @@
                 {{-- Inline error --}}
                 <div x-show="error" x-cloak class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" x-text="error"></div>
 
-                {{-- Resume draft tersimpan otomatis --}}
-                <div x-show="draftTersedia" x-cloak class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                {{-- Info draf dipulihkan otomatis --}}
+                <div x-show="draftDipulihkan" x-cloak class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="text-sm text-amber-800">
-                            <p class="font-bold">Lanjutkan diagnosis terakhir?</p>
+                        <div class="text-sm text-emerald-800">
+                            <p class="font-bold">Pilihan terakhir dipulihkan otomatis</p>
                             <p class="mt-0.5 text-xs">
-                                Draf tersimpan otomatis <span class="font-semibold" x-text="draftInfo"></span>
-                                · <span x-text="komoditasNama(draftTersedia?.commodityId)"></span>
-                                · <span x-text="(draftTersedia?.selected?.length ?? 0) + ' gejala'"></span>
+                                <span x-text="draftInfo"></span>
+                                · <span x-text="komoditasNama(commodityId)"></span>
+                                · <span x-text="selected.length === 0 ? 'belum pilih gejala' : (selected.length + ' gejala')"></span>
                             </p>
                         </div>
                         <div class="flex shrink-0 gap-2">
-                            <button type="button" @click="buangDraft()"
-                                    class="rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100">Buang</button>
-                            <button type="button" @click="terapkanDraft()"
-                                    class="rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjutkan</button>
+                            <button type="button" @click="reset()"
+                                    class="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Mulai baru</button>
                         </div>
                     </div>
                 </div>
 
-                <p x-show="commodityId && draftInfo && !draftTersedia" x-cloak class="mb-4 text-xs text-[#8a9990]">
+                <p x-show="commodityId && draftInfo && !draftDipulihkan" x-cloak class="mb-4 text-xs text-[#8a9990]">
                     <span x-text="draftInfo"></span> · draf terhapus otomatis setelah diagnosis diproses.
                 </p>
 
@@ -435,6 +571,19 @@
                             </button>
                         </div>
 
+                        <div x-show="laporanTerkait.length > 0" x-cloak class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-amber-700">Gejala baru terlampir (<span x-text="laporanTerkait.length"></span>)</p>
+                            <p class="mt-1 text-xs text-amber-700">Ikut terkirim bersama diagnosis ini. Belum ikut perhitungan CF sampai divalidasi dan dipublish.</p>
+                            <ul class="mt-2 space-y-1.5">
+                                <template x-for="lap in laporanTerkait" :key="'chip' + lap.id">
+                                    <li class="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                                        <span class="font-mono text-xs font-bold text-[#176b45]" x-text="lap.report_code"></span>
+                                        <button type="button" @click="hapusLaporanTerkait(lap.id)" class="text-xs font-semibold text-red-600 hover:underline">Lepas</button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala dipilih'"></span>
                             <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
@@ -517,6 +666,20 @@
                                     </template>
                                 </ul>
                             </div>
+                            <div x-show="laporanTerkait.length > 0" x-cloak class="border-t border-[#eef3ef]">
+                                <div class="flex items-center justify-between bg-[#fafcfb] px-4 py-3">
+                                    <span class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Gejala Baru Terlampir</span>
+                                    <span class="text-sm font-bold text-[#176b45]" x-text="laporanTerkait.length + ' laporan'"></span>
+                                </div>
+                                <ul class="divide-y divide-[#eef3ef]">
+                                    <template x-for="lap in laporanTerkait" :key="'sumlap' + lap.id">
+                                        <li class="flex items-center justify-between gap-3 px-4 py-3">
+                                            <span class="font-mono text-sm font-bold text-[#176b45]" x-text="lap.report_code"></span>
+                                            <span class="text-[11px] text-[#8a9990]">Tidak memengaruhi CF ini</span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
                         </div>
 
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -549,7 +712,7 @@
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" /></svg>
                                 </div>
                                 <h3 class="mt-3 text-base font-bold text-[#173b29]">Laporan berhasil dikirim</h3>
-                                <p class="mt-1 text-sm leading-6 text-[#66746c]">POPT akan meninjau pengamatan Anda. Laporan ini belum menjadi gejala diagnosis.</p>
+                                <p class="mt-1 text-sm leading-6 text-[#66746c]">POPT akan meninjau pengamatan Anda. Laporan ini belum menjadi gejala diagnosis, tetapi akan dilampirkan saat diagnosis ini diproses.</p>
                                 <p class="mt-3 inline-flex rounded-lg bg-white px-3 py-2 font-mono text-sm font-bold text-[#176b45]" x-text="reportCode"></p>
                                 <div class="mt-4 flex flex-col gap-2 sm:flex-row">
                                     <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Lihat laporan saya</a>

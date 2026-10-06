@@ -107,17 +107,17 @@ class PermohonanController extends Controller
 
         $poktanState = $this->poktanMilikState($user);
 
-        if ($poktanState['terkunci']) {
-            $kelompokTaniList = [$poktanState['poktan']];
-            $kelompokTaniError = false;
-        } else {
-            [$kelompokTaniList, $kelompokTaniError] = $this->muatKelompokTani();
-        }
+        // Form Poktan tidak lagi menyediakan pilihan kelompok tani —
+        // identitas selalu mengikuti akun login. Akun yang belum tertaut
+        // atau referensinya tak tersedia DITOLAK di halaman dengan pesan
+        // yang mengarahkan ke Admin (bukan fallback dropdown manual).
+        $akunPoktanBermasalah = ! $poktanState['terkunci'];
+        $alasanBlokir = $akunPoktanBermasalah
+            ? ($user->kelompok_tani_id === null ? 'belum_terikat' : 'tak_tersedia')
+            : null;
 
-        $kelompokTaniTerkunci = $poktanState['terkunci'];
         $poktanMilik = $poktanState['poktan'];
         $lokasiAwal = $poktanState['lokasiAwal'];
-        $poktanTakTersedia = $poktanState['takTersedia'];
         [$komoditasMap, $komoditasError] = $this->muatKomoditas();
 
         $komoditas = $selectedDiagnosis === null
@@ -129,12 +129,10 @@ class PermohonanController extends Controller
         return view('permohonan.create', compact(
             'diagnoses',
             'selectedDiagnosis',
-            'kelompokTaniList',
-            'kelompokTaniError',
-            'kelompokTaniTerkunci',
             'poktanMilik',
             'lokasiAwal',
-            'poktanTakTersedia',
+            'akunPoktanBermasalah',
+            'alasanBlokir',
             'komoditasMap',
             'komoditasError',
             'komoditas',
@@ -318,34 +316,6 @@ class PermohonanController extends Controller
         ];
 
         return $awal;
-    }
-
-    /**
-     * Muat kelompok tani aktif dari Shared Integration.
-     *
-     * @return array{0: array<int, array{id:int, kode:string, nama:string, ketua:?string, is_active:bool}>, 1: bool}
-     */
-    private function muatKelompokTani(): array
-    {
-        try {
-            $list = collect($this->kelompokTaniClient->all())
-                ->filter(fn (array $item): bool => ($item['is_active'] ?? false) === true)
-                ->sortBy('nama')
-                ->values()
-                ->all();
-
-            if ($list === []) {
-                return [[], true];
-            }
-
-            return [$list, false];
-        } catch (Throwable $e) {
-            Log::warning('Web permohonan: referensi kelompok tani gagal dimuat.', [
-                'message' => $e->getMessage(),
-            ]);
-
-            return [[], true];
-        }
     }
 
     /**
