@@ -35,4 +35,15 @@ class PenyakitKomoditas extends Model
     {
         return $this->belongsTo(Penyakit::class);
     }
+
+    /**
+     * Relasi ke model shared RefKomoditas (tim Integration) — dipakai
+     * untuk menampilkan nama komoditas pada tabel penyakit. Model
+     * shared inilah "service/model shared" yang dimaksud komentar
+     * kepemilikan di atas; FK tetap menunjuk ref_komoditas.id.
+     */
+    public function komoditas(): BelongsTo
+    {
+        return $this->belongsTo(RefKomoditas::class, 'komoditas_id');
+    }
 }

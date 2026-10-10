@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Support\PublicStorageUrl;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 /**
  * Shared local storage lifecycle for Knowledge photos.
@@ -18,7 +20,17 @@ class KnowledgeImageService
 
     public function store(?UploadedFile $file, string $entity): ?string
     {
-        return $file?->store("knowledge/{$entity}", self::DISK);
+        if ($file === null || ! $file->isValid()) {
+            return null;
+        }
+
+        $path = $file->store("knowledge/{$entity}", self::DISK);
+
+        if (! is_string($path) || $path === '') {
+            throw new RuntimeException('Foto Knowledge gagal disimpan ke penyimpanan lokal.');
+        }
+
+        return $path;
     }
 
     public function replace(UploadedFile $file, ?string $oldPath, string $entity): string
@@ -43,6 +55,6 @@ class KnowledgeImageService
 
     public function url(?string $path): ?string
     {
-        return $path === null ? null : Storage::disk(self::DISK)->url($path);
+        return PublicStorageUrl::make($path);
     }
 }

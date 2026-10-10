@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\Diagnosis;
 use App\Models\DiagnosisResult;
 use App\Models\DiagnosisSymptom;
+use App\Models\LaporanGejala;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * DiagnosisService — orkestrator alur diagnosis (M2).
@@ -62,8 +65,13 @@ class DiagnosisService
      * @param  array<int|string, float>  $cfUser  peta gejala_id => tingkat
      *                                            keyakinan user (0.0 s.d. 1.0). Gejala tanpa kunci
      *                                            dianggap 1.0 ("yakin").
+     * @param  array<int, int>  $laporanGejalaIds  id laporan gejala baru
+     *                                             milik user yang dikirim BERSAMAAN dengan
+     *                                             diagnosis ini. Laporan hanya DITAUTKAN
+     *                                             (diagnosis_id + snapshot gejala existing) —
+     *                                             TIDAK ikut perhitungan CF.
      */
-    public function diagnose(int $commodityId, array $symptomIds, ?int $userId = null, array $cfUser = []): Collection
+    public function diagnose(int $commodityId, array $symptomIds, ?int $userId = null, array $cfUser = [], array $laporanGejalaIds = []): Collection
     {
         $symptomIds = array_values(array_unique(array_map('intval', $symptomIds)));
 
@@ -100,7 +108,13 @@ class DiagnosisService
 
         $diagnosis = $results->isEmpty()
             ? null
-            : $this->persist($commodityId, $symptomIds, $cfUserMap, $namaGejala, $results, $userId);
+            : DB::transaction(fn (): Diagnosis => $this->tautkanLaporanGejala(
+                $this->persist($commodityId, $symptomIds, $cfUserMap, $namaGejala, $results, $userId),
+                $commodityId,
+                $symptomIds,
+                $laporanGejalaIds,
+                $userId,
+            ));
 
         return $results->map(fn (array $result): array => [
             'diagnosis_id' => $diagnosis?->id,
@@ -215,6 +229,53 @@ class DiagnosisService
                 'trace_snapshot' => $result['trace'],
                 'cf_value' => $result['final_cf'],
                 'ranking' => $result['ranking'],
+            ]);
+        }
+
+        return $diagnosis;
+    }
+
+    /**
+     * Tautkan laporan gejala baru ke diagnosis yang baru dibuat.
+     *
+     * Syarat per laporan (selain itu 422): milik user yang sama,
+     * berstatus `diajukan`, belum tertaut ke diagnosis mana pun, dan
+     * komoditasnya sama dengan diagnosis. Hasil CF diagnosis TIDAK
+     * dihitung ulang — laporan hanya membawa konteks untuk kajian POPT.
+     *
+     * @param  array<int, int>  $symptomIds
+     * @param  array<int, int>  $laporanGejalaIds
+     */
+    private function tautkanLaporanGejala(
+        Diagnosis $diagnosis,
+        int $commodityId,
+        array $symptomIds,
+        array $laporanGejalaIds,
+        ?int $userId,
+    ): Diagnosis {
+        $ids = array_values(array_unique(array_map('intval', $laporanGejalaIds)));
+
+        if ($ids === []) {
+            return $diagnosis;
+        }
+
+        foreach ($ids as $laporanId) {
+            $laporan = LaporanGejala::query()->whereKey($laporanId)->first();
+
+            if ($laporan === null
+                || ($userId !== null && (int) $laporan->created_by !== $userId)
+                || $laporan->status !== LaporanGejala::STATUS_DIAJUKAN
+                || $laporan->diagnosis_id !== null
+                || (int) $laporan->commodity_id !== $commodityId
+            ) {
+                throw ValidationException::withMessages([
+                    'laporan_gejala_ids' => "Laporan gejala #{$laporanId} tidak dapat ditautkan (bukan milik Anda, sudah diproses/tertaut, atau komoditasnya berbeda).",
+                ]);
+            }
+
+            $laporan->update([
+                'diagnosis_id' => $diagnosis->id,
+                'gejala_existing_ids' => array_values($symptomIds),
             ]);
         }
 

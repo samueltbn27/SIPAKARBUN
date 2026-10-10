@@ -16,9 +16,11 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Mockery\MockInterface;
 use RuntimeException;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use Tests\Traits\MenautkanPoktan;
 
 /**
  * TAHAP 9 — Security & Authorization testing frontend Poktan.
@@ -35,6 +37,7 @@ use Tests\TestCase;
  */
 class PoktanSecurityTest extends TestCase
 {
+    use MenautkanPoktan;
     use RefreshDatabase;
 
     private const BASE_URL = 'http://knowledge.test';
@@ -58,10 +61,7 @@ class PoktanSecurityTest extends TestCase
 
     private function buatPoktan(): User
     {
-        $user = User::factory()->create(['is_active' => true]);
-        $user->assignRole('poktan');
-
-        return $user;
+        return $this->buatPoktanTertaut(['is_active' => true]);
     }
 
     private function loginPoktan(): User
@@ -141,10 +141,10 @@ class PoktanSecurityTest extends TestCase
     {
         return [
             'diagnosis_id' => $diagnosisId,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
             'alamat_kasus' => 'Blok Cibeureum, Dusun Satu, Ciawi',
+            'lokasi_dikonfirmasi' => '1',
         ];
     }
 
@@ -377,7 +377,7 @@ class PoktanSecurityTest extends TestCase
         // Gagal total di layer service → API tetap 500 ramah tanpa bocor detail.
         $this->mock(
             DiagnosisService::class,
-            fn (\Mockery\MockInterface $mock) => $mock
+            fn (MockInterface $mock) => $mock
                 ->shouldReceive('diagnose')
                 ->andThrow(new RuntimeException('boom internal')),
         );
@@ -401,7 +401,7 @@ class PoktanSecurityTest extends TestCase
         $this->loginPoktan();
 
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('@submit="submitting = true"', false)
+            ->assertSee('@submit="submitting = true; hapusDraft()"', false)
             ->assertSee(':disabled="submitting', false)
             ->assertSee('Memproses…');
     }

@@ -67,12 +67,187 @@
                 selected: {{ Js::from(old('symptom_ids', [])) }},
                 confidences: {{ Js::from(old('symptom_confidence', [])) }},
                 submitting: false,
+                reportOpen: false,
+                reportSubmitting: false,
+                reportSuccess: false,
+                reportError: '',
+                reportErrors: {},
+                reportCode: '',
+                reportImagePreview: '',
+                laporanTerkait: [],
                 gejalaLoading: false,
                 error: '',
+                userId: {{ auth()->id() }},
+                draftTersedia: null,
+                draftDipulihkan: false,
+                draftInfo: '',
+                simpanTimer: null,
+                flushTerpasang: false,
+                riwayatKomoditas: {},
 
                 init() {
-                    this.selected = this.selected.map(Number);
+                    this.pasangFlushDraft();
+                    this.normalisasiStateAwal();
+                    this.tungguDraftModule();
+                },
+                normalisasiStateAwal() {
+                    this.selected = Array.isArray(this.selected) ? this.selected.map(Number).filter(Number.isFinite) : [];
+                    this.confidences = this.confidences && typeof this.confidences === 'object' ? this.confidences : {};
                     this.selected.forEach(id => { if (!(id in this.confidences)) this.confidences[id] = 0.8; });
+                },
+                tungguDraftModule() {
+                    const pulihkan = () => {
+                        try {
+                            const hasOld = Boolean(this.commodityId) || this.selected.length > 0;
+                            if (!hasOld) this.pulihkanDraftOtomatis();
+                        } catch {
+                            this.draftInfo = '';
+                        }
+                    };
+                    if (window.SipakarbunDiagnosisDraft) {
+                        pulihkan();
+                        return;
+                    }
+                    window.addEventListener('sipakarbun:diagnosis-draft-ready', pulihkan, { once: true });
+                    setTimeout(pulihkan, 0);
+                },
+                pulihkanDraftOtomatis() {
+                    let d = null;
+                    try {
+                        d = this.muatDraft();
+                    } catch {
+                        d = null;
+                    }
+                    if (d === null) {
+                        return false;
+                    }
+                    this.commodityId = d.commodityId;
+                    this.selected = d.selected;
+                    this.confidences = d.confidences;
+                    this.riwayatKomoditas = d.perKomoditas ?? {};
+                    this.laporanTerkait = Array.isArray(d.laporanTerkait) ? d.laporanTerkait : [];
+                    this.step = d.step;
+                    this.maxVisited = d.maxVisited;
+                    this.error = '';
+                    const s = window.SipakarbunDiagnosisDraft;
+                    const kapan = s ? s.formatDraftDateTime(d.updatedAt) : '';
+                    this.draftInfo = 'Draf dipulihkan otomatis' + (kapan ? ' · ' + kapan : '');
+                    this.draftDipulihkan = true;
+                    return true;
+                },
+                pasangFlushDraft() {
+                    if (this.flushTerpasang) {
+                        return;
+                    }
+                    this.flushTerpasang = true;
+                    const flush = () => { this.tulisDraftSegera(); };
+                    window.addEventListener('pagehide', flush);
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'hidden') flush();
+                    });
+                    window.addEventListener('beforeunload', flush);
+                    // Kembali dari bfcache (tombol Back) tidak selalu menjalankan
+                    // init() ulang; pulihkan draft bila state masih kosong agar
+                    // centang komoditas/gejala/keyakinan tidak hilang.
+                    window.addEventListener('pageshow', (event) => {
+                        try {
+                            if (event.persisted && !this.commodityId && this.selected.length === 0) {
+                                this.pulihkanDraftOtomatis();
+                            }
+                        } catch { /* abaikan */ }
+                    });
+                    // Tangkap klik navigasi internal sedini mungkin (capture)
+                    // agar draft tersimpan sinkron sebelum browser pindah halaman.
+                    document.addEventListener('click', (event) => {
+                        if (event.defaultPrevented || event.button !== 0
+                            || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            return;
+                        }
+                        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                        if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) {
+                            return;
+                        }
+                        const href = anchor.getAttribute('href');
+                        if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                            return;
+                        }
+                        try {
+                            if (new URL(anchor.href, window.location.href).origin !== window.location.origin) {
+                                return;
+                            }
+                        } catch {
+                            return;
+                        }
+                        flush();
+                    }, true);
+                },
+                draftKey() {
+                    const s = window.SipakarbunDiagnosisDraft;
+                    return s ? s.draftStorageKey(this.userId) : ('sipakarbun.diagnosis.v1:' + this.userId);
+                },
+                konteksDraft() { return { komoditas: this.komoditas, gejala: this.gejala, gejalaMap: this.gejalaMap }; },
+                tulisDraftSegera() {
+                    // Sengaja TIDAK melewati penyimpanan saat submitting:
+                    // draft harus tetap ada bila server mengembalikan validasi
+                    // gagal (old() hanya hidup 1 request). Draft baru dihapus
+                    // di halaman hasil setelah diagnosis sukses diproses.
+                    clearTimeout(this.simpanTimer);
+                    const s = window.SipakarbunDiagnosisDraft;
+                    if (!s) return 'failed';
+                    const hasil = s.saveDraft(localStorage, this.draftKey(), {
+                        commodityId: this.commodityId,
+                        selected: this.selected,
+                        confidences: this.confidences,
+                        perKomoditas: this.riwayatKomoditas,
+                        laporanTerkait: this.laporanTerkait,
+                        step: this.step,
+                        maxVisited: this.maxVisited,
+                    });
+                    if (hasil === 'saved') {
+                        this.draftInfo = 'Tersimpan otomatis ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    return hasil;
+                },
+                simpanDraft() {
+                    // Simpan SINKRON setiap ada perubahan (write localStorage
+                    // hanya ~KB sehingga murah). Debounce dihapus agar tidak
+                    // ada jeda 400ms: pengguna boleh pindah halaman kapan pun
+                    // dan draft tetap tersimpan. Jaring pengaman tambahan:
+                    // pagehide / visibilitychange / beforeunload / klik
+                    // navigasi internal (lihat pasangFlushDraft()).
+                    clearTimeout(this.simpanTimer);
+                    this.simpanTimer = null;
+                    this.tulisDraftSegera();
+                },
+                muatDraft() {
+                    const s = window.SipakarbunDiagnosisDraft;
+                    if (!s) return null;
+                    return s.loadDraft(localStorage, this.draftKey(), this.konteksDraft());
+                },
+                terapkanDraft() {
+                    const d = this.draftTersedia ?? this.muatDraft();
+                    if (!d) return;
+                    this.commodityId = d.commodityId;
+                    this.selected = d.selected;
+                    this.confidences = d.confidences;
+                    this.riwayatKomoditas = d.perKomoditas ?? {};
+                    this.laporanTerkait = Array.isArray(d.laporanTerkait) ? d.laporanTerkait : [];
+                    this.step = d.step;
+                    this.maxVisited = d.maxVisited;
+                    this.draftTersedia = null;
+                    this.draftDipulihkan = true;
+                    this.error = '';
+                    this.simpanDraft();
+                },
+                buangDraft() {
+                    this.hapusDraft();
+                    this.draftTersedia = null;
+                    this.draftDipulihkan = false;
+                    this.draftInfo = '';
+                },
+                hapusDraft() {
+                    const s = window.SipakarbunDiagnosisDraft;
+                    if (s) s.clearDraft(localStorage, this.draftKey());
                 },
                 filteredKomoditas() {
                     const q = this.komoditasSearch.trim().toLowerCase();
@@ -96,26 +271,110 @@
                     const i = this.selected.indexOf(id);
                     if (i > -1) { this.selected.splice(i, 1); delete this.confidences[id]; }
                     else { this.selected.push(id); if (!(id in this.confidences)) this.confidences[id] = 0.8; }
+                    this.simpanDraft();
                 },
                 confValue(id) { return this.confidences[Number(id)] ?? 0.8; },
-                setConf(id, value) { this.confidences[Number(id)] = value; },
+                setConf(id, value) { this.confidences[Number(id)] = value; this.simpanDraft(); },
+                openReport() {
+                    this.reportOpen = true;
+                    this.reportSuccess = false;
+                    this.reportError = '';
+                    this.reportErrors = {};
+                },
+                closeReport() {
+                    this.reportOpen = false;
+                    if (this.reportSuccess && this.$refs.reportForm) {
+                        this.$refs.reportForm.reset();
+                        this.clearReportImage();
+                        this.reportSuccess = false;
+                    }
+                },
+                previewReportImage(event) {
+                    this.clearReportImage();
+                    const file = event.target.files?.[0];
+                    if (file) this.reportImagePreview = URL.createObjectURL(file);
+                    this.reportErrors = { ...this.reportErrors, image: [] };
+                },
+                clearReportImage() {
+                    if (this.reportImagePreview) URL.revokeObjectURL(this.reportImagePreview);
+                    this.reportImagePreview = '';
+                    if (this.$refs.reportImage) this.$refs.reportImage.value = '';
+                },
+                hapusLaporanTerkait(id) {
+                    this.laporanTerkait = this.laporanTerkait.filter((l) => Number(l.id) !== Number(id));
+                    this.simpanDraft();
+                },
+                async submitReport(event) {
+                    this.reportSubmitting = true;
+                    this.reportError = '';
+                    this.reportErrors = {};
+                    try {
+                        const response = await fetch(event.currentTarget.action, {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            body: new FormData(event.currentTarget),
+                        });
+                        const payload = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            this.reportErrors = payload.errors ?? {};
+                            this.reportError = payload.message ?? 'Laporan belum berhasil dikirim. Periksa kembali data Anda.';
+                            return;
+                        }
+                        this.reportSuccess = true;
+                        this.reportCode = payload.data.report_code;
+                        if (payload.data?.id && !this.laporanTerkait.some((l) => Number(l.id) === Number(payload.data.id))) {
+                            this.laporanTerkait.push({ id: payload.data.id, report_code: payload.data.report_code });
+                            this.simpanDraft();
+                        }
+                        this.reportError = '';
+                        event.currentTarget.reset();
+                        this.clearReportImage();
+                    } catch (error) {
+                        this.reportError = 'Koneksi terputus. Periksa jaringan lalu coba kirim kembali.';
+                    } finally {
+                        this.reportSubmitting = false;
+                    }
+                },
                 confLabel(id) {
                     const v = this.confValue(id);
                     const lvl = this.levels.find(l => l.value === v);
                     return lvl ? lvl.label : String(v);
                 },
                 confIndex(id) { return this.levels.findIndex(l => l.value === this.confValue(id)); },
-                goTo(n) { if (n >= 1 && n <= this.maxVisited) this.step = n; },
+                goTo(n) { if (n >= 1 && n <= this.maxVisited) { this.step = n; this.simpanDraft(); } },
                 next() {
                     if (this.step === 1 && !this.commodityId) { this.error = 'Pilih komoditas terlebih dahulu.'; return; }
                     if (this.step === 2 && this.selected.length === 0) { this.error = 'Pilih minimal satu gejala.'; return; }
                     this.error = '';
-                    if (this.step < 4) { this.step++; this.maxVisited = Math.max(this.maxVisited, this.step); }
+                    if (this.step < 4) { this.step++; this.maxVisited = Math.max(this.maxVisited, this.step); this.simpanDraft(); }
                 },
-                prev() { if (this.step > 1) this.step--; },
+                prev() { if (this.step > 1) { this.step--; this.simpanDraft(); } },
                 reset() {
                     this.commodityId = ''; this.selected = []; this.confidences = {};
+                    this.riwayatKomoditas = {};
+                    this.laporanTerkait = [];
                     this.error = ''; this.step = 1; this.maxVisited = 1;
+                    this.hapusDraft(); this.draftTersedia = null;
+                    this.draftDipulihkan = false; this.draftInfo = '';
+                },
+                gejalaValidKomoditas(id) {
+                    return new Set((this.gejalaMap[Number(id)] || []).map(Number));
+                },
+                pulihkanPilihanTersimpan(id) {
+                    const tersimpan = this.riwayatKomoditas[Number(id)];
+                    if (!tersimpan) {
+                        this.selected = [];
+                        this.confidences = {};
+                        return;
+                    }
+                    const valid = this.gejalaValidKomoditas(id);
+                    const dipulihkan = (tersimpan.selected || []).map(Number).filter((g) => valid.has(g));
+                    this.selected = dipulihkan;
+                    this.confidences = {};
+                    dipulihkan.forEach((g) => {
+                        const v = Number(tersimpan.confidences?.[g] ?? 0.8);
+                        this.confidences[g] = this.levels.some((l) => l.value === v) ? v : 0.8;
+                    });
                 },
                 pilihKomoditas(id) {
                     id = Number(id);
@@ -123,26 +382,39 @@
                         // Komoditas sama: gejala sudah dimuat, cukup lanjut ke Step 2.
                         this.step = 2;
                         this.maxVisited = Math.max(this.maxVisited, 2);
+                        this.simpanDraft();
                         return;
                     }
-                    // Komoditas berubah → reset gejala/keyakinan sebelumnya,
-                    // tampilkan loading gejala, lalu lanjut ke Step 2.
+                    // Simpan pilihan komoditas lama agar tidak hilang diam-diam;
+                    // dipulihkan otomatis bila pengguna kembali ke komoditas itu.
+                    const lama = Number(this.commodityId);
+                    if (lama && this.selected.length > 0) {
+                        this.riwayatKomoditas[lama] = {
+                            selected: [...this.selected],
+                            confidences: { ...this.confidences },
+                        };
+                    }
+                    // Komoditas berubah → pakai pilihan tersimpan komoditas
+                    // baru bila ada, jika tidak mulai dari kosong.
                     this.commodityId = id;
-                    this.selected = [];
-                    this.confidences = {};
+                    this.pulihkanPilihanTersimpan(id);
                     this.gejalaSearch = '';
                     this.error = '';
                     this.gejalaLoading = true;
                     this.step = 2;
                     this.maxVisited = Math.max(this.maxVisited, 2);
+                    this.simpanDraft();
                     setTimeout(() => { this.gejalaLoading = false; }, 450);
                 },
             }"
         >
-            <form method="POST" action="{{ route('diagnosis.store') }}" @submit="submitting = true">
+            <form method="POST" action="{{ route('diagnosis.store') }}" @submit="tulisDraftSegera(); submitting = true">
                 @csrf
 
                 <input type="hidden" name="commodity_id" :value="commodityId || ''">
+                <template x-for="lap in laporanTerkait" :key="'lap' + lap.id">
+                    <input type="hidden" name="laporan_gejala_ids[]" :value="lap.id">
+                </template>
 
                 <template x-for="id in selected" :key="'s' + id">
                     <input type="hidden" name="symptom_ids[]" :value="id">
@@ -175,6 +447,28 @@
 
                 {{-- Inline error --}}
                 <div x-show="error" x-cloak class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" x-text="error"></div>
+
+                {{-- Info draf dipulihkan otomatis --}}
+                <div x-show="draftDipulihkan" x-cloak class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="text-sm text-emerald-800">
+                            <p class="font-bold">Pilihan terakhir dipulihkan otomatis</p>
+                            <p class="mt-0.5 text-xs">
+                                <span x-text="draftInfo"></span>
+                                · <span x-text="komoditasNama(commodityId)"></span>
+                                · <span x-text="selected.length === 0 ? 'belum pilih gejala' : (selected.length + ' gejala')"></span>
+                            </p>
+                        </div>
+                        <div class="flex shrink-0 gap-2">
+                            <button type="button" @click="reset()"
+                                    class="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Mulai baru</button>
+                        </div>
+                    </div>
+                </div>
+
+                <p x-show="commodityId && draftInfo && !draftDipulihkan" x-cloak class="mb-4 text-xs text-[#8a9990]">
+                    <span x-text="draftInfo"></span> · draf terhapus otomatis setelah diagnosis diproses.
+                </p>
 
                 {{-- STEP 1: Pilih Komoditas --}}
                 <section x-show="step === 1" x-cloak>
@@ -232,7 +526,7 @@
                                     Komoditas: <span class="font-semibold text-[#176b45]" x-text="komoditasNama(commodityId)"></span>
                                 </p>
                             </div>
-                            <div class="relative sm:w-64">
+                            <div class="relative w-full sm:min-w-0 sm:flex-1 sm:max-w-xl">
                                 <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a0aba4]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
                                 <input type="search" x-model="gejalaSearch" placeholder="Cari gejala…"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-colors focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15">
@@ -254,27 +548,51 @@
                             <button type="button" @click="prev()" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Kembali</button>
                         </div>
 
-                        <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2" x-show="!gejalaLoading && filteredGejala().length > 0" x-cloak>
+                        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" x-show="!gejalaLoading && filteredGejala().length > 0" x-cloak>
                             <template x-for="g in filteredGejala()" :key="g.id">
-                                <label class="soft-card cursor-pointer rounded-xl border bg-white p-3 transition-colors"
+                                <label class="soft-card cursor-pointer rounded-xl border bg-white p-2.5 transition-colors"
                                        :class="isSelected(g.id) ? 'border-[#176b45] ring-2 ring-[#176b45]/15' : 'border-[#e4ece7] hover:border-[#176b45]/40'">
                                     <input type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 rounded border-[#dbe5df] text-[#176b45] focus:ring-[#176b45]/15"
                                            :checked="isSelected(g.id)" @change="toggleGejala(g.id)">
                                     <span class="block min-w-0">
                                         <template x-if="g.image_url">
-                                            <img :src="g.image_url" :alt="'Gejala: ' + g.nama" class="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy">
+                                            <img :src="g.image_url" :alt="'Gejala: ' + g.nama" class="aspect-[16/10] w-full rounded-lg object-cover" loading="lazy">
                                         </template>
                                         <template x-if="!g.image_url">
-                                            <span class="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-[#eef3ef] text-xs font-semibold text-[#8a9990]">Foto belum tersedia</span>
+                                            <span class="flex aspect-[16/10] w-full items-center justify-center rounded-lg bg-[#eef3ef] text-xs font-semibold text-[#8a9990]">Foto belum tersedia</span>
                                         </template>
-                                        <span class="mt-3 flex items-center gap-2">
-                                            <span class="text-sm font-bold text-[#173b29]" x-text="g.nama"></span>
-                                            <span class="rounded bg-[#eef3ef] px-1.5 py-0.5 text-[10px] font-semibold text-[#8a9990]" x-text="g.kode ?? ''"></span>
+                                        <span class="mt-2 flex items-start gap-2">
+                                            <span class="line-clamp-2 min-w-0 flex-1 text-sm font-bold leading-5 text-[#173b29]" x-text="g.nama"></span>
+                                            <span class="shrink-0 rounded bg-[#eef3ef] px-1.5 py-0.5 text-[10px] font-semibold text-[#8a9990]" x-text="g.kode ?? ''"></span>
                                         </span>
-                                        <span x-show="g.deskripsi" x-cloak class="mt-1 block text-xs leading-relaxed text-[#66746c]" x-text="g.deskripsi"></span>
+                                        <span x-show="g.deskripsi" x-cloak class="mt-1 line-clamp-2 text-xs leading-relaxed text-[#66746c]" x-text="g.deskripsi"></span>
                                     </span>
                                 </label>
                             </template>
+                        </div>
+
+                        <div x-show="!gejalaLoading" class="mt-4 flex flex-col gap-3 rounded-xl border border-dashed border-[#b8d5c3] bg-[#f5faf6] p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-[#173b29]">Gejala yang Anda amati belum ada di daftar?</p>
+                                <p class="mt-1 text-xs leading-5 text-[#66746c]">Laporkan pengamatan dan foto ke POPT. Laporan ini tidak menjalankan diagnosis.</p>
+                            </div>
+                            <button type="button" @click="openReport()" class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#176b45] bg-white px-4 py-2.5 text-sm font-semibold text-[#176b45] transition-colors hover:bg-[#e8f4ed]">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" /></svg>
+                                Gejala saya belum ada? Laporkan
+                            </button>
+                        </div>
+
+                        <div x-show="laporanTerkait.length > 0" x-cloak class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-amber-700">Gejala baru terlampir (<span x-text="laporanTerkait.length"></span>)</p>
+                            <p class="mt-1 text-xs text-amber-700">Ikut terkirim bersama diagnosis ini. Belum ikut perhitungan CF sampai divalidasi dan dipublish.</p>
+                            <ul class="mt-2 space-y-1.5">
+                                <template x-for="lap in laporanTerkait" :key="'chip' + lap.id">
+                                    <li class="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                                        <span class="font-mono text-xs font-bold text-[#176b45]" x-text="lap.report_code"></span>
+                                        <button type="button" @click="hapusLaporanTerkait(lap.id)" class="text-xs font-semibold text-red-600 hover:underline">Lepas</button>
+                                    </li>
+                                </template>
+                            </ul>
                         </div>
 
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -359,6 +677,20 @@
                                     </template>
                                 </ul>
                             </div>
+                            <div x-show="laporanTerkait.length > 0" x-cloak class="border-t border-[#eef3ef]">
+                                <div class="flex items-center justify-between bg-[#fafcfb] px-4 py-3">
+                                    <span class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Gejala Baru Terlampir</span>
+                                    <span class="text-sm font-bold text-[#176b45]" x-text="laporanTerkait.length + ' laporan'"></span>
+                                </div>
+                                <ul class="divide-y divide-[#eef3ef]">
+                                    <template x-for="lap in laporanTerkait" :key="'sumlap' + lap.id">
+                                        <li class="flex items-center justify-between gap-3 px-4 py-3">
+                                            <span class="font-mono text-sm font-bold text-[#176b45]" x-text="lap.report_code"></span>
+                                            <span class="text-[11px] text-[#8a9990]">Tidak memengaruhi CF ini</span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
                         </div>
 
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -373,6 +705,78 @@
                     </x-card>
                 </section>
             </form>
+
+            <div x-show="reportOpen" x-cloak x-transition.opacity class="fixed inset-0 z-[120] flex items-end justify-center bg-[#10251a]/55 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="presentation" @keydown.escape.window="closeReport()">
+                <section role="dialog" aria-modal="true" aria-labelledby="report-modal-title" aria-describedby="report-modal-description" @click.outside="closeReport()" class="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
+                    <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[#eef3ef] bg-white px-5 py-4 sm:px-6">
+                        <div>
+                            <h2 id="report-modal-title" class="text-lg font-bold text-[#173b29]">Laporkan gejala baru</h2>
+                            <p id="report-modal-description" class="mt-1 text-xs leading-5 text-[#66746c]">POPT akan meninjau laporan sebelum gejala dapat digunakan dalam basis pengetahuan.</p>
+                        </div>
+                        <button type="button" @click="closeReport()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-[#66746c] hover:bg-[#f3f8f4]" aria-label="Tutup formulir laporan">&times;</button>
+                    </div>
+
+                    <div class="p-5 sm:p-6">
+                        <template x-if="reportSuccess">
+                            <div class="rounded-2xl border border-green-200 bg-green-50 p-5" role="status">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-[#176b45]">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" /></svg>
+                                </div>
+                                <h3 class="mt-3 text-base font-bold text-[#173b29]">Laporan berhasil dikirim</h3>
+                                <p class="mt-1 text-sm leading-6 text-[#66746c]">POPT akan meninjau pengamatan Anda. Laporan ini belum menjadi gejala diagnosis, tetapi akan dilampirkan saat diagnosis ini diproses.</p>
+                                <p class="mt-3 inline-flex rounded-lg bg-white px-3 py-2 font-mono text-sm font-bold text-[#176b45]" x-text="reportCode"></p>
+                                <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+                                    <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Lihat laporan saya</a>
+                                    <button type="button" @click="closeReport()" class="min-h-11 rounded-xl border border-[#dbe5df] px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali ke gejala</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <form x-show="!reportSuccess" x-ref="reportForm" method="POST" enctype="multipart/form-data" action="{{ route('diagnosis.reports.store') }}" @submit.prevent="submitReport($event)" class="space-y-4">
+                            @csrf
+                            <input type="hidden" name="commodity_id" :value="commodityId">
+
+                            <div class="rounded-xl bg-[#f5faf6] px-4 py-3">
+                                <p class="text-[11px] font-bold uppercase tracking-wide text-[#8a9990]">Komoditas yang dipilih</p>
+                                <p class="mt-1 text-sm font-semibold text-[#176b45]" x-text="komoditasNama(commodityId)"></p>
+                            </div>
+
+                            <div>
+                                <label for="report-description" class="mb-1.5 block text-sm font-semibold text-[#34483b]">Ceritakan gejala yang diamati <span class="text-red-600">*</span></label>
+                                <textarea id="report-description" name="description" rows="4" minlength="10" maxlength="2000" required class="w-full rounded-xl border border-[#dbe5df] px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20" placeholder="Contoh: daun muda menggulung, muncul bercak putih, dan mulai terlihat sejak tiga hari lalu."></textarea>
+                                <p class="mt-1 text-xs text-red-600" x-show="reportErrors.description?.length" x-text="reportErrors.description?.[0]"></p>
+                                <p class="mt-1 text-xs text-[#8a9990]">Jelaskan bagian tanaman, warna atau bentuk perubahan, dan kapan mulai terlihat.</p>
+                            </div>
+
+                            <div>
+                                <label for="report-location" class="mb-1.5 block text-sm font-semibold text-[#34483b]">Lokasi / keterangan kebun <span class="font-normal text-[#8a9990]">(opsional)</span></label>
+                                <textarea id="report-location" name="location_description" rows="2" maxlength="500" class="w-full rounded-xl border border-[#dbe5df] px-3 py-2.5 text-sm text-[#173b29] placeholder:text-[#a0aba4] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20" placeholder="Blok kebun, desa, atau area tanaman terdampak."></textarea>
+                                <p class="mt-1 text-xs text-red-600" x-show="reportErrors.location_description?.length" x-text="reportErrors.location_description?.[0]"></p>
+                            </div>
+
+                            <div>
+                                <label for="report-image" class="mb-1.5 block text-sm font-semibold text-[#34483b]">Foto gejala <span class="font-normal text-[#8a9990]">(opsional)</span></label>
+                                <input x-ref="reportImage" id="report-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" @change="previewReportImage($event)" class="block w-full cursor-pointer rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-3 py-3 text-sm text-[#66746c] file:mr-3 file:rounded-lg file:border-0 file:bg-[#176b45] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white">
+                                <p class="mt-1 text-xs text-[#8a9990]">JPG, PNG, atau WebP; maksimal 5 MB.</p>
+                                <p class="mt-1 text-xs text-red-600" x-show="reportErrors.image?.length" x-text="reportErrors.image?.[0]"></p>
+                                <div x-show="reportImagePreview" x-cloak class="mt-3 flex items-start gap-3 rounded-xl border border-[#e4ece7] p-2.5">
+                                    <img :src="reportImagePreview" alt="Pratinjau foto gejala" class="h-24 w-28 rounded-lg bg-[#f3f8f4] object-cover">
+                                    <button type="button" @click="clearReportImage()" class="text-xs font-semibold text-red-600 hover:underline">Hapus foto</button>
+                                </div>
+                            </div>
+
+                            <p x-show="reportError" x-cloak class="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700" role="alert" x-text="reportError"></p>
+                            <div class="flex flex-col-reverse gap-2 border-t border-[#eef3ef] pt-4 sm:flex-row sm:justify-end">
+                                <button type="button" @click="closeReport()" class="min-h-11 rounded-xl border border-[#dbe5df] px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Batal</button>
+                                <button type="submit" :disabled="reportSubmitting" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] disabled:cursor-wait disabled:opacity-60">
+                                    <svg x-show="reportSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                    <span x-text="reportSubmitting ? 'Mengirim…' : 'Kirim laporan ke POPT'"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
         </div>
     @endif
 @endsection

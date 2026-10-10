@@ -7,11 +7,11 @@ use App\Contracts\KomoditasReferensiClient;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePermohonanRequest;
 use App\Models\Diagnosis;
-use App\Models\KasusPenanganan;
 use App\Models\KeputusanPermohonan;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
 use App\Services\PermohonanService;
+use App\Services\PoktanHandlingViewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -44,6 +44,7 @@ class PermohonanController extends Controller
         private readonly PermohonanService $service,
         private readonly KelompokTaniReferensiClient $kelompokTaniClient,
         private readonly KomoditasReferensiClient $komoditasClient,
+        private readonly PoktanHandlingViewService $poktanHandlingView,
     ) {}
 
     public function index(Request $request): View
@@ -59,6 +60,13 @@ class PermohonanController extends Controller
         );
 
         [$komoditasMap, $komoditasError] = $this->muatKomoditas();
+        $handlingStatuses = $permohonan->getCollection()
+            ->mapWithKeys(fn (PermohonanPenanganan $item): array => [
+                $item->id => $item->kasus === null
+                    ? null
+                    : $this->poktanHandlingView->status($item->kasus),
+            ])
+            ->all();
 
         $statusFilter = trim((string) $request->string('status', ''));
         $tanggalDari = trim((string) $request->string('created_from', ''));
@@ -71,6 +79,7 @@ class PermohonanController extends Controller
             'statusFilter',
             'tanggalDari',
             'tanggalSampai',
+            'handlingStatuses',
         ));
     }
 
@@ -96,7 +105,19 @@ class PermohonanController extends Controller
             $selectedDiagnosis = $diagnoses->firstWhere('id', $diagnosisId);
         }
 
-        [$kelompokTaniList, $kelompokTaniError] = $this->muatKelompokTani();
+        $poktanState = $this->poktanMilikState($user);
+
+        // Form Poktan tidak lagi menyediakan pilihan kelompok tani —
+        // identitas selalu mengikuti akun login. Akun yang belum tertaut
+        // atau referensinya tak tersedia DITOLAK di halaman dengan pesan
+        // yang mengarahkan ke Admin (bukan fallback dropdown manual).
+        $akunPoktanBermasalah = ! $poktanState['terkunci'];
+        $alasanBlokir = $akunPoktanBermasalah
+            ? ($user->kelompok_tani_id === null ? 'belum_terikat' : 'tak_tersedia')
+            : null;
+
+        $poktanMilik = $poktanState['poktan'];
+        $lokasiAwal = $poktanState['lokasiAwal'];
         [$komoditasMap, $komoditasError] = $this->muatKomoditas();
 
         $komoditas = $selectedDiagnosis === null
@@ -108,8 +129,10 @@ class PermohonanController extends Controller
         return view('permohonan.create', compact(
             'diagnoses',
             'selectedDiagnosis',
-            'kelompokTaniList',
-            'kelompokTaniError',
+            'poktanMilik',
+            'lokasiAwal',
+            'akunPoktanBermasalah',
+            'alasanBlokir',
             'komoditasMap',
             'komoditasError',
             'komoditas',
@@ -167,6 +190,9 @@ class PermohonanController extends Controller
                 'reviewer',
                 'kasus.penugasanAktif.popt',
                 'kasus.penugasanTerakhir.popt',
+                'kasus.progress.actor',
+                'kasus.extensionRequests',
+                'kasus.finalReport.evidences',
                 'kasus.riwayatStatus.actor',
             ])
             ->firstOrFail();
@@ -176,27 +202,21 @@ class PermohonanController extends Controller
             : $this->komoditasClient->find((int) $permohonan->diagnosis->commodity_id);
 
         $kasus = $permohonan->kasus;
-        // Assignment aktif diprioritaskan. Setelah kasus selesai assignment
-        // ditutup, tetapi Poktan tetap harus dapat membaca POPT terakhirnya.
-        $penugasan = $kasus?->penugasanAktif ?? $kasus?->penugasanTerakhir;
+        $handling = $kasus === null ? null : $this->poktanHandlingView->present($kasus);
         $timeline = $this->bangunTimeline($permohonan);
 
         return view('permohonan.show', compact(
             'permohonan',
             'komoditas',
             'kasus',
-            'penugasan',
+            'handling',
             'timeline',
         ));
     }
 
     /**
-     * Bangun timeline (TAHAP 7) yang menggabungkan siklus permohonan dan
-     * kasus penanganan, diurutkan menaik dari peristiwa paling awal.
-     *
-     * Entri kasus berstatus `diterima` (kelahiran kasus) dilewati karena
-     * sudah direpresentasikan oleh peristiwa "Permohonan Diterima" yang
-     * dicatat lewat keputusan operator — menghindari duplikasi visual.
+     * Bangun timeline siklus permohonan, terpisah dari perkembangan teknis
+     * penanganan yang disajikan sebagai timeline read-only tersendiri.
      *
      * @return array<int, array{
      *     key:string,
@@ -209,15 +229,6 @@ class PermohonanController extends Controller
      */
     private function bangunTimeline(PermohonanPenanganan $permohonan): array
     {
-        $penangananLabels = [
-            KasusPenanganan::STATUS_DITUGASKAN => 'POPT Ditugaskan',
-            KasusPenanganan::STATUS_SEDANG_DIREVIEW => 'Kasus Sedang Direview',
-            KasusPenanganan::STATUS_DITUNDA => 'Ditunda',
-            KasusPenanganan::STATUS_SIAP_DIEKSEKUSI => 'Siap Dieksekusi',
-            KasusPenanganan::STATUS_DALAM_PELAKSANAAN => 'Dalam Pelaksanaan',
-            KasusPenanganan::STATUS_SELESAI => 'Selesai',
-        ];
-
         $entries = [];
 
         $entries[] = $this->entryTimeline(
@@ -238,22 +249,6 @@ class PermohonanController extends Controller
                 catatan: $keputusan->catatan,
                 actor: $keputusan->operator,
             );
-        }
-
-        if ($kasus = $permohonan->kasus) {
-            foreach ($kasus->riwayatStatus as $riwayat) {
-                if ($riwayat->status === KasusPenanganan::STATUS_DITERIMA) {
-                    continue;
-                }
-
-                $entries[] = $this->entryTimeline(
-                    key: 'penanganan.'.$riwayat->status,
-                    label: $penangananLabels[$riwayat->status] ?? Str::headline((string) $riwayat->status),
-                    waktu: $riwayat->created_at,
-                    catatan: $riwayat->catatan,
-                    actor: $riwayat->actor,
-                );
-            }
         }
 
         return collect($entries)
@@ -285,32 +280,42 @@ class PermohonanController extends Controller
     }
 
     /**
-     * Muat kelompok tani aktif dari Shared Integration.
+     * Status Poktan milik user login (satu-akun-satu-Poktan).
      *
-     * @return array{0: array<int, array{id:int, kode:string, nama:string, ketua:?string, is_active:bool}>, 1: bool}
+     * @return array{terkunci:bool, poktan:?array<string, mixed>, lokasiAwal:array{latitude:?float, longitude:?float}, takTersedia:bool}
      */
-    private function muatKelompokTani(): array
+    private function poktanMilikState(User $user): array
     {
+        $awal = ['terkunci' => false, 'poktan' => null, 'lokasiAwal' => ['latitude' => null, 'longitude' => null], 'takTersedia' => false];
+
+        if ($user->kelompok_tani_id === null) {
+            return $awal;
+        }
+
         try {
-            $list = collect($this->kelompokTaniClient->all())
-                ->filter(fn (array $item): bool => ($item['is_active'] ?? false) === true)
-                ->sortBy('nama')
-                ->take(25)
-                ->values()
-                ->all();
-
-            if ($list === []) {
-                return [[], true];
-            }
-
-            return [$list, false];
+            $milik = $this->kelompokTaniClient->find((int) $user->kelompok_tani_id);
         } catch (Throwable $e) {
-            Log::warning('Web permohonan: referensi kelompok tani gagal dimuat.', [
+            Log::warning('Web permohonan: referensi Poktan milik user gagal dimuat.', [
+                'user_id' => $user->id,
                 'message' => $e->getMessage(),
             ]);
-
-            return [[], true];
+            $milik = null;
         }
+
+        if ($milik === null) {
+            $awal['takTersedia'] = true;
+
+            return $awal;
+        }
+
+        $awal['terkunci'] = true;
+        $awal['poktan'] = $milik;
+        $awal['lokasiAwal'] = [
+            'latitude' => $milik['latitude'] ?? null,
+            'longitude' => $milik['longitude'] ?? null,
+        ];
+
+        return $awal;
     }
 
     /**

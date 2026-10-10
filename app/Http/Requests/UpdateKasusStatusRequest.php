@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\KasusPenanganan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,7 @@ class UpdateKasusStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'string', Rule::in(config('kasus.statuses', []))],
+            'status' => ['required', 'string', Rule::in(config('kasus.statuses', [])), Rule::notIn([KasusPenanganan::STATUS_SELESAI])],
             'catatan' => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -30,6 +31,7 @@ class UpdateKasusStatusRequest extends FormRequest
     {
         return [
             'status.in' => 'Status kasus tidak dikenali.',
+            'status.not_in' => 'Penyelesaian kasus wajib melalui Laporan Hasil Penanganan.',
         ];
     }
 }

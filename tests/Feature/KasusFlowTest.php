@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\MockKelompokTaniReferensiClient;
 use App\Services\MockKomoditasReferensiClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -48,7 +49,7 @@ class KasusFlowTest extends TestCase
 
     /**
      * Buat kasus penanganan berstatus 'diterima' lewat alur nyata:
-     * diagnosis → permohonan → operator accept.
+     * diagnosis → permohonan → review → operator accept.
      */
     private function buatKasusDiterima(User $pemohon, User $operator): KasusPenanganan
     {
@@ -73,6 +74,8 @@ class KasusFlowTest extends TestCase
         ]);
 
         Sanctum::actingAs($operator);
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")
+            ->assertOk();
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])
             ->assertCreated();
 
@@ -85,6 +88,7 @@ class KasusFlowTest extends TestCase
 
         return $this->postJson("/api/kasus/{$kasus->id}/assign-popt", [
             'popt_id' => $popt->id,
+            'deadline_at' => now()->addDays(7)->toDateTimeString(),
             'catatan' => $catatan,
         ]);
     }
@@ -92,13 +96,23 @@ class KasusFlowTest extends TestCase
     private function selesaikanKasus(User $popt, KasusPenanganan $kasus): void
     {
         Sanctum::actingAs($popt);
+        $assignment = PenugasanPopt::query()->where('kasus_id', $kasus->id)->where('status', PenugasanPopt::STATUS_AKTIF)->firstOrFail();
 
-        foreach (['sedang_direview', 'siap_dieksekusi', 'dalam_pelaksanaan', 'selesai'] as $status) {
+        $this->postJson("/api/popt/penugasan/{$assignment->id}/accept")->assertOk();
+
+        foreach (['siap_dieksekusi', 'dalam_pelaksanaan'] as $status) {
             $this->postJson("/api/popt/kasus/{$kasus->id}/status", [
                 'status' => $status,
                 'catatan' => 'Catatan '.$status,
             ])->assertOk();
         }
+
+        $this->post("/api/popt/kasus/{$kasus->id}/selesaikan", [
+            'ringkasan_tindakan' => 'Pemeriksaan dan tindakan pengendalian dilakukan.',
+            'hasil_penanganan' => 'Gejala terkendali setelah tindakan lapangan.',
+            'rekomendasi' => 'Lanjutkan pemantauan rutin.',
+            'photos' => [UploadedFile::fake()->image('laporan-akhir.jpg')],
+        ])->assertOk();
     }
 
     /*
@@ -241,7 +255,7 @@ class KasusFlowTest extends TestCase
         $kasus = $this->buatKasusDiterima($pemohon, $operator);
 
         Sanctum::actingAs($operator);
-        $this->postJson("/api/kasus/{$kasus->id}/assign-popt", ['popt_id' => $popt->id])->assertOk();
+        $this->postJson("/api/kasus/{$kasus->id}/assign-popt", ['popt_id' => $popt->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()])->assertOk();
 
         $this->getJson("/api/kasus/{$kasus->id}/history")
             ->assertOk()
@@ -390,10 +404,7 @@ class KasusFlowTest extends TestCase
         $this->assignPopt($operator, $popt, $kasus)->assertOk();
 
         Sanctum::actingAs($popt);
-
-        $this->postJson("/api/popt/kasus/{$kasus->id}/status", ['status' => 'sedang_direview'])->assertOk();
-        $this->postJson("/api/popt/kasus/{$kasus->id}/status", ['status' => 'selesai', 'catatan' => 'Selesai dikerjakan.'])
-            ->assertOk();
+        $this->selesaikanKasus($popt, $kasus);
 
         $kasus->refresh();
         $this->assertSame(KasusPenanganan::STATUS_SELESAI, $kasus->current_status);
@@ -465,9 +476,9 @@ class KasusFlowTest extends TestCase
             ->get(route('popt.penugasan.show', $kasus->id))
             ->assertOk()
             ->assertSee($kasus->kasus_code)
-            ->assertSee('Kasus sudah selesai')
-            ->assertSee('Riwayat penanganan')
-            ->assertDontSee('Simpan Progres');
+            ->assertSee('Laporan Hasil Penanganan')
+            ->assertSee('Riwayat Status Teknis')
+            ->assertDontSee('Tambah Progress');
     }
 
     public function test_operator_tidak_bisa_akses_endpoint_popt(): void

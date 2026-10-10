@@ -83,6 +83,10 @@ class AturanCfCrudTest extends TestCase
             'penyakit_id' => $penyakit->id,
             'gejala_id' => $gejala->id,
             'cf_pakar' => 0.6,
+            'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
+            'pendekatan' => 'Simulation / Testing',
+            'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
+            'status_validasi' => AturanCf::VALIDATION_UNVALIDATED,
             'status' => 'aktif',
         ])->assertCreated();
     }
@@ -90,10 +94,16 @@ class AturanCfCrudTest extends TestCase
     public function test_update_boleh_kalau_tidak_bentrok_dengan_rule_aktif_lain(): void
     {
         Sanctum::actingAs($this->createOperator());
-        $rule = AturanCf::factory()->create(['cf_pakar' => 0.5]);
+        $rule = AturanCf::factory()->create([
+            'cf_pakar' => 0.5,
+            'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
+            'pendekatan' => 'Simulation / Testing',
+            'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
+            'status_validasi' => AturanCf::VALIDATION_UNVALIDATED,
+        ]);
 
         $this->putJson("/api/admin/aturan-cf/{$rule->id}", [
-            'cf_pakar' => 0.9,
-        ])->assertOk()->assertJsonPath('cf_pakar', '0.900');
+            'cf_pakar' => 0.8,
+        ])->assertOk()->assertJsonPath('cf_pakar', '0.800');
     }
 }

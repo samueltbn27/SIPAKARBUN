@@ -79,7 +79,7 @@ terminal kedua. Jika port 8000 terpakai, gunakan `php artisan serve --port=8001`
 | Operator UPTD | `operator.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Review, terima/tolak, assign POPT, publish |
 | POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Penugasan, status teknis, Draft Knowledge |
 | Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Diagnosis dan permohonan |
-| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | WebGIS dan monitoring read-only |
+| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | WebGIS & Monitoring dan Laporan Monitoring read-only |
 
 Tidak ada role `pakar`. Admin demo dibuat hanya oleh demo seeder; role admin
 tetap tidak tersedia pada form register/user provisioning biasa.
@@ -91,12 +91,16 @@ berbeda dari koordinat reference Poktan agar kontrak lokasi kasus dapat diuji.
 
 | Scenario | Request | Case | Status | Assigned POPT | Tujuan |
 |---|---|---|---|---|---|
-| Accepted / unassigned | `PM-20260101-9001` | `KS-20260101-9001` | diterima / diterima | — | Operator assignment UAT |
-| Assigned | `PM-20260101-9002` | `KS-20260101-9002` | diterima / ditugaskan | POPT Demo | Penugasan Saya |
-| In progress | `PM-20260101-9003` | `KS-20260101-9003` | diterima / dalam_pelaksanaan | POPT Demo | Monitoring aktif |
-| Completed | `PM-20260101-9004` | `KS-20260101-9004` | diterima / selesai | POPT Demo | History, WebGIS, delete UAT |
-| Rejected | `PM-20260101-9005` | — | ditolak | — | Keputusan Operator |
+| Menunggu tanpa penugasan | `PM-20260101-9001` | `KS-20260101-9001` | diterima / diterima | — | Assignment Operator |
+| Menunggu, belum diterima POPT | `PM-20260101-9002` | `KS-20260101-9002` | diterima / ditugaskan | POPT Demo | Penugasan Saya |
+| Dalam penanganan, diterima | `PM-20260101-9003` | `KS-20260101-9003` | diterima / dalam_pelaksanaan | POPT Demo | Acceptance workflow |
+| Selesai dengan laporan akhir | `PM-20260101-9004` | `KS-20260101-9004` | diterima / selesai | POPT Demo | Foto evidence, history, delete |
+| Ditolak | `PM-20260101-9005` | — | ditolak | — | Keputusan Operator |
 | Ditunda | `PM-20260101-9006` | `KS-20260101-9006` | diterima / ditunda | POPT Demo | KPI Ditunda |
+| Melewati batas waktu + progress | `PM-20260101-9007` | `KS-20260101-9007` | diterima / dalam_pelaksanaan | POPT Demo | KPI overdue dan progress |
+| Perpanjangan pending | `PM-20260101-9008` | `KS-20260101-9008` | diterima / dalam_pelaksanaan | POPT Demo | Review Operator |
+| Perpanjangan approved | `PM-20260101-9009` | `KS-20260101-9009` | diterima / dalam_pelaksanaan | POPT Demo | Deadline efektif baru |
+| Selesai legacy | `PM-20260101-9010` | `KS-20260101-9010` | diterima / selesai | POPT Demo | Kasus tanpa laporan akhir |
 
 Kasus `KS-20260101-9004` boleh dipakai untuk UAT Hapus Kasus karena sudah
 selesai. Setelah dihapus/diarsipkan, jalankan ulang seeder demo untuk
@@ -129,8 +133,26 @@ Reference penting:
 7. Login Pimpinan atau Admin, buka `/webgis`, lalu periksa filter, marker,
    popup, drawer, KPI, dan grafik. Pastikan marker memakai koordinat kasus,
    bukan koordinat Poktan, serta tidak ada marker `[0,0]`.
-8. Sebagai Admin, uji pembatalan modal Hapus Kasus lalu, bila diperlukan,
+8. Sebagai Pimpinan, buka **Laporan Monitoring**, uji filter periode,
+   kabupaten/kota, komoditas, penyakit, dan status. Pastikan ringkasan serta
+   tabel berubah mengikuti filter dan tidak menyediakan aksi perubahan data.
+9. Sebagai Admin, uji pembatalan modal Hapus Kasus lalu, bila diperlukan,
    hapus kasus selesai yang ditandai di atas.
+
+### UAT deadline, progress, dan laporan akhir
+
+1. Login sebagai POPT dan buka `KS-20260101-9002`. Pastikan tombol terima
+   tersedia dan status awal masih menunggu.
+2. Buka `KS-20260101-9007` untuk memeriksa progress dan label **Melewati Batas
+   Waktu**. Buka `KS-20260101-9008` untuk melihat perpanjangan **Menunggu
+   Persetujuan**, lalu login Operator dan pastikan permintaan tersebut muncul
+   di review.
+3. Buka `KS-20260101-9009` dan pastikan deadline penugasan sudah mengikuti
+   perpanjangan approved. `KS-20260101-9004` memiliki satu foto laporan akhir
+   lokal; `KS-20260101-9010` sengaja tidak memiliki laporan akhir untuk menguji
+   kompatibilitas data legacy.
+4. Jangan menganggap kasus demo atau nilai CF sebagai rekomendasi budidaya.
+   Untuk data produksi, gunakan sumber dan proses validasi resmi UPTD/Disbun.
 
 ### POPT sebagai kontributor Knowledge
 

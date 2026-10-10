@@ -73,6 +73,17 @@ class Diagnosis extends Model
     }
 
     /**
+     * Laporan gejala baru yang dikirim bersamaan dengan diagnosis ini.
+     * Tidak ikut perhitungan CF — menunggu kajian POPT, review Operator,
+     * relasi penyakit & CF, dan publish sebelum bisa dipakai diagnosis
+     * berikutnya.
+     */
+    public function laporanGejalaBaru(): HasMany
+    {
+        return $this->hasMany(LaporanGejala::class, 'diagnosis_id')->latest('id');
+    }
+
+    /**
      * Scope: transaksi diagnosis milik user tertentu.
      */
     public function scopeUntukUser(Builder $query, int $userId): Builder

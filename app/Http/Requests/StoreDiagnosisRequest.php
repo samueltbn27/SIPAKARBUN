@@ -18,12 +18,18 @@ use Illuminate\Validation\Validator;
  *   symptom_confidence: array<gejala_id => float> OPSIONAL — tingkat
  *                       keyakinan user per gejala (0.0 s.d. 1.0).
  *                       Gejala tanpa nilai dianggap 1.0 ("yakin").
+ *   laporan_gejala_ids: array<int> OPSIONAL — id laporan gejala baru
+ *                       milik user yang dikirim BERSAMAAN dengan diagnosis
+ *                       ini. Laporan hanya ditautkan (konteks kajian POPT),
+ *                       TIDAK ikut perhitungan CF. Kepemilikan, status, dan
+ *                       kesamaan komoditas diverifikasi di DiagnosisService.
  *
  * Validasi "dasar" di sini (tahap #3):
  *   - format & keunikan id gejala,
  *   - rentang nilai symptom_confidence dan hanya untuk gejala terpilih,
  *   - komoditas benar ada & aktif menurut Shared Integration,
- *   - gejala yang dikirim benar ada di Knowledge API Mahasiswa 1.
+ *   - gejala yang dikirim benar ada di Knowledge API Mahasiswa 1
+ *     dan terkait dengan komoditas yang dipilih.
  *
  * Mesin hitung CF (forward chaining / kombinasi certainty factor) bukan
  * bagian request ini — itu dilakukan service diagnosis pada tahap berikutnya.
@@ -45,6 +51,8 @@ class StoreDiagnosisRequest extends FormRequest
             'symptom_ids.*' => ['required', 'integer', 'distinct', 'min:1'],
             'symptom_confidence' => ['sometimes', 'array'],
             'symptom_confidence.*' => ['numeric', 'between:0,1'],
+            'laporan_gejala_ids' => ['sometimes', 'array', 'max:10'],
+            'laporan_gejala_ids.*' => ['integer', 'distinct', 'min:1'],
         ];
     }
 
@@ -61,7 +69,8 @@ class StoreDiagnosisRequest extends FormRequest
     /**
      * Validasi tambahan lewat client eksternal (bukan query tabel lokal):
      *   - komoditas_id: ada & aktif di referensi Shared Integration.
-     *   - tiap symptom_id: ada di Knowledge API Mahasiswa 1.
+     *   - tiap symptom_id: ada di Knowledge API Mahasiswa 1 dan terkait
+     *     dengan komoditas yang dipilih (bukan gejala milik komoditas lain).
      *
      * Semua panggilan eksternal dibungkus exception handling: kalau
      * Knowledge API / referensi sedang turun, user melihat pesan validasi
@@ -99,13 +108,16 @@ class StoreDiagnosisRequest extends FormRequest
             if ($symptomIds !== []) {
                 try {
                     $knowledge = app(KnowledgeApiClient::class);
-                    $validIds = $knowledge->gejala()->pluck('id')->map(fn ($id): int => (int) $id)->all();
+                    // Filter per komoditas: gejala aktif milik komoditas lain
+                    // tidak boleh lolos validasi untuk komoditas ini.
+                    $gejalaScope = $komoditasId !== null ? (int) $komoditasId : null;
+                    $validIds = $knowledge->gejala($gejalaScope)->pluck('id')->map(fn ($id): int => (int) $id)->all();
 
                     foreach ($symptomIds as $id) {
                         if (! in_array((int) $id, $validIds, true)) {
                             $validator->errors()->add(
                                 'symptom_ids',
-                                "Gejala dengan id {$id} tidak ditemukan di basis pengetahuan."
+                                "Gejala dengan id {$id} tidak ditemukan pada komoditas yang dipilih di basis pengetahuan."
                             );
                         }
                     }

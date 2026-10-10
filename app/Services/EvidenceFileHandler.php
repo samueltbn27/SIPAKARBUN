@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * EvidenceFileHandler — penyimpanan file bukti yang AMAN (M2).
@@ -45,6 +46,9 @@ class EvidenceFileHandler
         $storedName = Str::uuid()->toString().'.'.$extension;
 
         $filePath = $file->storeAs($directory, $storedName, ['disk' => 'public']);
+        if (! is_string($filePath) || $filePath === '') {
+            throw new RuntimeException('File bukti gagal disimpan ke penyimpanan publik.');
+        }
 
         return [
             'file_path' => (string) $filePath,

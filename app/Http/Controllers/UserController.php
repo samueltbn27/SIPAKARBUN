@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\RefKelompokTani;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,11 +13,13 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = User::with('roles')
+        $query = User::with(['roles', 'kelompokTani'])
             ->when($request->q, function ($q, $search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('kelompok_tani_kode', 'like', "%{$search}%")
+                  ->orWhere('kelompok_tani_nama', 'like', "%{$search}%");
             })
             ->when($request->status === 'pending', fn ($q) => $q->where('is_active', false))
             ->when($request->status === 'active', fn ($q) => $q->where('is_active', true))
@@ -30,6 +33,21 @@ class UserController extends Controller
 
     public function approve(User $user): RedirectResponse
     {
+        // Akun Poktan hanya boleh disetujui selama referensi kelompok
+        // taninya masih tersedia pada data Disbun.
+        if ($user->kelompok_tani_id !== null
+            && ! RefKelompokTani::query()->tersedia()->whereKey($user->kelompok_tani_id)->exists()) {
+            ActivityLog::record(
+                'User',
+                'approval_blocked',
+                $user->name,
+                $user->id,
+                "Persetujuan akun \"{$user->name}\" ditahan — referensi Poktan ({$user->kelompok_tani_kode}) tidak tersedia pada data Disbun",
+            );
+
+            return back()->with('error', "Akun \"{$user->name}\" belum bisa disetujui karena referensi Poktan ({$user->kelompok_tani_kode}) tidak tersedia pada data Disbun.");
+        }
+
         $user->update(['is_active' => true]);
 
         ActivityLog::record(
@@ -37,7 +55,7 @@ class UserController extends Controller
             'activated',
             $user->name,
             $user->id,
-            "Menyetujui akun \"{$user->name}\" ({$user->email})",
+            "Menyetujui akun \"{$user->name}\" ({$user->email})".($user->kelompok_tani_nama !== null ? " Poktan: \"{$user->kelompok_tani_nama}\" ({$user->kelompok_tani_kode})" : ''),
         );
 
         return back()->with('success', "Akun \"{$user->name}\" telah disetujui dan dapat digunakan untuk login.");

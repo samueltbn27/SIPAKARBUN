@@ -19,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use Tests\Traits\MenautkanPoktan;
 
 /**
  * Test modul Web Permohonan Penanganan Poktan (TAHAP 4):
@@ -34,6 +35,7 @@ use Tests\TestCase;
  */
 class WebPermohonanTest extends TestCase
 {
+    use MenautkanPoktan;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -51,6 +53,13 @@ class WebPermohonanTest extends TestCase
     }
 
     private function buatUserPoktan(): User
+    {
+        // Akun Poktan selalu tertaut (baris ref asli + test double) —
+        // identitas permohonan diambil dari akun, bukan dari form.
+        return $this->buatPoktanTertaut();
+    }
+
+    private function buatUserPoktanTanpaTautan(): User
     {
         $user = User::factory()->create();
         $user->assignRole('poktan');
@@ -90,12 +99,13 @@ class WebPermohonanTest extends TestCase
 
     private function payloadDasar(Diagnosis $diagnosis): array
     {
+        // Tanpa kelompok_tani_id: identitas Poktan diambil dari akun login.
         return [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
             'latitude_kasus' => -6.921,
             'longitude_kasus' => 107.6169,
             'alamat_kasus' => 'Blok Cibeureum, Dusun Satu, Ciawi',
+            'lokasi_dikonfirmasi' => '1',
             'catatan_pemohon' => 'Banyak daun menguning, mohon ditindaklanjuti.',
         ];
     }
@@ -227,7 +237,7 @@ class WebPermohonanTest extends TestCase
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
 
-        // Permohonan tanpa kasus -> status penanganan "Belum Ditugaskan".
+        // Permohonan tanpa kasus -> status penanganan belum tersedia.
         $permohonan = PermohonanPenanganan::factory()->create([
             'diagnosis_id' => $diagnosis->id,
             'kelompok_tani_id' => 1,
@@ -242,9 +252,9 @@ class WebPermohonanTest extends TestCase
             ->assertSee($permohonan->permohonan_code)
             ->assertSee('Permohonan: Diajukan')
             ->assertSee('Diajukan')
-            ->assertSee('Belum Ditugaskan');
+            ->assertSee('Belum tersedia');
 
-        // Permohonan diterima + kasus ditugaskan -> status penanganan "Ditugaskan".
+        // Permohonan diterima + kasus ditugaskan -> status sederhana menunggu penanganan.
         $kasusPermohonan = PermohonanPenanganan::factory()->create([
             'diagnosis_id' => $this->buatDiagnosis($user)->id,
             'status' => PermohonanPenanganan::STATUS_DITERIMA,
@@ -261,7 +271,7 @@ class WebPermohonanTest extends TestCase
             ->assertSee($kasusPermohonan->permohonan_code)
             ->assertSee('KS-20260819-0007')
             ->assertSee('Diterima')
-            ->assertSee('Ditugaskan');
+            ->assertSee('Menunggu Penanganan');
     }
 
     public function test_index_filter_tanggal(): void
@@ -365,37 +375,40 @@ class WebPermohonanTest extends TestCase
             ->assertSee('Tinjau Permohonan');
     }
 
-    public function test_create_menyediakan_pencarian_kelompok_tani_dengan_wilayah(): void
+    public function test_create_menampilkan_kelompok_tani_akun_dengan_wilayah(): void
     {
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
 
         $this->actingAs($user);
 
+        // Tidak ada lagi pencarian/dropdown — kartu read-only dari akun.
         $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
             ->assertOk()
-            ->assertSee('Cari nama, kode, kabupaten, kecamatan, atau kelurahan...')
-            ->assertSee('kabupaten')
-            ->assertSee('kecamatan')
+            ->assertSee('Poktan Kopi Sejahtera')
+            ->assertSee('KT-001')
             ->assertSee('Pangalengan')
-            ->assertSee('Kabupaten Bandung');
+            ->assertSee('Kabupaten Bandung')
+            ->assertSee('Terkunci mengikuti akun Anda')
+            ->assertDontSee('Pilih Kelompok Tani')
+            ->assertDontSee('id="kelompok-tani"')
+            ->assertDontSee('name="kelompok_tani_id"', false);
     }
 
-    public function test_create_menampilkan_error_state_jelas_saat_referensi_kelompok_tani_gagal(): void
+    public function test_create_akun_tanpa_tautan_diblokir_dengan_arahan_admin(): void
     {
-        $user = $this->buatUserPoktan();
+        $user = $this->buatUserPoktanTanpaTautan();
         $diagnosis = $this->buatDiagnosis($user);
-        app()->instance(KelompokTaniReferensiClient::class, new class implements KelompokTaniReferensiClient {
-            public function all(): array { return []; }
-            public function find(int $id): ?array { return null; }
-        });
 
         $this->actingAs($user);
 
+        // Form tidak ditampilkan; ada pesan blokir yang jelas.
         $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
             ->assertOk()
-            ->assertSee('Referensi kelompok tani tidak dapat dimuat')
-            ->assertDontSee('Memuat opsi');
+            ->assertSee('Permohonan belum dapat dibuat')
+            ->assertSee('belum terikat Kelompok Tani')
+            ->assertSee('Hubungi Admin')
+            ->assertDontSee('Tinjau Permohonan');
     }
 
     public function test_create_dengan_diagnosis_di_luar_daftar_tampil_empty(): void
@@ -507,10 +520,14 @@ class WebPermohonanTest extends TestCase
 
         $this->assertSame('PM-'.now()->format('Ymd').'-0001', $permohonan->permohonan_code);
         $this->assertSame(PermohonanPenanganan::STATUS_DIAJUKAN, $permohonan->status);
-        $this->assertSame(1, $permohonan->kelompok_tani_id);
+        $this->assertSame($user->kelompok_tani_id, $permohonan->kelompok_tani_id);
         $this->assertSame('Poktan Kopi Sejahtera', $permohonan->kelompok_tani_name_snapshot);
         $this->assertSame($user->id, $permohonan->created_by);
         $this->assertSame('Blok Cibeureum, Dusun Satu, Ciawi', $permohonan->alamat_kasus);
+        // Wilayah terisi otomatis dari referensi Disbun.
+        $this->assertSame('Kabupaten Bandung', $permohonan->kabupaten);
+        $this->assertSame('Pangalengan', $permohonan->kecamatan);
+        $this->assertSame('Margamukti', $permohonan->kelurahan);
     }
 
     public function test_store_dengan_file_bukti_menyimpan_evidence(): void
@@ -559,6 +576,7 @@ class WebPermohonanTest extends TestCase
 
     public function test_store_menolak_kelompok_tani_tidak_valid(): void
     {
+        // Poktan dilarang mengirim kelompok_tani_id apa pun (prohibited).
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
 
@@ -608,12 +626,12 @@ class WebPermohonanTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('permohonan_penanganan', [
-            'kelompok_tani_id' => 1,
+            'kelompok_tani_id' => $user->kelompok_tani_id,
             'latitude_kasus' => -6.85,
             'longitude_kasus' => 107.92,
         ]);
         $this->assertDatabaseMissing('permohonan_penanganan', [
-            'kelompok_tani_id' => 1,
+            'kelompok_tani_id' => $user->kelompok_tani_id,
             'latitude_kasus' => -6.90,
             'longitude_kasus' => 107.80,
         ]);
@@ -628,11 +646,71 @@ class WebPermohonanTest extends TestCase
 
         $this->post('/permohonan', [
             'diagnosis_id' => $diagnosis->id,
-            'kelompok_tani_id' => 1,
             'catatan_pemohon' => 'Lokasi belum dipilih.',
         ])->assertSessionHasErrors(['latitude_kasus', 'longitude_kasus']);
 
         $this->assertDatabaseCount('permohonan_penanganan', 0);
+    }
+
+    public function test_form_menampilkan_checkbox_konfirmasi_lokasi(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('titik lokasi kasus di atas sudah benar')
+            ->assertSee('name="lokasi_dikonfirmasi"', false);
+    }
+
+    public function test_store_menolak_tanpa_konfirmasi_lokasi(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $payload = $this->payloadDasar($diagnosis);
+        unset($payload['lokasi_dikonfirmasi']);
+
+        $this->post('/permohonan', $payload)
+            ->assertSessionHasErrors('lokasi_dikonfirmasi');
+
+        $this->assertDatabaseCount('permohonan_penanganan', 0);
+    }
+
+    public function test_store_menyimpan_flag_konfirmasi_dan_kesamaan_titik(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        // Koordinat payload dasar berbeda dari titik referensi Poktan.
+        $this->post('/permohonan', $this->payloadDasar($diagnosis))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis->id,
+            'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => false,
+        ]);
+
+        // Titik sama persis dengan referensi (−6.90, 107.80).
+        $diagnosis2 = $this->buatDiagnosis($user);
+
+        $this->post('/permohonan', array_merge($this->payloadDasar($diagnosis2), [
+            'latitude_kasus' => -6.9,
+            'longitude_kasus' => 107.8,
+        ]))->assertRedirect();
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis2->id,
+            'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => true,
+        ]);
     }
 
     public function test_store_menolak_catatan_berlebih(): void
@@ -728,6 +806,53 @@ class WebPermohonanTest extends TestCase
             ->assertSee('Banyak daun menguning.')
             ->assertSee('Karat Daun Kopi')
             ->assertSee('Kopi Arabika');
+    }
+
+    public function test_show_menampilkan_badge_konfirmasi_lokasi(): void
+    {
+        $user = $this->buatUserPoktan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        // Factory default: dikonfirmasi + sama dengan titik Poktan.
+        $sama = PermohonanPenanganan::factory()->create([
+            'diagnosis_id' => $diagnosis->id,
+            'status' => PermohonanPenanganan::STATUS_DIAJUKAN,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->get('/permohonan/'.$sama->id)
+            ->assertOk()
+            ->assertSee('Lokasi dikonfirmasi pemohon')
+            ->assertSee('Sama dengan titik referensi Poktan');
+
+        // Titik disesuaikan dari referensi.
+        $beda = PermohonanPenanganan::factory()->create([
+            'diagnosis_id' => $this->buatDiagnosis($user)->id,
+            'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => false,
+            'status' => PermohonanPenanganan::STATUS_DIAJUKAN,
+            'created_by' => $user->id,
+        ]);
+
+        $this->get('/permohonan/'.$beda->id)
+            ->assertOk()
+            ->assertSee('Lokasi dikonfirmasi pemohon')
+            ->assertSee('Disesuaikan dari titik referensi Poktan');
+
+        // Data lama tanpa konfirmasi.
+        $lama = PermohonanPenanganan::factory()->create([
+            'diagnosis_id' => $this->buatDiagnosis($user)->id,
+            'lokasi_dikonfirmasi' => false,
+            'lokasi_sama_dengan_poktan' => null,
+            'status' => PermohonanPenanganan::STATUS_DIAJUKAN,
+            'created_by' => $user->id,
+        ]);
+
+        $this->get('/permohonan/'.$lama->id)
+            ->assertOk()
+            ->assertSee('Belum ada konfirmasi (data lama)');
     }
 
     public function test_show_kepemilikan_dibatasi_user_lain(): void
@@ -904,7 +1029,7 @@ class WebPermohonanTest extends TestCase
             ->assertSee('Status Permohonan')
             ->assertSee('Status Penanganan')
             ->assertSee('Diterima')
-            ->assertSee('Dalam Pelaksanaan')
+            ->assertSee('Dalam Penanganan')
             ->assertSee($kasus->kasus_code);
     }
 
@@ -944,7 +1069,7 @@ class WebPermohonanTest extends TestCase
 
         $this->get('/permohonan/'.$permohonan->id)
             ->assertOk()
-            ->assertSee('Belum ada petugas yang ditugaskan.');
+            ->assertSee('Belum ditugaskan');
     }
 
     public function test_show_menampilkan_petugas_popt_yang_ditugaskan(): void
@@ -977,14 +1102,12 @@ class WebPermohonanTest extends TestCase
 
         $response = $this->get('/permohonan/'.$permohonan->id)->assertOk();
 
-        $response->assertSee('Timeline')
+        $response->assertSee('Riwayat Permohonan')
             ->assertSee('Permohonan Diajukan')
             ->assertSee('Permohonan Diterima')
-            ->assertSee('POPT Ditugaskan')
-            ->assertSee('Dalam Pelaksanaan')
+            ->assertSee('Perkembangan Penanganan')
+            ->assertSee('Informasi Penanganan')
             ->assertSee('Layak ditindaklanjuti.')
-            ->assertSee('Mulai pelaksanaan di lapangan.')
-            ->assertSee('oleh '.$popt->name)
             ->assertSee($pemohon->name);
     }
 
@@ -1002,10 +1125,9 @@ class WebPermohonanTest extends TestCase
             ->assertOk()
             ->assertSee('Permohonan Diajukan')
             ->assertSee('Permohonan Diterima')
-            ->assertSee('POPT Ditugaskan')
-            ->assertSee('Dalam Pelaksanaan')
             ->assertSee('Selesai')
-            ->assertSee('Penanganan selesai.')
+            ->assertSee('Hasil Penanganan')
+            ->assertSee('Laporan akhir belum tersedia untuk kasus historis ini.')
             ->assertSee($popt->name)
             ->assertSee('Penugasan Selesai')
             ->assertDontSee('Belum ada petugas yang ditugaskan.');
@@ -1030,5 +1152,134 @@ class WebPermohonanTest extends TestCase
             ->assertDontSee('Tugaskan POPT')
             ->assertDontSee('Hapus Riwayat')
             ->assertDontSee('Hapus');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Kelompok tani terkunci mengikuti akun login (satu-akun-satu-Poktan)
+    |--------------------------------------------------------------------------
+    */
+
+    private function buatUserPoktanTertaut(bool $tersedia = true): User
+    {
+        // Mode tak-tersedia: baris ref dibuat non-aktif sehingga
+        // find() mengembalikan null (di luar scope tersedia).
+        return $this->buatPoktanTertaut(
+            atributRef: $tersedia ? [] : ['source_is_active' => false],
+        );
+    }
+
+    public function test_create_mengunci_kelompok_tani_milik_user(): void
+    {
+        $user = $this->buatUserPoktanTertaut();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('Terkunci mengikuti akun Anda')
+            ->assertSee('Poktan Kopi Sejahtera')
+            ->assertDontSee('name="kelompok_tani_id"', false)
+            ->assertDontSee('id="kelompok-tani"')
+            ->assertDontSee('Pilih Kelompok Tani');
+    }
+
+    public function test_create_mengisi_lokasi_awal_dari_poktan_milik_user(): void
+    {
+        $user = $this->buatUserPoktanTertaut();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        // Koordinat mock KT-001: -6.90, 107.80.
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('value="-6.9"', false)
+            ->assertSee('value="107.8"', false);
+    }
+
+    public function test_create_akun_tanpa_tautan_tidak_lagi_menawarkan_pilihan_manual(): void
+    {
+        $user = $this->buatUserPoktanTanpaTautan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        // Tidak ada lagi fallback dropdown manual — akun diarahkan ke Admin.
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('Permohonan belum dapat dibuat')
+            ->assertDontSee('Pilih Kelompok Tani')
+            ->assertDontSee('Terkunci mengikuti akun Anda');
+    }
+
+    public function test_create_menampilkan_pesan_blokir_saat_poktan_tak_tersedia(): void
+    {
+        $user = $this->buatUserPoktanTertaut(false);
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $this->get('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertOk()
+            ->assertSee('Permohonan belum dapat dibuat')
+            ->assertSee('tidak tersedia pada referensi Disbun')
+            ->assertDontSee('Pilih Kelompok Tani');
+    }
+
+    public function test_store_menolak_kelompok_tani_yang_dikirim_manual(): void
+    {
+        // Field kelompok_tani_id dilarang dikirim Poktan (prohibited) —
+        // identitas selalu diambil dari akun login.
+        $user = $this->buatUserPoktanTertaut();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $payload = $this->payloadDasar($diagnosis);
+        $payload['kelompok_tani_id'] = $user->kelompok_tani_id + 99;
+
+        $this->from('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->post('/permohonan', $payload)
+            ->assertRedirect('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertSessionHasErrors('kelompok_tani_id');
+
+        $this->assertDatabaseMissing('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis->id,
+        ]);
+    }
+
+    public function test_store_menolak_akun_tanpa_tautan_dengan_arahan_admin(): void
+    {
+        $user = $this->buatUserPoktanTanpaTautan();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        $this->from('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->post('/permohonan', $this->payloadDasar($diagnosis))
+            ->assertRedirect('/permohonan/create?diagnosis_id='.$diagnosis->id)
+            ->assertSessionHasErrors('kelompok_tani_id');
+
+        $this->assertDatabaseCount('permohonan_penanganan', 0);
+    }
+
+    public function test_store_dengan_poktan_sendiri_berhasil(): void
+    {
+        $user = $this->buatUserPoktanTertaut();
+        $diagnosis = $this->buatDiagnosis($user);
+
+        $this->actingAs($user);
+
+        // Tanpa mengirim kelompok_tani_id — diambil dari akun login.
+        $this->post('/permohonan', $this->payloadDasar($diagnosis))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('permohonan_penanganan', [
+            'diagnosis_id' => $diagnosis->id,
+            'kelompok_tani_id' => $user->kelompok_tani_id,
+            'created_by' => $user->id,
+        ]);
     }
 }

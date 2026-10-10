@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Support\PublicStorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * PermohonanEvidenceResource — metadata file bukti/foto permohonan.
@@ -22,7 +22,7 @@ class PermohonanEvidenceResource extends JsonResource
             'evidence_id' => $this->id,
             'file_name' => $this->file_name,
             'mime_type' => $this->mime_type,
-            'url' => Storage::disk('public')->url($this->file_path),
+            'url' => PublicStorageUrl::make($this->file_path, $request),
         ];
     }
 }

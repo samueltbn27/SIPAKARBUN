@@ -77,6 +77,12 @@ Route::middleware(['auth:sanctum', 'role:admin|operator_uptd'])
     ->group(function (): void {
         Route::post('/{id}/assign-popt', [KasusController::class, 'assignPopt'])
             ->whereNumber('id');
+        Route::post('/{id}/status', [KasusController::class, 'updateStatus'])
+            ->whereNumber('id');
+        Route::post('/{id}/verifikasi', [KasusController::class, 'verifikasi'])
+            ->whereNumber('id');
+        Route::post('/{id}/batal', [KasusController::class, 'batal'])
+            ->whereNumber('id');
     });
 
 /* Completed cases may only be archived by an Admin. */
@@ -92,7 +98,18 @@ Route::middleware(['auth:sanctum', 'role:popt'])
     ->prefix('popt')
     ->group(function (): void {
         Route::get('/penugasan', [PoptController::class, 'index']);
+        Route::get('/antrian', [PoptController::class, 'antrian']);
         Route::get('/kasus/{id}', [PoptController::class, 'show'])
+            ->whereNumber('id');
+        Route::post('/penugasan/{assignment}/accept', [PoptController::class, 'acceptAssignment'])
+            ->whereNumber('assignment');
+        Route::post('/kasus/{id}/accept', [PoptController::class, 'accept'])
+            ->whereNumber('id');
+        Route::post('/kasus/{id}/progress', [PoptController::class, 'storeProgress'])
+            ->whereNumber('id');
+        Route::post('/kasus/{id}/perpanjangan', [PoptController::class, 'requestExtension'])
+            ->whereNumber('id');
+        Route::post('/kasus/{id}/selesaikan', [PoptController::class, 'complete'])
             ->whereNumber('id');
         Route::post('/kasus/{id}/status', [PoptController::class, 'updateStatus'])
             ->whereNumber('id');

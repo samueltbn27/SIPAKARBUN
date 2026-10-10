@@ -26,6 +26,8 @@ class PermohonanPenangananFactory extends Factory
             'kelompok_tani_name_snapshot' => $this->faker->company(),
             'latitude_kasus' => $this->faker->latitude(-7, -6),
             'longitude_kasus' => $this->faker->longitude(106, 108),
+            'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => true,
             'status' => PermohonanPenanganan::STATUS_DIAJUKAN,
             'created_by' => UserFactory::new(),
         ];

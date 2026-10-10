@@ -46,6 +46,11 @@ class KnowledgeUatSeederTest extends TestCase
             'penyakit_id' => Penyakit::where('kode', 'PNY-UAT-001')->value('id'),
             'gejala_id' => Gejala::where('kode', 'G-UAT-003')->value('id'),
             'cf_pakar' => 0.95,
+            'jenis_sumber' => AturanCf::SOURCE_SIMULATION,
+            'pendekatan' => 'Simulation / Testing',
+            'dasar_penentuan' => AturanCf::SIMULATION_JUSTIFICATION,
+            'status_validasi' => AturanCf::VALIDATION_UNVALIDATED,
+            'validator_nama' => null,
         ]);
     }
 }

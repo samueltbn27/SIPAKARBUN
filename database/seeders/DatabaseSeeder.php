@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             RefKomoditasSeeder::class,
             PenyakitSeeder::class,
             GejalaSeeder::class,
+            CfMethodSeeder::class,
             AturanCfSeeder::class,
             SolusiSeeder::class,
             PenyakitKomoditasSeeder::class,

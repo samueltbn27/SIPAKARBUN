@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Support\PublicStorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Bentuk response /api/penyakit — ini KONTRAK yang dipakai Mahasiswa 2
@@ -59,17 +59,6 @@ class PenyakitKnowledgeResource extends JsonResource
 
     private function imageUrl(Request $request): ?string
     {
-        if (! $this->image_path) {
-            return null;
-        }
-
-        $storageUrl = Storage::disk('public')->url($this->image_path);
-        $storagePath = parse_url($storageUrl, PHP_URL_PATH);
-
-        if (! is_string($storagePath) || $storagePath === '') {
-            return $storageUrl;
-        }
-
-        return rtrim($request->getSchemeAndHttpHost(), '/').'/'.ltrim($storagePath, '/');
+        return PublicStorageUrl::make($this->image_path, $request);
     }
 }

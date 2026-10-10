@@ -53,10 +53,10 @@
                 <form method="POST" action="{{ route('login.store') }}" class="auth-form" @submit="submitting = true">
                     @csrf
                     <div>
-                        <label for="email" class="auth-field-label">Email</label>
+                        <label for="identitas" class="auth-field-label">Email atau Kode Poktan</label>
                         <div class="auth-field-control">
                             <svg width="20" height="20" class="auth-field-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 6.75A1.75 1.75 0 014.75 5h14.5A1.75 1.75 0 0121 6.75v10.5A1.75 1.75 0 0119.25 19H4.75A1.75 1.75 0 013 17.25V6.75z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="m4 6 8 6 8-6"/></svg>
-                            <input type="email" id="email" name="email" required autofocus autocomplete="email" value="{{ old('email') }}" class="auth-field-input" placeholder="Masukkan email Anda">
+                            <input type="text" id="identitas" name="identitas" required autofocus autocomplete="username" value="{{ old('identitas', old('email')) }}" class="auth-field-input" placeholder="Email atau Kode Poktan">
                         </div>
                     </div>
                     <div>
