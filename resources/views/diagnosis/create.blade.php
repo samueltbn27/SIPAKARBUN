@@ -87,18 +87,29 @@
 
                 init() {
                     this.pasangFlushDraft();
-                    try {
-                        this.selected = Array.isArray(this.selected) ? this.selected.map(Number) : [];
-                        this.selected.forEach(id => { if (!(id in this.confidences)) this.confidences[id] = 0.8; });
-                        const hasOld = Boolean(this.commodityId) || this.selected.length > 0;
-                        if (!hasOld) {
-                            this.pulihkanDraftOtomatis();
+                    this.normalisasiStateAwal();
+                    this.tungguDraftModule();
+                },
+                normalisasiStateAwal() {
+                    this.selected = Array.isArray(this.selected) ? this.selected.map(Number).filter(Number.isFinite) : [];
+                    this.confidences = this.confidences && typeof this.confidences === 'object' ? this.confidences : {};
+                    this.selected.forEach(id => { if (!(id in this.confidences)) this.confidences[id] = 0.8; });
+                },
+                tungguDraftModule() {
+                    const pulihkan = () => {
+                        try {
+                            const hasOld = Boolean(this.commodityId) || this.selected.length > 0;
+                            if (!hasOld) this.pulihkanDraftOtomatis();
+                        } catch {
+                            this.draftInfo = '';
                         }
-                    } catch {
-                        // Jangan biarkan satu state tak terduga mematikan wizard;
-                        // flush-listener sudah terpasang di atas sehingga
-                        // perubahan berikutnya tetap tersimpan.
+                    };
+                    if (window.SipakarbunDiagnosisDraft) {
+                        pulihkan();
+                        return;
                     }
+                    window.addEventListener('sipakarbun:diagnosis-draft-ready', pulihkan, { once: true });
+                    setTimeout(pulihkan, 0);
                 },
                 pulihkanDraftOtomatis() {
                     let d = null;
