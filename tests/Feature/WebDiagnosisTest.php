@@ -145,6 +145,17 @@ class WebDiagnosisTest extends TestCase
             ->assertSee('Sangat Yakin');
     }
 
+    public function test_wizard_menampilkan_tombol_riwayat_diagnosis(): void
+    {
+        $this->fakeKnowledge();
+        $this->loginSebagai('poktan');
+
+        $this->get('/diagnosis')
+            ->assertOk()
+            ->assertSee('Riwayat Diagnosis')
+            ->assertSee(route('diagnosis.history'));
+    }
+
     public function test_wizard_memiliki_state_loading_dan_empty_gejala(): void
     {
         $this->fakeKnowledge();

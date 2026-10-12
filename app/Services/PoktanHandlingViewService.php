@@ -67,10 +67,17 @@ class PoktanHandlingViewService
         return $status + [
             'badge_class' => match ($status['key']) {
                 MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU => 'bg-red-50 text-red-700',
-                MonitoringStatusService::STATUS_DITUNDA => 'bg-orange-50 text-orange-700',
-                MonitoringStatusService::STATUS_DALAM_PENANGANAN => 'bg-[#176b45] text-white',
-                MonitoringStatusService::STATUS_SELESAI => 'bg-[#173b29] text-white',
-                default => 'bg-[#eef3ef] text-[#66746c]',
+                MonitoringStatusService::STATUS_DITUNDA => 'bg-amber-50 text-amber-700',
+                MonitoringStatusService::STATUS_DALAM_PENANGANAN => 'bg-emerald-50 text-emerald-700',
+                MonitoringStatusService::STATUS_SELESAI => 'bg-[#e8f4ed] text-[#176b45]',
+                default => 'bg-amber-50 text-amber-700',
+            },
+            'icon_path' => match ($status['key']) {
+                MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU => 'M12 9v4m0 4h.01M10.3 3.5 2.7 17a2 2 0 0 0 1.8 3h15a2 2 0 0 0 1.8-3L13.7 3.5a2 2 0 0 0-3.4 0z',
+                MonitoringStatusService::STATUS_DITUNDA => 'M7 5h3v14H7zM14 5h3v14h-3z',
+                MonitoringStatusService::STATUS_DALAM_PENANGANAN => 'M14.7 6.3a5 5 0 0 0-6.4 6.4l-5 5a2.1 2.1 0 0 0 3 3l5-5a5 5 0 0 0 6.4-6.4l-3 3-3-3z',
+                MonitoringStatusService::STATUS_SELESAI => 'M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM9 12l2 2 4-5',
+                default => 'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
             },
         ];
     }

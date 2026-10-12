@@ -3,14 +3,8 @@
 @section('title', 'Permohonan Saya')
 
 @php
-    $statusLabels = [
-        'diajukan' => ['Diajukan', 'bg-blue-50 text-blue-700'],
-        'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
-        'diterima' => ['Diterima', 'bg-[#e8f4ed] text-[#176b45]'],
-        'ditolak' => ['Ditolak', 'bg-red-50 text-red-700'],
-    ];
+    $statusLabels = config('kasus.request_labels', []);
     $komoditasNama = fn (int $commodityId): string => $komoditasMap[$commodityId] ?? ('Komoditas #'.$commodityId);
-    $status = fn (string $value): array => $statusLabels[$value] ?? [\Illuminate\Support\Str::headline($value), 'bg-[#eef3ef] text-[#66746c]'];
     $hasFilter = $statusFilter !== '' || $tanggalDari !== '' || $tanggalSampai !== '';
 @endphp
 
@@ -32,7 +26,7 @@
                 <select name="status" id="filter-status"
                         class="rounded-xl border border-[#dbe5df] bg-white px-3 py-2.5 text-sm text-[#173b29] focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20">
                     <option value="">Semua Status</option>
-                    @foreach ($statusLabels as $value => [$label])
+                    @foreach ($statusLabels as $value => $label)
                         <option value="{{ $value }}" @selected($statusFilter === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -118,10 +112,7 @@
                         @foreach ($permohonan as $item)
                             @php
                                 $primary = $item->diagnosis?->results?->first();
-                                [$statusLabel, $statusClass] = $status((string) $item->status);
                                 $handling = $handlingStatuses[$item->id] ?? null;
-                                $penangananLabel = $handling['label'] ?? 'Belum tersedia';
-                                $penangananClass = $handling['badge_class'] ?? 'bg-[#eef3ef] text-[#66746c]';
                             @endphp
                             <tr class="transition-colors hover:bg-[#fafcfb]">
                                 <td class="px-5 py-4">
@@ -143,10 +134,10 @@
                                     @endif
                                 </td>
                                 <td class="px-3 py-4">
-                                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
+                                    <x-kasus.request-status-badge :status="$item->status" />
                                 </td>
                                 <td class="px-3 py-4">
-                                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $penangananClass }}">{{ $penangananLabel }}</span>
+                                    <x-kasus.handling-status-badge :status="$handling" />
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <a href="{{ route('permohonan.show', $item->id) }}"
@@ -166,10 +157,7 @@
             @foreach ($permohonan as $item)
                 @php
                     $primary = $item->diagnosis?->results?->first();
-                    [$statusLabel, $statusClass] = $status((string) $item->status);
                     $handling = $handlingStatuses[$item->id] ?? null;
-                    $penangananLabel = $handling['label'] ?? 'Belum tersedia';
-                    $penangananClass = $handling['badge_class'] ?? 'bg-[#eef3ef] text-[#66746c]';
                 @endphp
                 <x-card class="p-4">
                     <div class="flex items-start justify-between gap-3">
@@ -190,12 +178,12 @@
                         @endif
                     </p>
                     <div class="mt-3 flex flex-wrap gap-2">
-                        <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusClass }}">
-                            Permohonan: {{ $statusLabel }}
-                        </span>
-                        <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $penangananClass }}">
-                            Penanganan: {{ $penangananLabel }}
-                        </span>
+                        <x-kasus.request-status-badge :status="$item->status" prefix="Permohonan:" />
+                        @if ($item->kasus !== null)
+                            <x-kasus.handling-status-badge :status="$handling" />
+                        @else
+                            <span class="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-500">Belum tersedia</span>
+                        @endif
                     </div>
                     <p class="mt-1 text-xs text-[#8a9990]">{{ $item->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y · H:i') ?? '—' }}</p>
                     <a href="{{ route('permohonan.show', $item->id) }}"

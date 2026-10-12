@@ -162,7 +162,7 @@ class PoktanSecurityTest extends TestCase
         $response = $this->get(route('dashboard'))->assertOk();
 
         $response->assertSee('Diagnosis')
-            ->assertSee('Riwayat Diagnosis')
+            ->assertSee('Laporan Gejala Saya')
             ->assertSee('Permohonan Saya');
 
         $response->assertDontSee('Permohonan Masuk')
@@ -401,7 +401,7 @@ class PoktanSecurityTest extends TestCase
         $this->loginPoktan();
 
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('@submit="submitting = true; hapusDraft()"', false)
+            ->assertSee('@submit="tulisDraftSegera(); submitting = true"', false)
             ->assertSee(':disabled="submitting', false)
             ->assertSee('Memproses…');
     }

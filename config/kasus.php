@@ -53,6 +53,39 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Label + gaya badge STATUS PERMOHONAN (permohonan_penanganan.status).
+    |--------------------------------------------------------------------------
+    | Sumber tunggal untuk komponen x-kasus.request-status-badge agar warna dan
+    | ikon konsisten di halaman Daftar Permohonan dan Detail Permohonan Poktan.
+    */
+    'request_labels' => [
+        'diajukan' => 'Diajukan',
+        'sedang_direview' => 'Sedang Direview',
+        'diterima' => 'Diterima',
+        'ditolak' => 'Ditolak',
+    ],
+
+    'request_status_badge' => [
+        'diajukan' => [
+            'bg' => 'bg-blue-50 text-blue-700',
+            'icon' => 'M12 5v14M5 12h14',
+        ],
+        'sedang_direview' => [
+            'bg' => 'bg-amber-50 text-amber-700',
+            'icon' => 'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
+        ],
+        'diterima' => [
+            'bg' => 'bg-[#e8f4ed] text-[#176b45]',
+            'icon' => 'M20 6 9 17l-5-5',
+        ],
+        'ditolak' => [
+            'bg' => 'bg-red-50 text-red-700',
+            'icon' => 'M18 6 6 18M6 6l12 12',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | State machine transisi (current_status → allowed next status).
     |
     | 'diterima' hanya bertransisi via penugasan POPT (ditugaskan).

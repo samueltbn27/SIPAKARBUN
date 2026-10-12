@@ -424,26 +424,41 @@
                     <input type="hidden" :name="'symptom_confidence[' + id + ']'" :value="confValue(id)">
                 </template>
 
-                {{-- Step indicator --}}
-                <ol class="mb-6 flex flex-wrap items-center gap-2 sm:gap-3" aria-label="Langkah diagnosis">
-                    <template x-for="s in steps" :key="s.n">
-                        <li class="flex items-center gap-2 sm:gap-3">
-                            <button type="button" @click="goTo(s.n)"
-                                    class="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
-                                    :class="step === s.n
+                {{-- Baris sejajar: stepper (kiri) + tombol Riwayat Diagnosis (kanan) --}}
+                <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    {{-- Step indicator — 4 langkah tersebar merata --}}
+                    <div class="flex items-center" aria-label="Langkah diagnosis">
+                        @php $steps = [['n'=>1,'l'=>'Komoditas'],['n'=>2,'l'=>'Gejala'],['n'=>3,'l'=>'Keyakinan'],['n'=>4,'l'=>'Proses']]; @endphp
+                        @foreach($steps as $i => $s)
+                            {{-- connector line before each step (except first) --}}
+                            @if($i > 0)
+                                <div class="relative mx-1 flex-1 overflow-hidden sm:mx-2" style="min-width: 1.25rem;">
+                                    <div class="h-px bg-[#dbe5df]"></div>
+                                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                        <svg class="h-3 w-3 text-[#b9c4bd]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                    </div>
+                                </div>
+                            @endif
+                            {{-- step button --}}
+                            <button type="button" @click="goTo({{ $s['n'] }})"
+                                    class="flex min-w-0 shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors sm:px-4"
+                                    :class="step === {{ $s['n'] }}
                                         ? 'border-[#176b45] bg-[#e8f4ed] text-[#176b45]'
-                                        : (s.n < maxVisited ? 'border-[#176b45]/30 bg-white text-[#176b45] hover:bg-[#f3f8f4]' : 'border-[#e4ece7] bg-white text-[#a0aba4]')">
-                                <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
-                                      :class="step === s.n ? 'bg-[#176b45] text-white' : (s.n < maxVisited ? 'bg-[#e8f4ed] text-[#176b45]' : 'bg-[#eef3ef] text-[#a0aba4]')"
-                                      x-text="s.n"></span>
-                                <span class="hidden sm:inline" x-text="s.label"></span>
+                                        : ({{ $s['n'] }} < maxVisited ? 'border-[#176b45]/30 bg-white text-[#176b45] hover:bg-[#f3f8f4]' : 'border-[#e4ece7] bg-white text-[#a0aba4]')">
+                                <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px]"
+                                      :class="step === {{ $s['n'] }} ? 'bg-[#176b45] text-white' : ({{ $s['n'] }} < maxVisited ? 'bg-[#e8f4ed] text-[#176b45]' : 'bg-[#eef3ef] text-[#a0aba4]')">{{ $s['n'] }}</span>
+                                <span class="hidden whitespace-nowrap sm:inline">{{ $s['l'] }}</span>
                             </button>
-                            <template x-if="s.n < 4">
-                                <svg class="h-3 w-3 text-[#b9c4bd]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                            </template>
-                        </li>
-                    </template>
-                </ol>
+                        @endforeach
+                    </div>
+
+                    {{-- Tombol Riwayat Diagnosis, sejajar dengan stepper --}}
+                    <a href="{{ route('diagnosis.history') }}"
+                       class="inline-flex shrink-0 items-center gap-2 self-end rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(23,107,69,.25)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#125437] hover:shadow-[0_6px_18px_rgba(23,107,69,.32)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#176b45]/40 focus-visible:ring-offset-2 sm:self-auto">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Riwayat Diagnosis
+                    </a>
+                </div>
 
                 {{-- Inline error --}}
                 <div x-show="error" x-cloak class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" x-text="error"></div>
@@ -696,7 +711,7 @@
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
                             <button type="submit" :disabled="submitting || selected.length === 0"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
+                                    class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
                                 <svg x-show="!submitting" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                                 <svg x-show="submitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                 <span x-text="submitting ? 'Memproses…' : 'Proses Diagnosis'"></span>
