@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Detail Laporan Gejala')
+@section('subtitle', 'Lihat pengamatan yang Anda laporkan dan perkembangan tinjauannya.')
 
 @section('content')
     <x-page-header
@@ -48,7 +49,7 @@
                 <p class="rounded-xl bg-[#f3f8f4] p-3 text-xs text-[#66746c]">
                     Dilaporkan bersamaan dengan diagnosis
                     <a href="{{ route('diagnosis.show', $laporan->diagnosis_id) }}" class="font-bold text-[#176b45] hover:underline">{{ $laporan->diagnosis?->kode ?? 'Diagnosis #'.$laporan->diagnosis_id }}</a>.
-                    Laporan ini tidak memengaruhi hasil CF diagnosis tersebut.
+                    Laporan ini belum digunakan untuk menentukan hasil diagnosis tersebut.
                 </p>
             @endif
 

@@ -306,7 +306,7 @@ class PoktanSecurityTest extends TestCase
 
         // Wizard tetap tampil dengan state error (bukan halaman crash).
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('Data knowledge tidak dapat dimuat. Silakan coba kembali.');
+            ->assertSee('Data diagnosis belum dapat dimuat. Silakan coba lagi.');
 
         // Store web: Knowledge tidak tersedia → validasi gagal dgn pesan wajar.
         $this->get('/diagnosis')->assertOk(); // buat referrer /diagnosis
@@ -358,7 +358,7 @@ class PoktanSecurityTest extends TestCase
 
         // Wizard: state error, halaman tetap tampil.
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('Data knowledge tidak dapat dimuat. Silakan coba kembali.');
+            ->assertSee('Data diagnosis belum dapat dimuat. Silakan coba lagi.');
 
         $this->get('/diagnosis')->assertOk(); // referrer
         $this->post('/diagnosis', ['commodity_id' => 1, 'symptom_ids' => [1]])
@@ -401,9 +401,10 @@ class PoktanSecurityTest extends TestCase
         $this->loginPoktan();
 
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('@submit="submitting = true; hapusDraft()"', false)
+            ->assertSee('@submit="tulisDraftSegera(); submitting = true"', false)
+            ->assertDontSee('@submit="submitting = true; hapusDraft()"', false)
             ->assertSee(':disabled="submitting', false)
-            ->assertSee('Memproses…');
+            ->assertSee('Menganalisis gejala…');
     }
 
     public function test_test5_form_permohonan_mengunci_tombol_saat_proses(): void

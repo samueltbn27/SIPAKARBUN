@@ -99,7 +99,7 @@
                 @if(session('error'))
                     <div class="mb-5 rounded-xl border border-[#f0c5c0] bg-[#fff4f2] p-4 text-sm text-[#a83d32] shadow-[0_4px_14px_rgba(168,61,50,.05)]" x-data="{ show: true }" x-show="show" x-transition role="alert">
                         <div class="flex items-center justify-between">
-                            <span class="pr-4">{{ session('error') }}</span>
+                            <span class="pr-4">{{ request()->routeIs('diagnosis.*') && session('error') === 'Data knowledge tidak dapat dimuat. Silakan coba kembali.' ? 'Data diagnosis belum dapat dimuat. Silakan coba lagi.' : session('error') }}</span>
                             <button @click="show = false" class="rounded-md px-1.5 text-[#c56a61] transition-colors hover:bg-[#fee4e0] hover:text-[#a83d32]" aria-label="Tutup notifikasi">&times;</button>
                         </div>
                     </div>

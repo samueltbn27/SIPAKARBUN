@@ -8,6 +8,7 @@ use App\Models\DiagnosisResult;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -141,7 +142,7 @@ class WebDiagnosisTest extends TestCase
             ->assertSee('Gejala saya belum ada? Laporkan')
             ->assertSee(route('diagnosis.reports.index'))
             ->assertSee('Foto belum tersedia')
-            ->assertSee('Tidak Yakin')
+            ->assertSee('Sangat Ragu')
             ->assertSee('Sangat Yakin');
     }
 
@@ -185,7 +186,7 @@ class WebDiagnosisTest extends TestCase
 
         $response = $this->get('/diagnosis')->assertOk();
 
-        $response->assertSee('Data knowledge tidak dapat dimuat. Silakan coba kembali.')
+        $response->assertSee('Data diagnosis belum dapat dimuat. Silakan coba lagi.')
             ->assertDontSee('Sangat Yakin');
     }
 
@@ -224,6 +225,124 @@ class WebDiagnosisTest extends TestCase
         $this->assertSame(0.643, (float) $result->cf_value);
         $this->assertSame(0.5, (float) $result->trace_snapshot[0]['cf_user']);
         $this->assertSame(0.9, (float) $result->trace_snapshot[0]['cf_pakar']);
+    }
+
+    public static function pilihanKeyakinan(): array
+    {
+        return [
+            'Sangat Ragu' => ['Sangat Ragu', 0.2, 0.295, 0.16],
+            'Ragu' => ['Ragu', 0.4, 0.539, 0.32],
+            'Cukup Yakin' => ['Cukup Yakin', 0.6, 0.733, 0.48],
+            'Yakin' => ['Yakin', 0.8, 0.877, 0.64],
+            'Sangat Yakin' => ['Sangat Yakin', 1.0, 0.97, 0.8],
+        ];
+    }
+
+    #[DataProvider('pilihanKeyakinan')]
+    public function test_label_keyakinan_mempertahankan_nilai_dan_hasil_diagnosis(
+        string $label,
+        float $value,
+        float $primaryCf,
+        float $secondaryCf,
+    ): void {
+        $this->fakeKnowledge();
+        $this->loginSebagai('poktan');
+
+        $this->post('/diagnosis', [
+            'commodity_id' => 1,
+            'symptom_ids' => [1, 2, 3],
+            'symptom_confidence' => [1 => $value, 2 => $value, 3 => $value],
+        ])->assertRedirect();
+
+        $diagnosis = Diagnosis::firstOrFail()->load(['symptoms', 'results']);
+        $this->assertSame([1, 2, 3], $diagnosis->symptoms->pluck('symptom_id')->all(), $label);
+        $this->assertSame([$value, $value, $value], $diagnosis->symptoms->map(fn ($s) => (float) $s->cf_user)->all(), $label);
+        $this->assertSame([1, 2], $diagnosis->results->pluck('disease_id')->all(), $label);
+        $this->assertSame([$primaryCf, $secondaryCf], $diagnosis->results->map(fn ($r) => (float) $r->cf_value)->all(), $label);
+        $this->assertSame($value, (float) $diagnosis->results->first()->trace_snapshot[0]['cf_user']);
+        $this->assertSame(0.9, (float) $diagnosis->results->first()->trace_snapshot[0]['cf_pakar']);
+    }
+
+    public function test_wizard_memakai_bahasa_poktan_dan_pilihan_keyakinan_aksesibel(): void
+    {
+        $this->fakeKnowledge();
+        $this->loginSebagai('poktan');
+
+        $response = $this->get('/diagnosis')->assertOk()
+            ->assertSee('Pilih kondisi tanaman yang Anda temukan untuk membantu mengenali kemungkinan penyakit.')
+            ->assertSee('Tingkat Keyakinan Gejala')
+            ->assertSee('Untuk setiap gejala, pilih tingkat keyakinan berdasarkan kondisi yang benar-benar Anda lihat pada tanaman.')
+            ->assertSee('Tinjau Pilihan')
+            ->assertSee('Lihat Hasil')
+            ->assertSee('Pilihan sebelumnya berhasil dipulihkan')
+            ->assertDontSee('Certainty Factor backend')
+            ->assertDontSee('knowledge management')
+            ->assertDontSee('skala 0–1');
+
+        foreach (self::pilihanKeyakinan() as [$label, $value]) {
+            $response->assertSee("label: '$label', value: ".number_format($value, 1, '.', ''), false);
+        }
+
+        $html = $response->getContent();
+        $this->assertStringContainsString('role="radiogroup"', $html);
+        $this->assertStringContainsString('role="radio"', $html);
+        $this->assertStringContainsString(':aria-checked="confValue(id) === lvl.value"', $html);
+        $this->assertStringContainsString(':tabindex="confValue(id) === lvl.value || (confIndex(id) < 0 && lvl.value === levels[0].value) ? 0 : -1"', $html);
+        $this->assertStringNotContainsString('lvl.value.toFixed', $html);
+        $this->assertStringContainsString(":name=\"'symptom_confidence[' + id + ']'\" :value=\"confValue(id)\"", $html);
+    }
+
+    public function test_hasil_memakai_label_linguistik_tanpa_mengubah_nilai_tersimpan(): void
+    {
+        $this->fakeKnowledge();
+        $user = $this->loginSebagai('poktan');
+        $diagnosis = $this->buatDiagnosisLangsung($user, cf: 0.82);
+        $expected = [];
+        foreach (self::pilihanKeyakinan() as [$label, $value]) {
+            $diagnosis->symptoms()->create([
+                'symptom_id' => count($expected) + 1,
+                'symptom_name_snapshot' => 'Gejala '.$label,
+                'cf_user' => $value,
+            ]);
+            $expected[] = $label;
+        }
+        // Nilai lama yang tidak ada pada lima pilihan tidak boleh dibulatkan ke label lain.
+        $diagnosis->symptoms()->create(['symptom_id' => 99, 'symptom_name_snapshot' => 'Gejala lama', 'cf_user' => 0.5]);
+        $expected[] = 'Penilaian tersimpan';
+
+        $response = $this->get('/diagnosis/'.$diagnosis->id)->assertOk()
+            ->assertSee('Tingkat Keyakinan Diagnosis')->assertSee('82%')
+            ->assertDontSee('Nilai CF')->assertDontSee('0,82')
+            ->assertDontSee('knowledge management');
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $labels = (new \DOMXPath($document))->query('//span[@data-symptom-confidence]');
+        $this->assertSame($expected, array_map(fn ($node) => trim($node->textContent), iterator_to_array($labels)));
+        $this->assertSame([0.2, 0.4, 0.6, 0.8, 1.0, 0.5], $diagnosis->symptoms()->get()->map(fn ($s) => (float) $s->cf_user)->all());
+    }
+
+    public function test_rincian_teknis_hasil_tersedia_dalam_disclosure_tertutup(): void
+    {
+        $this->fakeKnowledge();
+        $this->loginSebagai('poktan');
+        $this->post('/diagnosis', ['commodity_id' => 1, 'symptom_ids' => [1, 2]])->assertRedirect();
+
+        $response = $this->get('/diagnosis/'.Diagnosis::firstOrFail()->id)->assertOk()
+            ->assertSee('Rincian perhitungan (teknis)')->assertSee('CF User')->assertSee('CF Pakar');
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(1, $xpath->query('//details[not(@open)]//table')->length);
+    }
+
+    public function test_error_flash_diagnosis_memakai_bahasa_poktan(): void
+    {
+        $this->fakeKnowledge();
+        $this->loginSebagai('poktan');
+        $this->withSession(['error' => 'Data knowledge tidak dapat dimuat. Silakan coba kembali.'])
+            ->get('/diagnosis')->assertOk()
+            ->assertSee('Data diagnosis belum dapat dimuat. Silakan coba lagi.')
+            ->assertDontSee('Data knowledge tidak dapat dimuat');
     }
 
     public function test_store_validasi_menolak_payload_tanpa_gejala(): void
@@ -481,7 +600,7 @@ class WebDiagnosisTest extends TestCase
 
         $this->get('/diagnosis/'.$diagnosis->id)->assertOk()
             ->assertSee($diagnosis->kode)
-            ->assertSee('Informasi Snapshot');
+            ->assertSee('Tentang Riwayat Diagnosis');
     }
 
     // ==== TAHAP 3 — Halaman Hasil Diagnosis Poktan ====
@@ -534,7 +653,7 @@ class WebDiagnosisTest extends TestCase
             ->assertSee('Tanggal Diagnosis')                          // tanggal diagnosis
             ->assertSee('Kopi Arabika')                               // komoditas
             ->assertSee('Karat Daun Kopi')                            // penyakit utama
-            ->assertSee('0,82')                                       // nilai CF
+            ->assertDontSee('0,82')                                       // nilai CF
             ->assertSee('82%')                                        // nilai CF (persen)
             ->assertSee('Bercak jingga')                              // gejala yang dipilih
             ->assertSee('Daun menguning')                             // gejala yang dipilih
@@ -577,8 +696,8 @@ class WebDiagnosisTest extends TestCase
         ]);
 
         $this->get('/diagnosis/'.$diagnosis->id)->assertOk()
-            ->assertSee('Ranking Kandidat')
-            ->assertSee('Peringkat #1 dari 2 kandidat')
+            ->assertSee('Kemungkinan Penyakit')
+            ->assertSee('Urutan pertama dari 2 kemungkinan penyakit')
             ->assertSee('Karat Daun Kopi')
             ->assertSee('http://localhost/storage/knowledge/penyakit/karat.webp')
             ->assertSee('Layu Bakteri');
@@ -685,7 +804,7 @@ class WebDiagnosisTest extends TestCase
             ->assertSee('Tanggal')
             ->assertSee('Komoditas')
             ->assertSee('Diagnosis/Penyakit')
-            ->assertSee('Nilai CF')
+            ->assertSee('Tingkat Keyakinan')
             ->assertSee('Aksi')
             ->assertDontSee('Status');
     }

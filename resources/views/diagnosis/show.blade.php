@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
 @section('title', 'Hasil Diagnosis')
+@section('subtitle', 'Gejala yang Anda pilih dan kemungkinan penyakit pada tanaman.')
 
 @php
     $primary = $diagnosis->results->first();
     $komoditasNama = $komoditas['nama'] ?? ('Komoditas #'.$diagnosis->commodity_id);
-    $confidenceLevels = [0.2 => 'Tidak Yakin', 0.4 => 'Kurang Yakin', 0.6 => 'Cukup Yakin', 0.8 => 'Yakin', 1.0 => 'Sangat Yakin'];
-    $labelCf = fn (float $v): string => $confidenceLevels[$v] ?? (round(max(0.0, $v) * 100, 1).'%');
+    $confidenceLevels = ['0.2' => 'Sangat Ragu', '0.4' => 'Ragu', '0.6' => 'Cukup Yakin', '0.8' => 'Yakin', '1' => 'Sangat Yakin'];
+    $labelCf = fn (float $v): string => $confidenceLevels[(string) $v] ?? 'Penilaian tersimpan';
     $createdAt = $diagnosis->created_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y H:i') ?? '—';
     $statusLabel = $diagnosis->status === 'selesai' ? 'Selesai' : \Illuminate\Support\Str::headline($diagnosis->status);
     $bolehAjukan = $diagnosis->status === \App\Models\Diagnosis::STATUS_SELESAI;
@@ -15,7 +16,7 @@
 @section('content')
     <x-page-header
         title="Hasil Diagnosis"
-        subtitle="Ringkasan hasil perhitungan Certainty Factor untuk {{ $diagnosis->kode }}."
+        subtitle="Gejala yang Anda pilih dan kemungkinan penyakit pada tanaman."
         :breadcrumbs="[
             ['label' => 'Dashboard', 'url' => route('dashboard')],
             ['label' => 'Riwayat Diagnosis', 'url' => route('diagnosis.history')],
@@ -61,7 +62,7 @@
                     <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     <div>
                         <p class="font-semibold">Gejala baru terlampir ({{ $diagnosis->laporanGejalaBaru->count() }}) — menunggu validasi POPT.</p>
-                        <p class="mt-0.5 text-amber-700">Laporan ini belum ikut perhitungan CF di atas dan baru dipakai diagnosis berikutnya setelah divalidasi dan dipublish.</p>
+                        <p class="mt-0.5 text-amber-700">Laporan ini belum digunakan untuk menentukan hasil diagnosis. Gejala baru dapat digunakan setelah ditinjau dan disetujui.</p>
                         <ul class="mt-2 space-y-1">
                             @foreach ($diagnosis->laporanGejalaBaru as $laporan)
                                 <li><a href="{{ route('diagnosis.reports.show', $laporan) }}" class="font-mono text-xs font-bold text-[#176b45] hover:underline">{{ $laporan->report_code }}</a> <span class="text-xs text-amber-700">· {{ $laporan->statusLabel() }}</span></li>
@@ -107,6 +108,7 @@
             </a>
         </x-card>
     @else
+        <p class="mb-4 text-sm leading-6 text-[#66746c]">Hasil diagnosis merupakan bantuan awal berdasarkan gejala yang dipilih.</p>
         {{-- Diagnosis utama --}}
         <x-card class="mb-6 overflow-hidden">
             <div class="border-b border-[#eef3ef] bg-[#fafcfb] px-5 py-4">
@@ -114,7 +116,7 @@
             </div>
             <div class="p-5">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="flex items-start gap-4">
+                    <div class="flex min-w-0 flex-col items-start gap-4 sm:flex-row">
                         @if ($primary->disease_image_url)
                             <img src="{{ $primary->disease_image_url }}" alt="Penyakit: {{ $primary->disease_name_snapshot }}" class="aspect-[4/3] w-32 shrink-0 rounded-xl object-cover" loading="lazy">
                         @else
@@ -122,13 +124,13 @@
                         @endif
                         <div>
                             <h2 class="text-xl font-extrabold tracking-tight text-[#173b29]">{{ $primary->disease_name_snapshot }}</h2>
-                            <p class="mt-0.5 text-xs font-semibold text-[#8a9990]">Peringkat #1 dari {{ $diagnosis->results->count() }} kandidat</p>
+                            <p class="mt-0.5 text-xs font-semibold text-[#8a9990]">Urutan pertama dari {{ $diagnosis->results->count() }} kemungkinan penyakit</p>
                         </div>
                     </div>
-                    <div class="shrink-0 text-right">
-                        <p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Nilai CF</p>
-                        <p class="text-3xl font-extrabold tracking-tight text-[#176b45]">{{ number_format((float) $primary->cf_value, 2, ',', '.') }}</p>
-                        <p class="text-xs font-semibold text-[#8a9990]">{{ round(max(0.0, (float) $primary->cf_value) * 100, 2) }}% keyakinan</p>
+                    <div class="shrink-0 text-left sm:text-right">
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Tingkat Keyakinan Diagnosis</p>
+                        <p class="text-3xl font-extrabold tracking-tight text-[#176b45]">{{ round(max(0.0, (float) $primary->cf_value) * 100, 2) }}%</p>
+                        <p class="text-xs font-semibold text-[#8a9990]">Berdasarkan gejala yang Anda pilih</p>
                     </div>
                 </div>
                 <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-[#eef3ef]">
@@ -151,9 +153,8 @@
                                     <svg class="h-4 w-4 shrink-0 text-[#176b45]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                                     {{ $symptom->symptom_name_snapshot }}
                                 </span>
-                                <span class="rounded-full bg-[#e8f4ed] px-2.5 py-1 text-xs font-semibold text-[#176b45] sm:text-right">
+                                <span data-symptom-confidence class="self-start rounded-full bg-[#e8f4ed] px-2.5 py-1 text-xs font-semibold text-[#176b45] sm:shrink-0 sm:text-right">
                                     {{ $labelCf((float) $symptom->cf_user) }}
-                                    <span class="font-normal text-[#8a9990]">· {{ number_format((float) $symptom->cf_user, 1, ',', '.') }}</span>
                                 </span>
                             </li>
                         @empty
@@ -165,34 +166,37 @@
                 {{-- CF pakar (trace diagnosis utama) --}}
                 @if (count($primary->trace_snapshot ?? []) > 0)
                     <x-card>
-                        <div class="border-b border-[#eef3ef] px-5 py-4">
-                            <h3 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Rincian CF Pakar — {{ $primary->disease_name_snapshot }}</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full min-w-[520px] text-left text-sm">
-                                <thead>
-                                    <tr class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">
-                                        <th class="px-5 py-3">Gejala</th>
-                                        <th class="px-3 py-3 text-right">CF User</th>
-                                        <th class="px-3 py-3 text-right">CF Pakar</th>
-                                        <th class="px-5 py-3 text-right">CF Gejala</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-[#eef3ef]">
-                                    @foreach ($primary->trace_snapshot as $trace)
-                                        <tr>
-                                            <td class="px-5 py-3 font-medium text-[#173b29]">{{ $trace['gejala_nama'] ?? 'Gejala #'.$trace['gejala_id'] }}</td>
-                                            <td class="px-3 py-3 text-right text-[#66746c]">{{ number_format((float) $trace['cf_user'], 2, ',', '.') }}</td>
-                                            <td class="px-3 py-3 text-right">
-                                                <span class="rounded bg-[#eef3ef] px-2 py-0.5 text-xs font-semibold text-[#176b45]">{{ number_format((float) $trace['cf_pakar'], 2, ',', '.') }}</span>
-                                            </td>
-                                            <td class="px-5 py-3 text-right font-semibold text-[#173b29]">{{ number_format((float) $trace['cf_gejala'], 2, ',', '.') }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="px-5 py-3 text-xs text-[#8a9990]">CF Gejala = CF User × CF Pakar. Diperlihatkan untuk diagnosis utama.</p>
+                        <details class="group">
+                            <summary class="cursor-pointer rounded-xl px-5 py-4 text-sm font-semibold text-[#66746c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45]">Rincian perhitungan (teknis)</summary>
+                            <div class="border-t border-[#eef3ef]">
+                                <h3 class="sr-only">Rincian CF Pakar — {{ $primary->disease_name_snapshot }}</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full min-w-[520px] text-left text-sm">
+                                        <thead>
+                                            <tr class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">
+                                                <th class="px-5 py-3">Gejala</th>
+                                                <th class="px-3 py-3 text-right">CF User</th>
+                                                <th class="px-3 py-3 text-right">CF Pakar</th>
+                                                <th class="px-5 py-3 text-right">CF Gejala</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-[#eef3ef]">
+                                            @foreach ($primary->trace_snapshot as $trace)
+                                                <tr>
+                                                    <td class="px-5 py-3 font-medium text-[#173b29]">{{ $trace['gejala_nama'] ?? 'Gejala #'.$trace['gejala_id'] }}</td>
+                                                    <td class="px-3 py-3 text-right text-[#66746c]">{{ number_format((float) $trace['cf_user'], 2, ',', '.') }}</td>
+                                                    <td class="px-3 py-3 text-right">
+                                                        <span class="rounded bg-[#eef3ef] px-2 py-0.5 text-xs font-semibold text-[#176b45]">{{ number_format((float) $trace['cf_pakar'], 2, ',', '.') }}</span>
+                                                    </td>
+                                                    <td class="px-5 py-3 text-right font-semibold text-[#173b29]">{{ number_format((float) $trace['cf_gejala'], 2, ',', '.') }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p class="px-5 py-3 text-xs text-[#8a9990]">CF Gejala = CF User × CF Pakar. Diperlihatkan untuk diagnosis utama.</p>
+                            </div>
+                        </details>
                     </x-card>
                 @endif
 
@@ -200,9 +204,9 @@
                 <x-card class="flex items-start gap-3 p-4">
                     <svg class="mt-0.5 h-5 w-5 shrink-0 text-[#176b45]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Informasi Snapshot</p>
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Tentang Riwayat Diagnosis</p>
                         <p class="mt-1 text-xs leading-relaxed text-[#66746c]">
-                            Nama gejala, hasil, nilai CF, dan solusi di halaman ini adalah <span class="font-semibold text-[#173b29]">snapshot yang disimpan saat diagnosis dijalankan</span>.
+                            Gejala, hasil, dan rekomendasi ini disimpan saat diagnosis dilakukan.
                             Riwayat tetap akurat meskipun data pengetahuan berubah di kemudian hari.
                         </p>
                     </div>
@@ -213,18 +217,17 @@
             <div class="space-y-6 lg:col-span-2">
                 <x-card>
                     <div class="border-b border-[#eef3ef] px-5 py-4">
-                        <h3 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Ranking Kandidat</h3>
+                        <h3 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Kemungkinan Penyakit</h3>
                     </div>
                     <ul class="divide-y divide-[#eef3ef]">
                         @foreach ($diagnosis->results as $result)
                             <li class="flex items-center justify-between gap-3 px-5 py-3.5">
-                                <div class="flex items-center gap-3">
+                                <div class="flex min-w-0 items-center gap-3">
                                     <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold {{ $loop->first ? 'bg-[#176b45] text-white' : 'bg-[#eef3ef] text-[#8a9990]' }}">{{ $result->ranking }}</span>
                                     <span class="text-sm font-semibold {{ $loop->first ? 'text-[#173b29]' : 'text-[#66746c]' }}">{{ $result->disease_name_snapshot }}</span>
                                 </div>
-                                <div class="text-right">
-                                    <span class="text-sm font-bold {{ $loop->first ? 'text-[#176b45]' : 'text-[#173b29]' }}">{{ number_format((float) $result->cf_value, 2, ',', '.') }}</span>
-                                    <span class="block text-[10px] text-[#8a9990]">{{ round(max(0.0, (float) $result->cf_value) * 100, 2) }}%</span>
+                                <div class="shrink-0 text-right">
+                                    <span class="text-sm font-bold {{ $loop->first ? 'text-[#176b45]' : 'text-[#173b29]' }}">{{ round(max(0.0, (float) $result->cf_value) * 100, 2) }}%</span>
                                 </div>
                             </li>
                         @endforeach

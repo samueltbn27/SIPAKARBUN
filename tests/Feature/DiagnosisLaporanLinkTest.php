@@ -144,7 +144,7 @@ class DiagnosisLaporanLinkTest extends TestCase
         $this->get(route('diagnosis.show', ['id' => $diagnosis->id]))
             ->assertOk()
             ->assertSee('menunggu validasi POPT')
-            ->assertSee('belum ikut perhitungan CF')
+            ->assertSee('belum digunakan untuk menentukan hasil diagnosis')
             ->assertSee($laporan->report_code);
     }
 
@@ -163,7 +163,7 @@ class DiagnosisLaporanLinkTest extends TestCase
         $this->get(route('diagnosis.reports.show', $laporan))
             ->assertOk()
             ->assertSee($diagnosis->kode)
-            ->assertSee('tidak memengaruhi hasil CF');
+            ->assertSee('belum digunakan untuk menentukan hasil diagnosis');
     }
 
     public function test_menolak_penautan_laporan_tidak_sah(): void

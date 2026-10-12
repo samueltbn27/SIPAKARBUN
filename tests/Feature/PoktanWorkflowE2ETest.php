@@ -117,7 +117,7 @@ class PoktanWorkflowE2ETest extends TestCase
         $this->get(route('diagnosis.show', ['id' => $diagnosis->id]))->assertOk()
             ->assertSee('Karat Daun Kopi')
             ->assertSee('Ajukan Penanganan')
-            ->assertSee('Peringkat #1');
+            ->assertSee('Urutan pertama');
 
         // 5) Form ajuan dengan diagnosis terpilih terhubung dari ID diagnosis.
         $this->get(route('permohonan.create', ['diagnosis_id' => $diagnosis->id]))->assertOk()

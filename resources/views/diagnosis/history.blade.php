@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Riwayat Diagnosis')
+@section('subtitle', 'Lihat kembali gejala, hasil, dan rekomendasi diagnosis Anda.')
 
 @php
     $komoditasNama = fn (int $commodityId): string => $komoditasMap[$commodityId] ?? ('Komoditas #'.$commodityId);
@@ -9,7 +10,7 @@
         'terlama' => 'Terlama',
         'kode' => 'Kode Diagnosis (A–Z)',
         'komoditas' => 'Komoditas (A–Z)',
-        'cf' => 'Nilai CF (Tertinggi)',
+        'cf' => 'Tingkat Keyakinan (Tertinggi)',
         'penyakit' => 'Penyakit Utama (A–Z)',
     ];
     $hasFilters = $search !== '' || $komoditasFilter > 0 || $tanggal !== '';
@@ -141,7 +142,7 @@
                             <th class="px-3 py-3">Tanggal</th>
                             <th class="px-3 py-3">Komoditas</th>
                             <th class="px-3 py-3">Diagnosis/Penyakit</th>
-                            <th class="px-3 py-3 text-right">Nilai CF</th>
+                            <th class="px-3 py-3 text-right">Tingkat Keyakinan</th>
                             <th class="px-5 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -163,13 +164,12 @@
                                         <span class="text-[#8a9990]">Tidak ada hasil</span>
                                     @else
                                         <span class="font-semibold text-[#173b29]">{{ $top->disease_name_snapshot }}</span>
-                                        <span class="block text-xs text-[#8a9990]">dari {{ $diagnosis->results->count() }} kandidat</span>
+                                        <span class="block text-xs text-[#8a9990]">dari {{ $diagnosis->results->count() }} kemungkinan penyakit</span>
                                     @endif
                                 </td>
                                 <td class="px-3 py-4 text-right">
                                     @if ($top !== null)
-                                        <span class="font-bold text-[#176b45]">{{ number_format((float) $top->cf_value, 2, ',', '.') }}</span>
-                                        <span class="block text-[10px] text-[#8a9990]">{{ round(max(0.0, (float) $top->cf_value) * 100, 2) }}%</span>
+                                        <span class="font-bold text-[#176b45]">{{ round(max(0.0, (float) $top->cf_value) * 100, 2) }}%</span>
                                     @else
                                         <span class="text-[#8a9990]">—</span>
                                     @endif
@@ -200,7 +200,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-[#176b45]">
-                                {{ $top !== null ? number_format((float) $top->cf_value, 2, ',', '.') : '—' }}
+                                {{ $top !== null ? round(max(0.0, (float) $top->cf_value) * 100, 2).'%' : '—' }}
                             </p>
                         </div>
                     </div>
@@ -208,7 +208,7 @@
                         @if ($top === null)
                             Tidak ada hasil
                         @else
-                            {{ $top->disease_name_snapshot }} <span class="text-xs text-[#8a9990]">· {{ $diagnosis->results->count() }} kandidat</span>
+                            {{ $top->disease_name_snapshot }} <span class="text-xs text-[#8a9990]">· {{ $diagnosis->results->count() }} kemungkinan penyakit</span>
                         @endif
                     </p>
                     <p class="mt-1 text-xs text-[#8a9990]">{{ $diagnosis->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y · H:i') ?? '—' }}</p>

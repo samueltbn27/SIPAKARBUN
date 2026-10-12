@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Laporan Gejala Saya')
+@section('subtitle', 'Pantau laporan gejala yang Anda kirim kepada POPT.')
 
 @section('content')
     <x-page-header

@@ -1,13 +1,16 @@
 @extends('layouts.app')
 
 @section('title', 'Diagnosis Penyakit')
+@section('subtitle', 'Pilih kondisi tanaman yang Anda temukan untuk membantu mengenali kemungkinan penyakit.')
 
 @section('content')
     <x-page-header
         title="Diagnosis Penyakit"
-        subtitle="Deteksi dugaan penyakit perkebunan berbasis gejala yang Anda amati (Certainty Factor)."
+        subtitle="Pilih kondisi tanaman yang Anda temukan untuk membantu mengenali kemungkinan penyakit."
         :breadcrumbs="[['label' => 'Dashboard', 'url' => route('dashboard')], ['label' => 'Diagnosis']]"
     />
+
+    <p class="mb-5 text-sm leading-6 text-[#66746c] sm:hidden">Pilih kondisi tanaman yang Anda temukan untuk membantu mengenali kemungkinan penyakit.</p>
 
     {{-- State ERROR: knowledge API gagal --}}
     @if ($knowledgeError)
@@ -15,8 +18,8 @@
             <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
                 <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </span>
-            <h2 class="mt-4 text-lg font-bold text-[#173b29]">{{ $knowledgeError }}</h2>
-            <p class="mt-1 max-w-md text-sm text-[#66746c]">Pastikan layanan knowledge tersedia, lalu muat ulang halaman.</p>
+            <h2 class="mt-4 text-lg font-bold text-[#173b29]">Data diagnosis belum dapat dimuat. Silakan coba lagi.</h2>
+            <p class="mt-1 max-w-md text-sm text-[#66746c]">Periksa koneksi Anda, lalu muat ulang halaman untuk mencoba kembali.</p>
             <a href="{{ route('diagnosis.index') }}"
                class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29]">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -47,8 +50,8 @@
                 gejala: {{ Js::from($gejala) }},
                 gejalaMap: {{ Js::from($komoditasGejalaMap) }},
                 levels: [
-                    { label: 'Tidak Yakin', value: 0.2 },
-                    { label: 'Kurang Yakin', value: 0.4 },
+                    { label: 'Sangat Ragu', value: 0.2 },
+                    { label: 'Ragu', value: 0.4 },
                     { label: 'Cukup Yakin', value: 0.6 },
                     { label: 'Yakin', value: 0.8 },
                     { label: 'Sangat Yakin', value: 1.0 },
@@ -57,7 +60,7 @@
                     { n: 1, label: 'Komoditas' },
                     { n: 2, label: 'Gejala' },
                     { n: 3, label: 'Keyakinan' },
-                    { n: 4, label: 'Proses' },
+                    { n: 4, label: 'Hasil' },
                 ],
                 step: {{ $initialStep ?? 1 }},
                 maxVisited: {{ $initialStep ?? 1 }},
@@ -131,7 +134,7 @@
                     this.error = '';
                     const s = window.SipakarbunDiagnosisDraft;
                     const kapan = s ? s.formatDraftDateTime(d.updatedAt) : '';
-                    this.draftInfo = 'Draf dipulihkan otomatis' + (kapan ? ' · ' + kapan : '');
+                    this.draftInfo = kapan ? 'disimpan ' + kapan : 'pilihan tersimpan';
                     this.draftDipulihkan = true;
                     return true;
                 },
@@ -204,7 +207,7 @@
                         maxVisited: this.maxVisited,
                     });
                     if (hasil === 'saved') {
-                        this.draftInfo = 'Tersimpan otomatis ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        this.draftInfo = 'disimpan ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                     }
                     return hasil;
                 },
@@ -338,9 +341,19 @@
                 confLabel(id) {
                     const v = this.confValue(id);
                     const lvl = this.levels.find(l => l.value === v);
-                    return lvl ? lvl.label : String(v);
+                    return lvl ? lvl.label : 'Penilaian tersimpan';
                 },
                 confIndex(id) { return this.levels.findIndex(l => l.value === this.confValue(id)); },
+                navigateConfidence(event, id) {
+                    const offsets = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+                    if (!(event.key in offsets) && event.key !== 'Home' && event.key !== 'End') return;
+                    event.preventDefault();
+                    const group = event.currentTarget;
+                    const index = event.key === 'Home' ? 0 : (event.key === 'End' ? this.levels.length - 1
+                        : (Math.max(0, this.confIndex(id)) + offsets[event.key] + this.levels.length) % this.levels.length);
+                    this.setConf(id, this.levels[index].value);
+                    this.$nextTick(() => group.querySelector('[aria-checked=true]')?.focus());
+                },
                 goTo(n) { if (n >= 1 && n <= this.maxVisited) { this.step = n; this.simpanDraft(); } },
                 next() {
                     if (this.step === 1 && !this.commodityId) { this.error = 'Pilih komoditas terlebih dahulu.'; return; }
@@ -425,21 +438,23 @@
                 </template>
 
                 {{-- Step indicator --}}
-                <ol class="mb-6 flex flex-wrap items-center gap-2 sm:gap-3" aria-label="Langkah diagnosis">
+                <ol class="mb-5 grid grid-cols-4 gap-2 sm:mb-6 sm:flex sm:flex-wrap sm:items-center sm:gap-3" aria-label="Langkah diagnosis">
                     <template x-for="s in steps" :key="s.n">
-                        <li class="flex items-center gap-2 sm:gap-3">
+                        <li class="flex min-w-0 items-center sm:gap-3">
                             <button type="button" @click="goTo(s.n)"
-                                    class="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+                                    :disabled="s.n > maxVisited" :aria-current="step === s.n ? 'step' : 'false'"
+                                    :aria-label="'Langkah ' + s.n + ' dari 4: ' + s.label"
+                                    class="flex min-h-11 w-full flex-col items-center gap-1 rounded-xl border px-1.5 py-2 text-[11px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45] sm:w-auto sm:flex-row sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs"
                                     :class="step === s.n
                                         ? 'border-[#176b45] bg-[#e8f4ed] text-[#176b45]'
                                         : (s.n < maxVisited ? 'border-[#176b45]/30 bg-white text-[#176b45] hover:bg-[#f3f8f4]' : 'border-[#e4ece7] bg-white text-[#a0aba4]')">
                                 <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
                                       :class="step === s.n ? 'bg-[#176b45] text-white' : (s.n < maxVisited ? 'bg-[#e8f4ed] text-[#176b45]' : 'bg-[#eef3ef] text-[#a0aba4]')"
                                       x-text="s.n"></span>
-                                <span class="hidden sm:inline" x-text="s.label"></span>
+                                <span x-text="s.label"></span>
                             </button>
                             <template x-if="s.n < 4">
-                                <svg class="h-3 w-3 text-[#b9c4bd]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                <svg class="hidden h-3 w-3 text-[#b9c4bd] sm:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                             </template>
                         </li>
                     </template>
@@ -449,37 +464,38 @@
                 <div x-show="error" x-cloak class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" x-text="error"></div>
 
                 {{-- Info draf dipulihkan otomatis --}}
-                <div x-show="draftDipulihkan" x-cloak class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div x-show="draftDipulihkan" x-cloak class="mb-4 rounded-xl border border-[#b8d5c3] bg-[#f0f8f3] p-4" role="status" aria-live="polite">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="text-sm text-emerald-800">
-                            <p class="font-bold">Pilihan terakhir dipulihkan otomatis</p>
-                            <p class="mt-0.5 text-xs">
-                                <span x-text="draftInfo"></span>
-                                · <span x-text="komoditasNama(commodityId)"></span>
+                        <div class="min-w-0 text-sm text-[#176b45]">
+                            <p class="font-bold">Pilihan sebelumnya berhasil dipulihkan</p>
+                            <p class="mt-1 text-xs leading-5 text-[#53645a]">Anda dapat melanjutkan diagnosis dari terakhir kali.</p>
+                            <p class="mt-1 text-xs leading-5 text-[#53645a]">
+                                <span x-text="komoditasNama(commodityId)"></span>
                                 · <span x-text="selected.length === 0 ? 'belum pilih gejala' : (selected.length + ' gejala')"></span>
+                                · <span x-text="draftInfo"></span>
                             </p>
                         </div>
                         <div class="flex shrink-0 gap-2">
                             <button type="button" @click="reset()"
-                                    class="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Mulai baru</button>
+                                    class="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Mulai Ulang</button>
                         </div>
                     </div>
                 </div>
 
-                <p x-show="commodityId && draftInfo && !draftDipulihkan" x-cloak class="mb-4 text-xs text-[#8a9990]">
-                    <span x-text="draftInfo"></span> · draf terhapus otomatis setelah diagnosis diproses.
+                <p x-show="commodityId && draftInfo && !draftDipulihkan" x-cloak class="mb-4 text-xs leading-5 text-[#66746c]" role="status">
+                    Pilihan tersimpan otomatis · <span x-text="draftInfo"></span>
                 </p>
 
                 {{-- STEP 1: Pilih Komoditas --}}
                 <section x-show="step === 1" x-cloak>
                     <x-card class="p-5 sm:p-6">
-                        <h2 class="text-base font-bold text-[#173b29]">Step 1 · Pilih Komoditas</h2>
+                        <h2 class="text-base font-bold text-[#173b29]">Pilih Komoditas</h2>
                         <p class="mt-1 text-sm text-[#66746c]">Pilih komoditas yang sedang Anda amati.</p>
 
                         <div class="mt-4">
                             <div class="relative">
                                 <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a0aba4]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                                <input type="search" x-model="komoditasSearch" placeholder="Cari komoditas…"
+                                <input type="search" x-model="komoditasSearch" placeholder="Cari komoditas…" aria-label="Cari komoditas"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-colors focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15">
                             </div>
 
@@ -521,14 +537,14 @@
                     <x-card class="p-5 sm:p-6">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <h2 class="text-base font-bold text-[#173b29]">Step 2 · Pilih Gejala</h2>
+                                <h2 class="text-base font-bold text-[#173b29]">Pilih Gejala</h2>
                                 <p class="mt-1 text-sm text-[#66746c]">
                                     Komoditas: <span class="font-semibold text-[#176b45]" x-text="komoditasNama(commodityId)"></span>
                                 </p>
                             </div>
                             <div class="relative w-full sm:min-w-0 sm:flex-1 sm:max-w-xl">
                                 <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a0aba4]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                                <input type="search" x-model="gejalaSearch" placeholder="Cari gejala…"
+                                <input type="search" x-model="gejalaSearch" placeholder="Cari gejala…" aria-label="Cari gejala"
                                        class="w-full rounded-xl border border-[#dbe5df] bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition-colors focus:border-[#176b45] focus:ring-2 focus:ring-[#176b45]/15">
                             </div>
                         </div>
@@ -584,7 +600,7 @@
 
                         <div x-show="laporanTerkait.length > 0" x-cloak class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
                             <p class="text-xs font-bold uppercase tracking-wide text-amber-700">Gejala baru terlampir (<span x-text="laporanTerkait.length"></span>)</p>
-                            <p class="mt-1 text-xs text-amber-700">Ikut terkirim bersama diagnosis ini. Belum ikut perhitungan CF sampai divalidasi dan dipublish.</p>
+                            <p class="mt-1 text-xs text-amber-700">Ikut terkirim bersama diagnosis ini. Belum digunakan dalam hasil diagnosis sampai ditinjau dan disetujui.</p>
                             <ul class="mt-2 space-y-1.5">
                                 <template x-for="lap in laporanTerkait" :key="'chip' + lap.id">
                                     <li class="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
@@ -606,10 +622,10 @@
                 </section>
 
                 {{-- STEP 3: Tingkat Keyakinan --}}
-                <section x-show="step === 3" x-cloak>
+                <section x-show="step === 3" x-cloak data-diagnosis-step="confidence" aria-labelledby="confidence-title">
                     <x-card class="p-5 sm:p-6">
-                        <h2 class="text-base font-bold text-[#173b29]">Step 3 · Tingkat Keyakinan</h2>
-                        <p class="mt-1 text-sm text-[#66746c]">Seberapa yakin Anda mengamati tiap gejala? Nilai dipakai langsung oleh mesin Certainty Factor backend.</p>
+                        <h2 id="confidence-title" class="text-base font-bold text-[#173b29]">Tingkat Keyakinan Gejala</h2>
+                        <p class="mt-1 max-w-3xl text-sm leading-6 text-[#66746c]">Untuk setiap gejala, pilih tingkat keyakinan berdasarkan kondisi yang benar-benar Anda lihat pada tanaman.</p>
 
                         <div x-show="selected.length === 0" x-cloak
                              class="mt-4 rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-4 py-12 text-center text-sm text-[#8a9990]">
@@ -618,20 +634,24 @@
 
                         <ul class="mt-4 space-y-4" x-show="selected.length > 0" x-cloak>
                             <template x-for="id in selected" :key="id">
-                                <li class="rounded-xl border border-[#e4ece7] bg-[#fafcfb] p-4">
+                                <li class="rounded-xl border border-[#e4ece7] bg-[#fafcfb] p-3 sm:p-4">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
                                         <span class="text-sm font-bold text-[#173b29]" x-text="(gejala.find(g => Number(g.id) === Number(id))?.nama) ?? 'Gejala #' + id"></span>
-                                        <span class="rounded-full bg-[#e8f4ed] px-3 py-1 text-xs font-semibold text-[#176b45]" x-text="confLabel(id)"></span>
+                                        <span class="rounded-full bg-[#e8f4ed] px-3 py-1 text-xs font-semibold text-[#176b45]" :aria-label="'Pilihan saat ini: ' + confLabel(id)" x-text="confLabel(id)"></span>
                                     </div>
-                                    <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                                    <div class="mt-3 grid grid-cols-2 gap-2 xl:grid-cols-5" role="radiogroup"
+                                         :aria-label="'Tingkat keyakinan: ' + ((gejala.find(g => Number(g.id) === Number(id))?.nama) ?? 'gejala terpilih')"
+                                         @keydown="navigateConfidence($event, id)">
                                         <template x-for="lvl in levels" :key="lvl.value">
                                             <button type="button" @click="setConf(id, lvl.value)"
-                                                    class="rounded-lg border px-2 py-2 text-center text-xs font-semibold transition-colors"
+                                                    role="radio" :aria-checked="confValue(id) === lvl.value"
+                                                    :tabindex="confValue(id) === lvl.value || (confIndex(id) < 0 && lvl.value === levels[0].value) ? 0 : -1"
+                                                    class="flex min-h-12 items-center justify-center gap-2 rounded-lg border px-3 py-3 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45]"
                                                     :class="confValue(id) === lvl.value
                                                         ? 'border-[#176b45] bg-[#176b45] text-white'
                                                         : 'border-[#dbe5df] bg-white text-[#66746c] hover:border-[#176b45]/40'">
                                                 <span class="block" x-text="lvl.label"></span>
-                                                <span class="mt-0.5 block text-[10px] font-normal opacity-70" x-text="lvl.value.toFixed(1)"></span>
+                                                <svg x-show="confValue(id) === lvl.value" class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                                             </button>
                                         </template>
                                     </div>
@@ -640,10 +660,10 @@
                         </ul>
 
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala · keyakinan dikonversi ke skala 0–1'"></span>
+                            <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala dipilih · Pastikan pilihan sesuai dengan kondisi tanaman.'"></span>
                             <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
                                 <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
-                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjut</button>
+                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Tinjau Pilihan</button>
                             </div>
                         </div>
                     </x-card>
@@ -652,8 +672,8 @@
                 {{-- STEP 4: Proses Diagnosis --}}
                 <section x-show="step === 4" x-cloak>
                     <x-card class="p-5 sm:p-6">
-                        <h2 class="text-base font-bold text-[#173b29]">Step 4 · Proses Diagnosis</h2>
-                        <p class="mt-1 text-sm text-[#66746c]">Periksa kembali pilihan Anda sebelum menjalankan diagnosis.</p>
+                        <h2 class="text-base font-bold text-[#173b29]">Tinjau Pilihan Sebelum Melihat Hasil</h2>
+                        <p class="mt-1 text-sm text-[#66746c]">Pastikan komoditas, gejala, dan tingkat keyakinan sesuai dengan kondisi tanaman.</p>
 
                         <div class="mt-4 overflow-hidden rounded-xl border border-[#e4ece7]">
                             <div class="flex flex-col gap-1 bg-[#fafcfb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -686,7 +706,7 @@
                                     <template x-for="lap in laporanTerkait" :key="'sumlap' + lap.id">
                                         <li class="flex items-center justify-between gap-3 px-4 py-3">
                                             <span class="font-mono text-sm font-bold text-[#176b45]" x-text="lap.report_code"></span>
-                                            <span class="text-[11px] text-[#8a9990]">Tidak memengaruhi CF ini</span>
+                                            <span class="text-[11px] text-[#8a9990]">Belum digunakan pada hasil ini</span>
                                         </li>
                                     </template>
                                 </ul>
@@ -699,7 +719,7 @@
                                     class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
                                 <svg x-show="!submitting" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                                 <svg x-show="submitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                <span x-text="submitting ? 'Memproses…' : 'Proses Diagnosis'"></span>
+                                <span x-text="submitting ? 'Menganalisis gejala…' : 'Lihat Hasil'"></span>
                             </button>
                         </div>
                     </x-card>
@@ -711,7 +731,7 @@
                     <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[#eef3ef] bg-white px-5 py-4 sm:px-6">
                         <div>
                             <h2 id="report-modal-title" class="text-lg font-bold text-[#173b29]">Laporkan gejala baru</h2>
-                            <p id="report-modal-description" class="mt-1 text-xs leading-5 text-[#66746c]">POPT akan meninjau laporan sebelum gejala dapat digunakan dalam basis pengetahuan.</p>
+                            <p id="report-modal-description" class="mt-1 text-xs leading-5 text-[#66746c]">POPT akan meninjau laporan sebelum gejala dapat digunakan untuk diagnosis.</p>
                         </div>
                         <button type="button" @click="closeReport()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-[#66746c] hover:bg-[#f3f8f4]" aria-label="Tutup formulir laporan">&times;</button>
                     </div>
@@ -723,7 +743,7 @@
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" /></svg>
                                 </div>
                                 <h3 class="mt-3 text-base font-bold text-[#173b29]">Laporan berhasil dikirim</h3>
-                                <p class="mt-1 text-sm leading-6 text-[#66746c]">POPT akan meninjau pengamatan Anda. Laporan ini belum menjadi gejala diagnosis, tetapi akan dilampirkan saat diagnosis ini diproses.</p>
+                                <p class="mt-1 text-sm leading-6 text-[#66746c]">POPT akan meninjau pengamatan Anda. Laporan ini akan dilampirkan pada diagnosis, tetapi belum digunakan untuk menentukan hasilnya.</p>
                                 <p class="mt-3 inline-flex rounded-lg bg-white px-3 py-2 font-mono text-sm font-bold text-[#176b45]" x-text="reportCode"></p>
                                 <div class="mt-4 flex flex-col gap-2 sm:flex-row">
                                     <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Lihat laporan saya</a>
