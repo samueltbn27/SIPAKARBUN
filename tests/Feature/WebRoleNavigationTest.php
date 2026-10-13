@@ -64,7 +64,7 @@ class WebRoleNavigationTest extends TestCase
         $response = $this->get(route('dashboard'))->assertOk();
 
         $response->assertSee('Diagnosis')
-            ->assertSee('Riwayat Diagnosis')
+            ->assertSee('Laporan Gejala Saya')
             ->assertSee('Permohonan Saya');
 
         $response->assertDontSee('Permohonan Masuk')

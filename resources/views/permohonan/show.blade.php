@@ -5,16 +5,6 @@
 @php
     use Illuminate\Support\Facades\Storage;
 
-    $statusLabels = [
-        'diajukan' => ['Diajukan', 'bg-blue-50 text-blue-700'],
-        'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
-        'diterima' => ['Diterima', 'bg-[#e8f4ed] text-[#176b45]'],
-        'ditolak' => ['Ditolak', 'bg-red-50 text-red-700'],
-    ];
-    [$statusLabel, $statusClass] = $statusLabels[$permohonan->status] ?? [
-        \Illuminate\Support\Str::headline((string) $permohonan->status),
-        'bg-[#eef3ef] text-[#66746c]',
-    ];
     $primary = $permohonan->diagnosis?->results?->first();
     $komoditasNama = $komoditas['nama'] ?? ($permohonan->diagnosis === null ? null : 'Komoditas #'.$permohonan->diagnosis->commodity_id);
     $formatDate = fn ($date, string $format = 'd M Y · H:i'): string => $date?->timezone('Asia/Jakarta')->translatedFormat($format) ?? '—';
@@ -44,7 +34,7 @@
 
     <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">No. Permohonan</p><p class="mt-1 text-sm font-bold text-[#176b45]">{{ $permohonan->permohonan_code }}</p></x-card>
-        <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Status Permohonan</p><p class="mt-1"><span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">{{ $statusLabel }}</span></p></x-card>
+        <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Status Permohonan</p><p class="mt-1"><x-kasus.request-status-badge :status="$permohonan->status" /></p></x-card>
         <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Tanggal Pengajuan</p><p class="mt-1 text-sm font-bold text-[#173b29]">{{ $waktu }}</p></x-card>
         <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Diagnosis</p><p class="mt-1">@if ($permohonan->diagnosis === null)<span class="text-sm text-[#8a9990]">—</span>@else<a href="{{ route('diagnosis.show', $permohonan->diagnosis->id) }}" class="text-sm font-bold text-[#176b45] hover:underline">{{ $permohonan->diagnosis->kode }}</a>@endif</p></x-card>
     </div>
@@ -54,7 +44,7 @@
         <x-card>
             <div class="border-b border-[#eef3ef] px-5 py-4"><h4 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Status Permohonan</h4></div>
             <div class="p-5">
-                <p><span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">{{ $statusLabel }}</span></p>
+                <p><x-kasus.request-status-badge :status="$permohonan->status" /></p>
                 @if ($permohonan->status === 'sedang_direview')
                     <p class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-700">Sedang diperiksa oleh Operator UPTD.@if ($permohonan->reviewed_at !== null) Sejak {{ $formatDate($permohonan->reviewed_at) }}.@endif</p>
                 @endif
@@ -72,7 +62,7 @@
             <x-card>
                 <div class="border-b border-[#eef3ef] px-5 py-4"><h4 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Status Penanganan</h4></div>
                 <div class="p-5">
-                    <div class="flex flex-wrap items-center gap-2"><span class="text-sm font-bold text-[#173b29]">{{ $kasus->kasus_code }}</span><span class="rounded-full px-3 py-1 text-xs font-semibold {{ $handling['status']['badge_class'] }}">{{ $handling['status']['label'] }}</span></div>
+                    <div class="flex flex-wrap items-center gap-2"><span class="text-sm font-bold text-[#173b29]">{{ $kasus->kasus_code }}</span><x-kasus.handling-status-badge :status="$handling['status']" /></div>
                     @if ($handling['status']['is_overdue'])<p class="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">Penanganan telah melewati target penyelesaian.</p>@else<p class="mt-3 text-xs text-[#8a9990]">Kasus dibuat {{ $formatDate($kasus->created_at) }} ketika permohonan diterima.</p>@endif
                     @if ($handling['last_update_at'] !== null)<p class="mt-3 text-xs text-[#8a9990]">Update terakhir: {{ $formatDate($handling['last_update_at']) }}</p>@endif
                     @if ($kasus->current_status === 'selesai')

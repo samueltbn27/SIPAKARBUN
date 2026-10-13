@@ -437,8 +437,9 @@
                     <input type="hidden" :name="'symptom_confidence[' + id + ']'" :value="confValue(id)">
                 </template>
 
-                {{-- Step indicator --}}
-                <ol class="mb-5 grid grid-cols-4 gap-2 sm:mb-6 sm:flex sm:flex-wrap sm:items-center sm:gap-3" aria-label="Langkah diagnosis">
+                {{-- Step indicator and quick link to diagnosis history --}}
+                <div class="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <ol class="grid grid-cols-4 gap-2 sm:mb-0 sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:gap-3" aria-label="Langkah diagnosis">
                     <template x-for="s in steps" :key="s.n">
                         <li class="flex min-w-0 items-center sm:gap-3">
                             <button type="button" @click="goTo(s.n)"
@@ -459,6 +460,12 @@
                         </li>
                     </template>
                 </ol>
+                <a href="{{ route('diagnosis.history') }}" data-diagnosis-history="quick-link"
+                   class="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-action-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-action-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45] sm:w-auto">
+                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0z" /></svg>
+                    Riwayat Diagnosis
+                </a>
+                </div>
 
                 {{-- Inline error --}}
                 <div x-show="error" x-cloak class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" x-text="error"></div>
@@ -716,7 +723,7 @@
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
                             <button type="submit" :disabled="submitting || selected.length === 0"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
+                                    class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
                                 <svg x-show="!submitting" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                                 <svg x-show="submitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                 <span x-text="submitting ? 'Menganalisis gejala…' : 'Lihat Hasil'"></span>
