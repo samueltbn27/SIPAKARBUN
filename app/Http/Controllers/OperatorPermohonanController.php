@@ -44,7 +44,7 @@ class OperatorPermohonanController extends Controller
     {
         $permohonan = PermohonanPenanganan::query()->findOrFail($id);
 
-        $this->service->review($permohonan, (int) $request->user()->id);
+        $permohonan = $this->service->review($permohonan, (int) $request->user()->id);
 
         return new PermohonanResource($permohonan);
     }
@@ -57,6 +57,8 @@ class OperatorPermohonanController extends Controller
             permohonan: $permohonan,
             operator: $request->user(),
             catatan: $request->validated('catatan'),
+            poptId: (int) $request->validated('popt_id'),
+            deadlineAt: $request->validated('deadline_at'),
         );
 
         return (new KasusPenangananResource(

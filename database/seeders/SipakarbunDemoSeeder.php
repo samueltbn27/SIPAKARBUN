@@ -11,6 +11,7 @@ use App\Models\KasusPenanganan;
 use App\Models\KeputusanPermohonan;
 use App\Models\LaporanAkhirEvidence;
 use App\Models\LaporanAkhirPenanganan;
+use App\Models\LaporanGejala;
 use App\Models\PenugasanPopt;
 use App\Models\Penyakit;
 use App\Models\PermohonanPenanganan;
@@ -20,486 +21,371 @@ use App\Models\RefKelompokTani;
 use App\Models\RefKomoditas;
 use App\Models\RiwayatStatusPenanganan;
 use App\Models\User;
+use App\Services\CertaintyFactorService;
 use App\Services\MockKomoditasReferensiClient;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
-use Spatie\Permission\Models\Role;
 
-/**
- * Reproducible local/demo dataset. This seeder is deliberately explicit and
- * is not called from DatabaseSeeder, so a production seed cannot silently
- * create shared demo accounts or workflow records.
- */
+/** Offline fixtures only. Never resets a database or rewrites demo history. */
 class SipakarbunDemoSeeder extends Seeder
 {
-    private const CASE_MARKER = 'DATA DEMO SIPAKARBUN — khusus UAT, bukan laporan aktual.';
+    public const MARKER = 'DATA DEMO SIPAKARBUN V2 — fiktif, bukan laporan resmi Disbun.';
+
+    private const ACCOUNTS = [
+        'admin' => ['admin', 'admin.tester@sipakarbun.local', 'Admin Demo SIPAKARBUN'],
+        'operator_uptd' => ['operator_uptd', 'operator.tester@sipakarbun.local', 'Operator UPTD Demo'],
+        'popt' => ['popt', 'popt.tester@sipakarbun.local', 'POPT Demo'],
+        'pimpinan' => ['pimpinan', 'pimpinan.tester@sipakarbun.local', 'Pimpinan Demo'],
+        'popt_dua' => ['popt', 'popt.dua.tester@sipakarbun.local', 'POPT Kedua Demo'],
+        'kopi' => ['poktan', 'poktan.tester@sipakarbun.local', 'Poktan Kopi Demo'],
+        'kopi_garut' => ['poktan', 'poktan.kopi-garut.tester@sipakarbun.local', 'Poktan Kopi Garut Demo'],
+        'kakao' => ['poktan', 'poktan.kakao.tester@sipakarbun.local', 'Poktan Kakao Demo'],
+        'cengkeh' => ['poktan', 'poktan.cengkeh.tester@sipakarbun.local', 'Poktan Cengkeh Demo'],
+        'kelapa' => ['poktan', 'poktan.kelapa.tester@sipakarbun.local', 'Poktan Kelapa Demo'],
+    ];
 
     public function run(): void
     {
         if (app()->environment('production')) {
             throw new RuntimeException('Seeder demo SIPAKARBUN tidak boleh dijalankan pada environment production.');
         }
-
-        $password = (string) config('services.uat.demo_password', '');
-        if ($password === '') {
-            throw new RuntimeException('SIPAKARBUN_DEMO_PASSWORD wajib diisi sebelum menjalankan seeder demo.');
+        if (! app()->environment(['local', 'testing'])) {
+            throw new RuntimeException('Seeder demo hanya tersedia pada environment local/testing.');
         }
+        $this->assertDemoDatabase();
 
-        $this->call([RoleSeeder::class, RefKomoditasSeeder::class, KnowledgeUatSeeder::class]);
+        DB::transaction(function (): void {
+            Model::unguarded(function (): void {
+                $this->call(RoleSeeder::class);
+                $accounts = $this->seedAccounts();
+                $commodities = $this->seedCommodities();
+                if (! Penyakit::query()->where('kode', 'like', 'PNY-UAT-%')->exists()) {
+                    $this->call(KnowledgeUatSeeder::class);
+                }
+                $groups = $this->seedGroups($commodities);
+                $this->linkAccounts($accounts, $groups);
+                $this->seedKnowledgeImages();
+                $anchor = CarbonImmutable::now();
+                foreach (require database_path('seeders/data/sipakarbun-status-cases.php') as $definition) {
+                    $this->seedScenario($definition, $accounts, $groups, $anchor);
+                }
+            });
+        });
 
-        $accounts = $this->seedAccounts($password);
-        $commodities = $this->seedCommodities();
-        $groups = $this->seedGroups($commodities);
-        $this->tautkanPoktanDemo($accounts, $groups);
-        $this->seedKnowledgeImages();
-        $this->seedStudyCases($accounts, $commodities, $groups);
+        $this->command?->info('Dataset DEMO V2 siap: 20 permohonan, 14 kasus, empat status utama (3 review, 3 ditolak, 10 dalam penanganan, 4 selesai). Password dan histori existing dipertahankan.');
+    }
 
-        $this->command?->info('SIPAKARBUN demo dataset siap dan dapat dijalankan ulang tanpa duplikasi.');
+    /** Reject mixed databases before touching accounts, references or files. */
+    private function assertDemoDatabase(): void
+    {
+        $emails = array_column(self::ACCOUNTS, 1);
+        $commodityCodes = array_column((new MockKomoditasReferensiClient)->all(), 'kode');
+        $foreign = User::query()->whereNotIn('email', $emails)->exists()
+            || RefKelompokTani::query()->where('disbun_record_id', 'not like', 'DEMO-SIPAKARBUN-V2-%')->exists()
+            || RefKomoditas::query()->where(fn ($q) => $q->whereNotNull('disbun_record_id')->orWhereNotIn('kode', $commodityCodes))->exists()
+            || Diagnosis::query()->where(fn ($q) => $q->whereNull('kode')->orWhere('kode', 'not like', 'DG-DEMO-V2-%'))->exists()
+            || PermohonanPenanganan::query()->where(fn ($q) => $q->where('permohonan_code', 'not like', 'PM-DEMO-V2-%')->orWhereNull('catatan_pemohon')->orWhere('catatan_pemohon', 'not like', self::MARKER.'%'))->exists()
+            || KasusPenanganan::withTrashed()->where('kasus_code', 'not like', 'KS-DEMO-V2-%')->exists()
+            || Penyakit::query()->where('kode', 'not like', 'PNY-UAT-%')->exists()
+            || Gejala::query()->where('kode', 'not like', 'G-UAT-%')->exists()
+            || LaporanGejala::query()->exists();
+
+        if ($foreign) {
+            throw new RuntimeException('Database berisi data non-demo atau dataset lama. Gunakan database kosong/terisolasi; tidak ada data yang dihapus atau ditimpa.');
+        }
     }
 
     /** @return array<string, User> */
-    private function seedAccounts(string $password): array
+    private function seedAccounts(): array
     {
-        $definitions = [
-            'admin' => ['name' => 'Admin Demo SIPAKARBUN', 'email' => 'admin.tester@sipakarbun.local'],
-            'operator_uptd' => ['name' => 'Operator UPTD Demo', 'email' => 'operator.tester@sipakarbun.local'],
-            'popt' => ['name' => 'POPT Demo', 'email' => 'popt.tester@sipakarbun.local'],
-            'poktan' => ['name' => 'Poktan Demo', 'email' => 'poktan.tester@sipakarbun.local'],
-            'pimpinan' => ['name' => 'Pimpinan Demo', 'email' => 'pimpinan.tester@sipakarbun.local'],
-        ];
-
         $accounts = [];
-        foreach ($definitions as $role => $definition) {
-            $user = User::updateOrCreate(
-                ['email' => $definition['email']],
-                [
-                    'name' => $definition['name'],
-                    'password' => Hash::make($password),
-                    'is_active' => true,
-                    'email_verified_at' => now(),
-                ],
-            );
-            $user->syncRoles(Role::findByName($role));
-            $accounts[$role] = $user;
+        foreach (self::ACCOUNTS as $key => [$role, $email, $name]) {
+            $user = User::query()->where('email', $email)->first();
+            if ($user === null) {
+                $password = (string) config('services.uat.demo_password', '');
+                if ($password === '') {
+                    throw new RuntimeException('SIPAKARBUN_DEMO_PASSWORD wajib diisi untuk membuat akun demo baru.');
+                }
+                $user = User::create(['email' => $email, 'name' => $name, 'password' => $password, 'is_active' => true, 'email_verified_at' => now()]);
+                $user->assignRole($role);
+            } elseif (! $user->hasRole($role)) {
+                throw new RuntimeException('Role akun demo existing tidak sesuai: '.$email.'. Periksa akun tanpa mengganti password atau role secara otomatis.');
+            }
+            $accounts[$key] = $user;
         }
 
         return $accounts;
     }
 
-    /** @return array<string, int> */
+    /** Canonical offline reference codes; no invented official Disbun IDs. */
     private function seedCommodities(): array
     {
-        $ids = [];
-        $now = now();
-
+        $commodities = [];
         foreach ((new MockKomoditasReferensiClient)->all() as $row) {
-            $existing = RefKomoditas::query()->where('kode', $row['kode'])->first();
-            $externalId = $existing?->disbun_record_id ?? (900000 + (int) $row['id']);
-
-            $reference = RefKomoditas::updateOrCreate(
-                ['kode' => $row['kode']],
-                [
-                    'disbun_record_id' => $externalId,
-                    'source' => RefKomoditas::SOURCE_DISBUN,
-                    'nama' => $row['nama'],
-                    'nama_latin' => $row['nama_latin'] ?? null,
-                    'source_is_active' => true,
-                    'is_verified' => true,
-                    'sync_status' => RefKomoditas::SYNC_SYNCED,
-                    'quarantine_reason' => null,
-                    'last_synced_at' => $now,
-                ],
-            );
-
-            $ids[$row['kode']] = (int) $reference->id;
+            $commodities[$row['kode']] = RefKomoditas::firstOrCreate(['kode' => $row['kode']], [
+                'nama' => $row['nama'], 'nama_latin' => $row['nama_latin'] ?? null,
+                'disbun_record_id' => null, 'source' => RefKomoditas::SOURCE_DISBUN,
+                'source_is_active' => true, 'is_verified' => true, 'sync_status' => RefKomoditas::SYNC_SYNCED,
+            ]);
         }
 
-        return $ids;
+        return $commodities;
     }
 
-    /** @param array<string, int> $commodities
-     * @return array<string, RefKelompokTani>
-     */
     private function seedGroups(array $commodities): array
     {
         $definitions = [
-            'anugrah' => [
-                'external_id' => '5004', 'code' => '3205042005-004', 'name' => 'ANUGRAH TANI',
-                'commodity' => 'KP-138', 'kabupaten' => 'KAB GARUT', 'kecamatan' => 'Tarogong Kaler',
-                'desa' => 'Sukawangi', 'latitude' => -7.1719511, 'longitude' => 107.8224774,
-                'kode_kabupaten' => '3205', 'kode_kecamatan' => '320504', 'kode_desa' => '3205042005',
-            ],
-            'arosta' => [
-                'external_id' => '5488', 'code' => '3211012001-004', 'name' => 'AROSTA',
-                'commodity' => 'KP-079', 'kabupaten' => 'KAB SUMEDANG', 'kecamatan' => 'Wado',
-                'desa' => 'Cimungkal', 'latitude' => -7.0029856, 'longitude' => 108.1337070,
-                'kode_kabupaten' => '3211', 'kode_kecamatan' => '321101', 'kode_desa' => '3211012001',
-            ],
-            'kakao' => [
-                'external_id' => '9901', 'code' => 'DEMO-KAKAO-001', 'name' => 'KAKAO MAJU DEMO',
-                'commodity' => 'KP-017', 'kabupaten' => 'KAB BANDUNG', 'kecamatan' => 'Pangalengan',
-                'desa' => 'Margamulya', 'latitude' => -7.0250000, 'longitude' => 107.5190000,
-                'kode_kabupaten' => '3204', 'kode_kecamatan' => '320401', 'kode_desa' => '3204012001',
-            ],
-            'cengkeh' => [
-                'external_id' => '9902', 'code' => 'DEMO-CENGKEH-001', 'name' => 'CENGKEH SEJAHTERA DEMO',
-                'commodity' => 'KP-016', 'kabupaten' => 'KAB CIANJUR', 'kecamatan' => 'Pacet',
-                'desa' => 'Cipendawa', 'latitude' => -6.8200000, 'longitude' => 107.1400000,
-                'kode_kabupaten' => '3203', 'kode_kecamatan' => '320301', 'kode_desa' => '3203012001',
-            ],
-            'kelapa' => [
-                'external_id' => '9903', 'code' => 'DEMO-KELAPA-001', 'name' => 'KELAPA LESTARI DEMO',
-                'commodity' => 'KP-056', 'kabupaten' => 'KAB BOGOR', 'kecamatan' => 'Cibinong',
-                'desa' => 'Nanggewer', 'latitude' => -6.5800000, 'longitude' => 106.8000000,
-                'kode_kabupaten' => '3201', 'kode_kecamatan' => '320101', 'kode_desa' => '3201012001',
-            ],
+            'kopi' => ['KP-079', 'Kopi Sumedang', 'KAB SUMEDANG', 'Wado', 'Cimungkal', '3211', '321101', -7.003, 108.134],
+            'kopi_garut' => ['KP-079', 'Kopi Garut', 'KAB GARUT', 'Tarogong Kaler', 'Sukawangi', '3205', '320504', -7.172, 107.823],
+            'kakao' => ['KP-017', 'Kakao Bandung', 'KAB BANDUNG', 'Pangalengan', 'Margamulya', '3204', '320401', -7.025, 107.519],
+            'cengkeh' => ['KP-016', 'Cengkeh Cianjur', 'KAB CIANJUR', 'Pacet', 'Cipendawa', '3203', '320301', -6.820, 107.140],
+            'kelapa' => ['KP-056', 'Kelapa Bogor', 'KAB BOGOR', 'Cibinong', 'Nanggewer', '3201', '320101', -6.580, 106.800],
         ];
-
         $groups = [];
-        foreach ($definitions as $key => $definition) {
-            $commodityId = $commodities[$definition['commodity']]
-                ?? throw new RuntimeException('Komoditas demo tidak ditemukan: '.$definition['commodity']);
-
-            $groups[$key] = RefKelompokTani::updateOrCreate(
-                ['source' => RefKelompokTani::SOURCE_DISBUN, 'disbun_record_id' => $definition['external_id']],
-                [
-                    'kode' => $definition['code'], 'kode_kelompok' => $definition['code'],
-                    'nama' => $definition['name'], 'ketua' => 'Profil Demo',
-                    'jenis_komoditi' => (string) RefKomoditas::find($commodityId)?->nama,
-                    'external_commodity_id' => null,
-                    'external_commodity_code' => $definition['commodity'],
-                    'external_commodity_name' => (string) RefKomoditas::find($commodityId)?->nama,
-                    'commodity_ref_id' => $commodityId, 'commodity_mapping_status' => 'mapped',
-                    'kabupaten' => $definition['kabupaten'], 'kecamatan' => $definition['kecamatan'],
-                    'desa' => $definition['desa'], 'kelurahan' => $definition['desa'],
-                    'kode_kabupaten' => $definition['kode_kabupaten'],
-                    'kode_kecamatan' => $definition['kode_kecamatan'], 'kode_desa' => $definition['kode_desa'],
-                    'latitude' => $definition['latitude'], 'longitude' => $definition['longitude'],
-                    'status' => 'aktif', 'source_is_active' => true, 'is_verified' => true,
-                    'sync_status' => RefKelompokTani::SYNC_SYNCED, 'quarantine_reason' => null,
-                    'deleted_at' => null, 'last_synced_at' => now(),
-                ],
-            );
+        foreach ($definitions as $key => [$code, $name, $regency, $district, $village, $regencyCode, $districtCode, $lat, $lng]) {
+            $commodity = $commodities[$code];
+            $groups[$key] = RefKelompokTani::firstOrCreate([
+                'source' => RefKelompokTani::SOURCE_DISBUN,
+                'disbun_record_id' => 'DEMO-SIPAKARBUN-V2-'.strtoupper($key),
+            ], [
+                'kode' => 'DEMO-V2-'.strtoupper($key), 'kode_kelompok' => 'DEMO-V2-'.strtoupper($key),
+                'nama' => 'DEMO FIKTIF '.$name, 'ketua' => 'Ketua Demo Fiktif',
+                'jenis_komoditi' => $commodity->nama, 'external_commodity_code' => $code,
+                'external_commodity_name' => $commodity->nama, 'commodity_ref_id' => $commodity->id,
+                'commodity_mapping_status' => 'mapped', 'kabupaten' => $regency, 'kecamatan' => $district,
+                'desa' => $village, 'kelurahan' => $village, 'kode_kabupaten' => $regencyCode,
+                'kode_kecamatan' => $districtCode, 'latitude' => $lat, 'longitude' => $lng,
+                'status' => 'aktif', 'source_is_active' => true, 'is_verified' => true,
+                'sync_status' => RefKelompokTani::SYNC_SYNCED,
+            ]);
         }
 
         return $groups;
     }
 
-    /** @param array<string, User> $accounts
-     *  @param array<string, RefKelompokTani> $groups
-     */
-    private function tautkanPoktanDemo(array $accounts, array $groups): void
+    private function linkAccounts(array $accounts, array $groups): void
     {
-        $poktan = $accounts['poktan'] ?? null;
-        $group = $groups['arosta'] ?? null;
-
-        if ($poktan === null || $group === null) {
-            return;
+        foreach ($groups as $key => $group) {
+            $user = $accounts[$key];
+            if ($user->kelompok_tani_id === null) {
+                $user->update(['kelompok_tani_id' => $group->id, 'kelompok_tani_kode' => $group->kode, 'kelompok_tani_nama' => $group->nama]);
+            } elseif ((int) $user->kelompok_tani_id !== (int) $group->id) {
+                throw new RuntimeException('Tautan Kelompok Tani akun demo tidak sesuai: '.$user->email);
+            }
         }
-
-        $poktan->update([
-            'kelompok_tani_id' => $group->id,
-            'kelompok_tani_kode' => (string) ($group->kode_kelompok ?: $group->kode),
-            'kelompok_tani_nama' => (string) $group->nama,
-        ]);
     }
 
     private function seedKnowledgeImages(): void
     {
-        $diseaseAssets = [
-            'PNY-UAT-001' => 'knowledge/penyakit/karat-daun-kopi.svg',
-            'PNY-UAT-002' => 'knowledge/penyakit/busuk-buah-kakao.svg',
-            'PNY-UAT-003' => 'knowledge/penyakit/bpkc-cengkeh.svg',
-            'PNY-UAT-004' => 'knowledge/penyakit/busuk-pucuk-kelapa.svg',
-        ];
-        $symptomAssets = [
-            'G-UAT-001' => 'knowledge/gejala/karat-daun-kopi.svg',
-            'G-UAT-007' => 'knowledge/gejala/busuk-buah-kakao.svg',
-            'G-UAT-013' => 'knowledge/gejala/bpkc-cengkeh.svg',
-            'G-UAT-019' => 'knowledge/gejala/busuk-pucuk-kelapa.svg',
-        ];
-
-        foreach ($diseaseAssets as $code => $runtimePath) {
-            $this->copyAsset($runtimePath);
-            Penyakit::query()->where('kode', $code)->update(['image_path' => $runtimePath]);
-        }
-        foreach ($symptomAssets as $code => $runtimePath) {
-            $this->copyAsset($runtimePath);
-            Gejala::query()->where('kode', $code)->update(['image_path' => $runtimePath]);
-        }
-    }
-
-    private function copyAsset(string $runtimePath): void
-    {
-        $source = database_path('seeders/assets/'.$runtimePath);
-        if (! is_file($source)) {
-            throw new RuntimeException('Asset demo tidak ditemukan: '.$source);
-        }
-
-        Storage::disk('public')->put($runtimePath, file_get_contents($source));
-    }
-
-    /** @param array<string, User> $accounts
-     * @param  array<string, int>  $commodities
-     * @param  array<string, RefKelompokTani>  $groups
-     */
-    private function seedStudyCases(array $accounts, array $commodities, array $groups): void
-    {
-        $cases = [
-            [
-                'key' => 'accepted', 'diagnosis_code' => 'DG-20260101-9001', 'request_code' => 'PM-20260101-9001', 'case_code' => 'KS-20260101-9001',
-                'disease' => 'PNY-UAT-001', 'symptom' => 'G-UAT-001', 'commodity' => 'KP-079', 'group' => 'arosta',
-                'request_status' => 'diterima', 'case_status' => 'diterima', 'assigned' => false,
-                'lat' => -7.0250000, 'lng' => 107.5190000,
-            ],
-            [
-                'key' => 'assigned', 'diagnosis_code' => 'DG-20260101-9002', 'request_code' => 'PM-20260101-9002', 'case_code' => 'KS-20260101-9002',
-                'disease' => 'PNY-UAT-002', 'symptom' => 'G-UAT-007', 'commodity' => 'KP-017', 'group' => 'kakao',
-                'request_status' => 'diterima', 'case_status' => 'ditugaskan', 'assigned' => true,
-                'accepted' => false, 'deadline_days' => 7, 'lat' => -7.0150000, 'lng' => 107.5050000,
-            ],
-            [
-                'key' => 'in-progress', 'diagnosis_code' => 'DG-20260101-9003', 'request_code' => 'PM-20260101-9003', 'case_code' => 'KS-20260101-9003',
-                'disease' => 'PNY-UAT-003', 'symptom' => 'G-UAT-013', 'commodity' => 'KP-016', 'group' => 'cengkeh',
-                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => 7, 'lat' => -6.8350000, 'lng' => 107.1550000,
-            ],
-            [
-                'key' => 'completed-final-report', 'diagnosis_code' => 'DG-20260101-9004', 'request_code' => 'PM-20260101-9004', 'case_code' => 'KS-20260101-9004',
-                'disease' => 'PNY-UAT-004', 'symptom' => 'G-UAT-019', 'commodity' => 'KP-056', 'group' => 'kelapa',
-                'request_status' => 'diterima', 'case_status' => 'selesai', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => 3, 'final_report' => true, 'lat' => -6.5950000, 'lng' => 106.8150000,
-            ],
-            [
-                'key' => 'rejected', 'diagnosis_code' => 'DG-20260101-9005', 'request_code' => 'PM-20260101-9005', 'case_code' => null,
-                'disease' => 'PNY-UAT-001', 'symptom' => 'G-UAT-002', 'commodity' => 'KP-079', 'group' => 'arosta',
-                'request_status' => 'ditolak', 'case_status' => null, 'assigned' => false,
-                'lat' => -7.0120000, 'lng' => 108.1200000,
-            ],
-            [
-                'key' => 'deferred', 'diagnosis_code' => 'DG-20260101-9006', 'request_code' => 'PM-20260101-9006', 'case_code' => 'KS-20260101-9006',
-                'disease' => 'PNY-UAT-001', 'symptom' => 'G-UAT-003', 'commodity' => 'KP-079', 'group' => 'arosta',
-                'request_status' => 'diterima', 'case_status' => 'ditunda', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => 14, 'lat' => -7.0400000, 'lng' => 108.1500000,
-            ],
-            [
-                'key' => 'overdue-with-progress', 'diagnosis_code' => 'DG-20260101-9007', 'request_code' => 'PM-20260101-9007', 'case_code' => 'KS-20260101-9007',
-                'disease' => 'PNY-UAT-002', 'symptom' => 'G-UAT-009', 'commodity' => 'KP-017', 'group' => 'kakao',
-                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => -7, 'progress' => 'Pengendalian lapangan sudah dilakukan; pemantauan ulang diperlukan.',
-                'lat' => -7.0350000, 'lng' => 107.5250000,
-            ],
-            [
-                'key' => 'pending-extension', 'diagnosis_code' => 'DG-20260101-9008', 'request_code' => 'PM-20260101-9008', 'case_code' => 'KS-20260101-9008',
-                'disease' => 'PNY-UAT-001', 'symptom' => 'G-UAT-004', 'commodity' => 'KP-079', 'group' => 'arosta',
-                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => 2, 'extension' => 'pending', 'extension_proposed_days' => 9,
-                'lat' => -7.0550000, 'lng' => 108.1650000,
-            ],
-            [
-                'key' => 'approved-extension', 'diagnosis_code' => 'DG-20260101-9009', 'request_code' => 'PM-20260101-9009', 'case_code' => 'KS-20260101-9009',
-                'disease' => 'PNY-UAT-003', 'symptom' => 'G-UAT-016', 'commodity' => 'KP-016', 'group' => 'cengkeh',
-                'request_status' => 'diterima', 'case_status' => 'dalam_pelaksanaan', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => 12, 'assignment_deadline_days' => 3, 'extension' => 'approved',
-                'lat' => -6.8450000, 'lng' => 107.1650000,
-            ],
-            [
-                'key' => 'completed-legacy', 'diagnosis_code' => 'DG-20260101-9010', 'request_code' => 'PM-20260101-9010', 'case_code' => 'KS-20260101-9010',
-                'disease' => 'PNY-UAT-004', 'symptom' => 'G-UAT-023', 'commodity' => 'KP-056', 'group' => 'kelapa',
-                'request_status' => 'diterima', 'case_status' => 'selesai', 'assigned' => true,
-                'accepted' => true, 'deadline_days' => -20, 'legacy_completed' => true,
-                'lat' => -6.6050000, 'lng' => 106.8250000,
-            ],
-        ];
-
-        foreach ($cases as $definition) {
-            $this->seedCase($definition, $accounts, $commodities, $groups);
-        }
-    }
-
-    /** @param array<string, mixed> $definition
-     * @param  array<string, User>  $accounts
-     * @param  array<string, int>  $commodities
-     * @param  array<string, RefKelompokTani>  $groups
-     */
-    private function seedCase(array $definition, array $accounts, array $commodities, array $groups): void
-    {
-        $disease = Penyakit::query()->where('kode', $definition['disease'])->firstOrFail();
-        $symptom = Gejala::query()->where('kode', $definition['symptom'])->firstOrFail();
-        $commodityId = $commodities[$definition['commodity']] ?? throw new RuntimeException('Komoditas kasus demo tidak ditemukan.');
-        $group = $groups[$definition['group']] ?? throw new RuntimeException('Poktan kasus demo tidak ditemukan.');
-
-        $diagnosis = Diagnosis::updateOrCreate(
-            ['kode' => $definition['diagnosis_code']],
-            ['user_id' => $accounts['poktan']->id, 'commodity_id' => $commodityId, 'status' => Diagnosis::STATUS_SELESAI],
-        );
-        DiagnosisSymptom::updateOrCreate(
-            ['diagnosis_id' => $diagnosis->id, 'symptom_id' => $symptom->id],
-            ['symptom_name_snapshot' => $symptom->nama, 'cf_user' => 1.0],
-        );
-        $solution = $disease->solusi()->where('status', 'aktif')->first();
-        DiagnosisResult::updateOrCreate(
-            ['diagnosis_id' => $diagnosis->id, 'disease_id' => $disease->id],
-            [
-                'disease_name_snapshot' => $disease->nama, 'cf_value' => 0.90, 'ranking' => 1,
-                'solution_snapshot' => $solution === null ? null : [['judul' => $solution->judul, 'deskripsi' => $solution->deskripsi]],
-                'trace_snapshot' => [['gejala_id' => $symptom->id, 'gejala_nama' => $symptom->nama, 'cf_user' => 1.0, 'cf_pakar' => (float) AturanCf::where('penyakit_id', $disease->id)->where('gejala_id', $symptom->id)->value('cf_pakar'), 'cf_gejala' => 0.90]],
-            ],
-        );
-
-        $permohonan = PermohonanPenanganan::updateOrCreate(
-            ['permohonan_code' => $definition['request_code']],
-            [
-                'diagnosis_id' => $diagnosis->id, 'kelompok_tani_id' => $group->id,
-                'kelompok_tani_name_snapshot' => $group->nama,
-                'latitude_kasus' => $definition['lat'], 'longitude_kasus' => $definition['lng'],
-                'alamat_kasus' => self::CASE_MARKER.' '.$group->kabupaten,
-                'kode_kabupaten' => $group->kode_kabupaten, 'kabupaten' => $group->kabupaten,
-                'kode_kecamatan' => $group->kode_kecamatan, 'kecamatan' => $group->kecamatan,
-                'kode_desa' => $group->kode_desa, 'kelurahan' => $group->kelurahan,
-                'catatan_pemohon' => self::CASE_MARKER.' Skenario: '.$definition['key'].'.',
-                'status' => $definition['request_status'], 'created_by' => $accounts['poktan']->id,
-                'reviewed_by' => $accounts['operator_uptd']->id, 'reviewed_at' => now(),
-            ],
-        );
-
-        KeputusanPermohonan::updateOrCreate(
-            ['permohonan_id' => $permohonan->id],
-            [
-                'keputusan' => $definition['request_status'] === 'diterima' ? 'diterima' : 'ditolak',
-                'catatan' => self::CASE_MARKER.' Keputusan demo Operator UPTD.',
-                'operator_id' => $accounts['operator_uptd']->id, 'decided_at' => now(),
-            ],
-        );
-
-        if ($definition['case_code'] === null) {
-            return;
-        }
-
-        $case = KasusPenanganan::withTrashed()->where('kasus_code', $definition['case_code'])->first();
-        if ($case === null) {
-            $case = new KasusPenanganan(['kasus_code' => $definition['case_code']]);
-        }
-        $case->fill([
-            'permohonan_id' => $permohonan->id, 'current_status' => $definition['case_status'],
-            'komoditas_id' => $commodityId, 'komoditas_code_snapshot' => $definition['commodity'],
-            'komoditas_name_snapshot' => RefKomoditas::find($commodityId)?->nama,
-            'penyakit_id' => $disease->id, 'penyakit_kode_snapshot' => $disease->kode,
-            'penyakit_name_snapshot' => $disease->nama,
-            'latitude_kasus' => $definition['lat'], 'longitude_kasus' => $definition['lng'],
-            'created_by' => $accounts['operator_uptd']->id,
-            'completed_at' => $definition['case_status'] === KasusPenanganan::STATUS_SELESAI ? now()->copy()->subDays(2) : null,
-        ]);
-        $case->save();
-        if ($case->trashed()) {
-            $case->restore();
-        }
-
-        $states = ['diterima'];
-        if ($definition['assigned']) {
-            $states[] = 'ditugaskan';
-            if (in_array($definition['case_status'], ['sedang_direview', 'siap_dieksekusi', 'dalam_pelaksanaan', 'selesai', 'ditunda'], true)) {
-                $states[] = 'sedang_direview';
-            }
-            if (in_array($definition['case_status'], ['siap_dieksekusi', 'dalam_pelaksanaan', 'selesai'], true)) {
-                $states[] = 'siap_dieksekusi';
-            }
-            if (in_array($definition['case_status'], ['dalam_pelaksanaan', 'selesai'], true)) {
-                $states[] = 'dalam_pelaksanaan';
-            }
-            if ($definition['case_status'] === 'selesai') {
-                $states[] = 'selesai';
-            }
-            if ($definition['case_status'] === 'ditunda') {
-                $states[] = 'ditunda';
-            }
-        }
-
-        $notes = [
-            'diterima' => 'Kasus demo lahir dari permohonan yang diterima.',
-            'ditugaskan' => 'POPT demo ditugaskan oleh Operator UPTD.',
-            'sedang_direview' => 'Gejala dan data lokasi telah diverifikasi.',
-            'siap_dieksekusi' => 'Penanganan lapangan telah dipersiapkan.',
-            'dalam_pelaksanaan' => 'Pengendalian lapangan sedang dilaksanakan.',
-            'ditunda' => 'Penanganan demo ditunda untuk simulasi dashboard.',
-            'selesai' => 'Penanganan lapangan selesai dan hasil telah dicatat.',
-        ];
-        foreach ($states as $index => $status) {
-            RiwayatStatusPenanganan::firstOrCreate(
-                ['kasus_id' => $case->id, 'status' => $status],
-                ['previous_status' => $index === 0 ? null : $states[$index - 1], 'catatan' => self::CASE_MARKER.' '.$notes[$status], 'actor_id' => $status === 'diterima' ? $accounts['operator_uptd']->id : $accounts['popt']->id, 'created_at' => now()->subMinutes(count($states) - $index)],
-            );
-        }
-
-        if ($definition['assigned']) {
-            $assignment = PenugasanPopt::updateOrCreate(
-                ['kasus_id' => $case->id, 'popt_id' => $accounts['popt']->id],
-                [
-                    'assigned_by' => $accounts['operator_uptd']->id,
-                    'status' => $definition['case_status'] === 'selesai' ? PenugasanPopt::STATUS_SELESAI : PenugasanPopt::STATUS_AKTIF,
-                    'catatan' => self::CASE_MARKER,
-                    'assigned_at' => now()->copy()->subDays(5),
-                    'accepted_at' => ($definition['accepted'] ?? false) ? now()->copy()->subDays(4) : null,
-                    'deadline_at' => now()->copy()->addDays((int) ($definition['assignment_deadline_days'] ?? $definition['deadline_days'] ?? 7)),
-                ],
-            );
-
-            if (! empty($definition['progress'])) {
-                ProgresPenanganan::updateOrCreate(
-                    ['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id, 'catatan' => $definition['progress']],
-                    ['actor_id' => $accounts['popt']->id],
-                );
-            }
-
-            if (! empty($definition['extension'])) {
-                $currentDeadline = $assignment->deadline_at;
-                $proposedDeadline = now()->copy()->addDays((int) ($definition['extension_proposed_days'] ?? $definition['deadline_days'] ?? 7));
-                $extension = PerpanjanganPenugasan::updateOrCreate(
-                    ['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id, 'reason' => self::CASE_MARKER.' Perpanjangan '.$definition['extension'].'.'],
-                    [
-                        'requested_by' => $accounts['popt']->id,
-                        'current_deadline_at' => $currentDeadline,
-                        'proposed_deadline_at' => $proposedDeadline,
-                        'status' => $definition['extension'] === 'approved' ? PerpanjanganPenugasan::STATUS_APPROVED : PerpanjanganPenugasan::STATUS_PENDING,
-                        'reviewed_by' => $definition['extension'] === 'approved' ? $accounts['operator_uptd']->id : null,
-                        'reviewed_at' => $definition['extension'] === 'approved' ? now()->copy()->subDays(1) : null,
-                        'review_note' => $definition['extension'] === 'approved' ? 'Perpanjangan demo disetujui untuk UAT.' : null,
-                    ],
-                );
-                if ($definition['extension'] === 'approved') {
-                    $assignment->update(['deadline_at' => $extension->proposed_deadline_at]);
+        $assets = ['karat-daun-kopi', 'busuk-buah-kakao', 'bpkc-cengkeh', 'busuk-pucuk-kelapa'];
+        foreach ($assets as $index => $asset) {
+            foreach (['penyakit', 'gejala'] as $type) {
+                $path = 'knowledge/demo-status-v2/'.$type.'/'.$asset.'.svg';
+                $this->copyAsset('knowledge/'.$type.'/'.$asset.'.svg', $path);
+                $record = $type === 'penyakit'
+                    ? Penyakit::where('kode', sprintf('PNY-UAT-%03d', $index + 1))->firstOrFail()
+                    : Gejala::where('kode', sprintf('G-UAT-%03d', $index * 6 + 1))->firstOrFail();
+                if ($record->image_path === null) {
+                    $record->update(['image_path' => $path]);
                 }
             }
-
-            if (! empty($definition['final_report'])) {
-                $this->seedFinalReport($case, $assignment, $accounts['popt']);
-            }
         }
     }
 
-    private function seedFinalReport(KasusPenanganan $case, PenugasanPopt $assignment, User $popt): void
+    private function copyAsset(string $source, string $destination): void
     {
-        $report = $case->finalReport()->first();
-        if ($report === null) {
-            $report = LaporanAkhirPenanganan::create([
-                'kasus_id' => $case->id,
-                'penugasan_popt_id' => $assignment->id,
-                'submitted_by' => $popt->id,
-                'ringkasan_tindakan' => self::CASE_MARKER.' Tindakan pengendalian dan sanitasi dilakukan.',
-                'hasil_penanganan' => 'Intensitas gejala menurun pada pemeriksaan tindak lanjut demo.',
-                'rekomendasi' => 'Lanjutkan pemantauan kebun dan konsultasikan bila gejala muncul kembali.',
-                'catatan_tambahan' => 'Laporan akhir demo dengan evidence lokal.',
-                'submitted_at' => now()->copy()->subDays(2),
-            ]);
+        $path = database_path('seeders/assets/'.$source);
+        if (! is_file($path)) {
+            throw new RuntimeException('Asset demo tidak ditemukan: '.$path);
         }
+        $content = file_get_contents($path);
+        if (! Storage::disk('public')->exists($destination)
+            && ! Storage::disk('public')->put($destination, $content)) {
+            throw new RuntimeException('Asset demo gagal disimpan: '.$destination);
+        }
+    }
 
-        $path = 'laporan-akhir/demo-final-report.png';
-        $this->copyAsset($path);
-        LaporanAkhirEvidence::updateOrCreate(
-            ['laporan_akhir_id' => $report->id, 'file_path' => $path],
-            ['file_name' => 'demo-final-report.png', 'mime_type' => 'image/png', 'uploaded_by' => $popt->id],
-        );
+    private function seedScenario(array $definition, array $accounts, array $groups, CarbonImmutable $anchor): void
+    {
+        $id = $definition['id'];
+        if (PermohonanPenanganan::where('permohonan_code', 'PM-DEMO-V2-'.$id)->exists()) {
+            // Preserve accepted decisions, append-only progress, immutable final
+            // reports, archived cases, deadlines and original seed timestamps.
+            return;
+        }
+        $group = $groups[$definition['group']];
+        $owner = $accounts[$definition['group']];
+        $operator = $accounts['operator_uptd'];
+        $popt = $accounts[$definition['popt'] ?? 'popt'];
+        $submitted = $anchor->subDays($definition['age']);
+        $reviewed = $submitted->addDay()->addHour();
+        $decided = $reviewed->addHours(3);
+        // New fixtures follow atomic approval/assignment. Existing fixtures
+        // are skipped above: never rewrite their historical assignment times.
+        $assigned = $decided;
+        $accepted = $assigned->addHours(2);
+        $started = $accepted->addHour();
+        $finished = $submitted->addDays(10);
+        $done = ($definition['case_status'] ?? null) === 'selesai';
+        $working = in_array($definition['case_status'] ?? null, ['dalam_pelaksanaan', 'selesai'], true);
+        $lat = round((float) $group->latitude - 0.003 - (int) $id * 0.0005, 7);
+        $lng = round((float) $group->longitude + 0.004 + (int) $id * 0.0005, 7);
+        $commodity = RefKomoditas::findOrFail($group->commodity_ref_id);
+        $diseaseCode = match ($definition['group']) {
+            'kopi', 'kopi_garut' => 'PNY-UAT-001', 'kakao' => 'PNY-UAT-002',
+            'cengkeh' => 'PNY-UAT-003', 'kelapa' => 'PNY-UAT-004',
+        };
+        $disease = Penyakit::where('kode', $diseaseCode)->firstOrFail();
+        $diagnosis = $this->seedDiagnosis($id, $owner, $commodity, $disease, $submitted->subHours(2));
+        $isReviewed = $definition['status'] !== 'diajukan';
+        $request = PermohonanPenanganan::create([
+            'permohonan_code' => 'PM-DEMO-V2-'.$id, 'diagnosis_id' => $diagnosis->id,
+            'kelompok_tani_id' => $group->id, 'kelompok_tani_name_snapshot' => $group->nama,
+            'latitude_kasus' => $lat, 'longitude_kasus' => $lng, 'lokasi_dikonfirmasi' => true,
+            'lokasi_sama_dengan_poktan' => false, 'alamat_kasus' => self::MARKER.' Petak '.$id.', '.$group->desa,
+            'kode_kabupaten' => $group->kode_kabupaten, 'kabupaten' => $group->kabupaten,
+            'kode_kecamatan' => $group->kode_kecamatan, 'kecamatan' => $group->kecamatan,
+            'kelurahan' => $group->kelurahan, 'catatan_pemohon' => self::MARKER.' '.$definition['scenario'],
+            'status' => $definition['status'], 'created_by' => $owner->id,
+            'reviewed_by' => $isReviewed ? $operator->id : null, 'reviewed_at' => $isReviewed ? $reviewed : null,
+            'created_at' => $submitted, 'updated_at' => $isReviewed ? $reviewed : $submitted,
+        ]);
+        if (in_array($definition['status'], ['diajukan', 'sedang_direview'], true)) {
+            return;
+        }
+        KeputusanPermohonan::create([
+            'permohonan_id' => $request->id, 'keputusan' => $definition['status'],
+            'catatan' => self::MARKER.' '.($definition['status'] === 'ditolak' ? $definition['reason'] : 'Lokasi dan gejala simulasi telah diperiksa; permohonan diterima untuk penanganan.'),
+            'operator_id' => $operator->id, 'decided_at' => $decided, 'created_at' => $decided, 'updated_at' => $decided,
+        ]);
+        $request->update(['updated_at' => $decided]);
+        if ($definition['status'] === 'ditolak') {
+            return;
+        }
+        $deadline = $done
+            ? ($definition['late_completion'] ? $finished->subDay() : $finished->addDays(2))
+            : $anchor->addDays($definition['deadline']);
+        $case = KasusPenanganan::create([
+            'permohonan_id' => $request->id, 'kasus_code' => 'KS-DEMO-V2-'.$id,
+            'current_status' => $definition['case_status'], 'created_by' => $operator->id,
+            'komoditas_id' => $commodity->id, 'komoditas_code_snapshot' => $commodity->kode, 'komoditas_name_snapshot' => $commodity->nama,
+            'penyakit_id' => $disease->id, 'penyakit_kode_snapshot' => $disease->kode, 'penyakit_name_snapshot' => $disease->nama,
+            'latitude_kasus' => $lat, 'longitude_kasus' => $lng,
+            'completed_at' => $done ? $finished->addMinutes(10) : null,
+            'created_at' => $decided, 'updated_at' => $done ? $finished->addMinutes(10) : ($working ? $started : $assigned),
+        ]);
+        $assignment = PenugasanPopt::create([
+            'kasus_id' => $case->id, 'popt_id' => $popt->id, 'assigned_by' => $operator->id,
+            'status' => $done ? PenugasanPopt::STATUS_SELESAI : PenugasanPopt::STATUS_AKTIF,
+            'catatan' => self::MARKER.' Periksa petak '.$id.' dan catat hasil kunjungan.',
+            'assigned_at' => $assigned,
+            'accepted_at' => $definition['case_status'] === 'ditugaskan' ? null : $accepted,
+            'deadline_at' => $deadline, 'created_at' => $assigned,
+            'updated_at' => $done ? $finished->addMinutes(10) : $assigned,
+        ]);
+        $this->seedHistory($case, $operator, $popt, $decided, $assigned, $accepted, $started, $finished);
+        if ($working) {
+            foreach (range(1, $done ? 3 : 2) as $visit) {
+                $at = $started->addDays($visit);
+                $notes = [1 => 'Kunjungan awal: gejala pada petak dicatat dan bagian tanaman terdampak diperiksa.',
+                    2 => 'Sanitasi dan pemantauan petak dilakukan bersama kelompok tani; perkembangan gejala dicatat.',
+                    3 => 'Evaluasi tindak lanjut dilakukan; hasil pemeriksaan dirangkum untuk laporan akhir.'];
+                ProgresPenanganan::create(['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id,
+                    'actor_id' => $popt->id, 'catatan' => self::MARKER.' '.$notes[$visit], 'created_at' => $at, 'updated_at' => $at]);
+            }
+        }
+        if (isset($definition['extension'])) {
+            $this->seedExtension($definition, $case, $assignment, $operator, $popt, $anchor);
+        }
+        if ($done) {
+            $this->seedFinalReport($case, $assignment, $popt, $finished, $disease);
+        }
+    }
+
+    private function seedDiagnosis(string $id, User $owner, RefKomoditas $commodity, Penyakit $disease, CarbonImmutable $at): Diagnosis
+    {
+        $diagnosis = Diagnosis::create(['kode' => 'DG-DEMO-V2-'.$id, 'user_id' => $owner->id,
+            'commodity_id' => $commodity->id, 'status' => Diagnosis::STATUS_SELESAI, 'created_at' => $at, 'updated_at' => $at]);
+        $rules = AturanCf::where('penyakit_id', $disease->id)->where('status', 'aktif')->orderBy('gejala_id')->limit(2)->get();
+        if ($rules->count() !== 2) {
+            throw new RuntimeException('Dua aturan Knowledge UAT diperlukan untuk diagnosis demo.');
+        }
+        $engine = app(CertaintyFactorService::class);
+        $trace = [];
+        foreach ($rules as $index => $rule) {
+            $symptom = Gejala::findOrFail($rule->gejala_id);
+            $confidence = $index === 0 ? 0.8 : 1.0;
+            DiagnosisSymptom::create(['diagnosis_id' => $diagnosis->id, 'symptom_id' => $symptom->id,
+                'symptom_name_snapshot' => $symptom->nama, 'cf_user' => $confidence, 'created_at' => $at]);
+            $trace[] = ['gejala_id' => $symptom->id, 'gejala_nama' => $symptom->nama, 'cf_user' => $confidence,
+                'cf_pakar' => (float) $rule->cf_pakar, 'cf_gejala' => $engine->cfGejala($confidence, (float) $rule->cf_pakar)];
+        }
+        $solution = $disease->solusi()->where('status', 'aktif')->firstOrFail();
+        DiagnosisResult::create(['diagnosis_id' => $diagnosis->id, 'disease_id' => $disease->id,
+            'disease_name_snapshot' => $disease->nama, 'ranking' => 1, 'created_at' => $at,
+            'solution_snapshot' => [['judul' => $solution->judul, 'deskripsi' => $solution->deskripsi]],
+            'trace_snapshot' => $trace, 'cf_value' => $engine->combine(array_column($trace, 'cf_gejala'))]);
+
+        return $diagnosis;
+    }
+
+    private function seedHistory(KasusPenanganan $case, User $operator, User $popt, CarbonImmutable $decided, CarbonImmutable $assigned, CarbonImmutable $accepted, CarbonImmutable $started, CarbonImmutable $finished): void
+    {
+        $states = [['diterima', $decided, $operator->id], ['ditugaskan', $assigned, $operator->id]];
+        if ($case->current_status !== 'ditugaskan') {
+            $states[] = ['sedang_direview', $accepted, $popt->id];
+        }
+        if (in_array($case->current_status, ['dalam_pelaksanaan', 'selesai'], true)) {
+            $states[] = ['siap_dieksekusi', $started->subMinute(), $popt->id];
+            $states[] = ['dalam_pelaksanaan', $started, $popt->id];
+        }
+        if ($case->current_status === 'selesai') {
+            $states[] = ['selesai', $finished->addMinutes(10), $popt->id];
+        }
+        $previous = null;
+        foreach ($states as [$status, $at, $actor]) {
+            RiwayatStatusPenanganan::create(['kasus_id' => $case->id, 'previous_status' => $previous, 'status' => $status,
+                'actor_id' => $actor, 'catatan' => self::MARKER.' '.config('kasus.labels.'.$status), 'created_at' => $at]);
+            $previous = $status;
+        }
+    }
+
+    private function seedExtension(array $definition, KasusPenanganan $case, PenugasanPopt $assignment, User $operator, User $popt, CarbonImmutable $anchor): void
+    {
+        $pending = $definition['extension'] === 'pending';
+        $at = $anchor->subDays($pending ? 3 : 5);
+        $reviewed = $pending ? null : $at->addDay();
+        $proposed = $anchor->addDays($definition['proposed_deadline']);
+        PerpanjanganPenugasan::create(['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id,
+            'requested_by' => $popt->id, 'current_deadline_at' => $assignment->deadline_at,
+            'proposed_deadline_at' => $proposed, 'reason' => self::MARKER.' '.$definition['reason'],
+            'status' => $definition['extension'], 'reviewed_by' => $pending ? null : $operator->id,
+            'reviewed_at' => $reviewed, 'review_note' => $pending ? null : ($definition['extension'] === 'approved'
+                ? 'DEMO: tambahan waktu pemantauan disetujui.' : 'DEMO: target tetap; jadwalkan kunjungan menggunakan sumber daya yang tersedia.'),
+            'created_at' => $at, 'updated_at' => $reviewed ?? $at]);
+        if ($definition['extension'] === 'approved') {
+            $assignment->update(['deadline_at' => $proposed, 'updated_at' => $reviewed]);
+        }
+    }
+
+    private function seedFinalReport(KasusPenanganan $case, PenugasanPopt $assignment, User $popt, CarbonImmutable $at, Penyakit $disease): void
+    {
+        $report = LaporanAkhirPenanganan::create(['kasus_id' => $case->id, 'penugasan_popt_id' => $assignment->id,
+            'submitted_by' => $popt->id, 'submitted_at' => $at, 'created_at' => $at, 'updated_at' => $at,
+            'ringkasan_tindakan' => self::MARKER.' Petak diperiksa, sanitasi dilakukan, dan hasil kunjungan untuk '.$disease->nama.' dicatat bersama Poktan.',
+            'hasil_penanganan' => 'DEMO: pada kunjungan evaluasi, bagian tanaman yang diamati tidak menunjukkan perluasan gejala baru. Catatan ini hanya skenario simulasi.',
+            'rekomendasi' => 'DEMO: lanjutkan pencatatan kondisi petak dan konsultasikan perubahan gejala kepada POPT. Bukan rekomendasi teknis untuk kasus nyata.',
+            'catatan_tambahan' => 'Seluruh bukti merupakan ilustrasi placeholder lokal berlabel DATA DEMO; bukan foto serangan tanaman nyata.']);
+        foreach (['awal', 'akhir'] as $index => $stage) {
+            $path = 'laporan-akhir/demo-status-v2/'.$case->kasus_code.'/bukti-'.$stage.'.png';
+            $this->copyAsset('laporan-akhir/demo-status-'.$stage.'.png', $path);
+            LaporanAkhirEvidence::create(['laporan_akhir_id' => $report->id, 'file_path' => $path,
+                'file_name' => 'DATA-DEMO-'.$stage.'.png', 'mime_type' => 'image/png',
+                'uploaded_by' => $popt->id, 'created_at' => $at->addSeconds($index + 1)]);
+        }
     }
 }

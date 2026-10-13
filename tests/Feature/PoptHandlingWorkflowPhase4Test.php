@@ -43,7 +43,7 @@ class PoptHandlingWorkflowPhase4Test extends TestCase
     private function assignment(User $popt, string $status = KasusPenanganan::STATUS_DITUGASKAN, ?Carbon $deadline = null): array
     {
         $operator = $this->user('operator_uptd');
-        $kasus = KasusPenanganan::factory()->create(['current_status' => $status]);
+        $kasus = KasusPenanganan::factory()->withApproval()->create(['current_status' => $status]);
         $assignment = PenugasanPopt::factory()->create([
             'kasus_id' => $kasus->id,
             'popt_id' => $popt->id,
@@ -61,7 +61,7 @@ class PoptHandlingWorkflowPhase4Test extends TestCase
         $this->postJson("/api/popt/kasus/{$kasus->id}/accept")->assertOk();
     }
 
-    public function test_popt_accepts_owned_assignment_once_and_enters_handling_state(): void
+    public function test_popt_accepts_owned_assignment_once_without_changing_primary_state(): void
     {
         $popt = $this->user('popt');
         [$kasus, $assignment] = $this->assignment($popt);

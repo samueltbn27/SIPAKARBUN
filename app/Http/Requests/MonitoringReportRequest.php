@@ -24,6 +24,8 @@ class MonitoringReportRequest extends FormRequest
             'disease' => ['nullable', 'string', 'max:150'],
             'status' => ['nullable', Rule::in(array_keys(app(MonitoringStatusService::class)->labels()))],
             'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'overdue' => ['nullable', 'boolean'],
         ];
     }
 

@@ -140,7 +140,7 @@
             </template>
         </div>
 
-        <button type="button" @click="addSymptom(); $nextTick(() => { const inputs = $el.closest('[x-data]').querySelectorAll('[data-symptom-search]'); inputs[inputs.length - 1]?.focus({ preventScroll: true }); })" class="mt-5 inline-flex items-center rounded-lg border border-[#8fbea2] bg-white px-4 py-2 text-sm font-semibold text-[#176b45] hover:bg-[#f0faf3]">
+        <button type="button" @click="addSymptom(); $nextTick(() => { const inputs = $el.closest('[x-data]').querySelectorAll('[data-symptom-search]'); inputs[inputs.length - 1]?.focus({ preventScroll: true }); })" class="mt-5 inline-flex items-center rounded-lg border border-[#8fbea2] bg-white px-4 py-2 text-sm font-semibold text-[#176b45] hover:bg-action-secondary-hover">
             <span class="mr-2 text-lg leading-none">+</span> Tambah Gejala
         </button>
         <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">

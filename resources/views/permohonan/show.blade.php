@@ -34,17 +34,29 @@
 
     <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">No. Permohonan</p><p class="mt-1 text-sm font-bold text-[#176b45]">{{ $permohonan->permohonan_code }}</p></x-card>
-        <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Status Permohonan</p><p class="mt-1"><x-kasus.request-status-badge :status="$permohonan->status" /></p></x-card>
+        <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Status</p><p class="mt-1"><x-kasus.handling-status-badge :status="$primaryStatus" /></p><x-kasus.overdue-indicator :is-overdue="$primaryStatus['is_overdue']" class="mt-2" /></x-card>
         <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Tanggal Pengajuan</p><p class="mt-1 text-sm font-bold text-[#173b29]">{{ $waktu }}</p></x-card>
         <x-card class="p-4"><p class="text-xs font-bold uppercase tracking-wide text-[#8a9990]">Diagnosis</p><p class="mt-1">@if ($permohonan->diagnosis === null)<span class="text-sm text-[#8a9990]">—</span>@else<a href="{{ route('diagnosis.show', $permohonan->diagnosis->id) }}" class="text-sm font-bold text-[#176b45] hover:underline">{{ $permohonan->diagnosis->kode }}</a>@endif</p></x-card>
     </div>
 
     <h3 class="mb-3 mt-8 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Status</h3>
+    @if($primaryStatus['history_note'])
+        <p class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="note">{{ $primaryStatus['history_note'] }}</p>
+    @elseif($primaryStatus['key'] === 'dalam_penanganan')
+        <p class="mb-4 text-sm text-[#66746c]">Permohonan disetujui dan menjadi tanggung jawab POPT. Kegiatan lapangan ditampilkan sesuai catatan aktual di bawah.</p>
+    @elseif($primaryStatus['key'] === 'menunggu_review')
+        <p class="mb-4 text-sm text-[#66746c]">Permohonan sedang diperiksa Operator.</p>
+    @endif
     <div class="grid grid-cols-1 gap-6 {{ $kasus !== null || ! $isRejectedWithoutCase ? 'lg:grid-cols-2' : '' }}">
         <x-card>
-            <div class="border-b border-[#eef3ef] px-5 py-4"><h4 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Status Permohonan</h4></div>
+            <div class="border-b border-[#eef3ef] px-5 py-4"><h4 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Keputusan Operator</h4></div>
             <div class="p-5">
-                <p><x-kasus.request-status-badge :status="$permohonan->status" /></p>
+                @if ($permohonan->keputusan !== null)
+                    <p class="text-sm font-semibold text-[#173b29]">{{ $isRejectedWithoutCase ? 'Permohonan ditolak' : 'Permohonan diterima' }}</p>
+                    @if ($isRejectedWithoutCase)<p class="mt-3 text-xs font-bold text-red-700">Alasan Penolakan</p>@endif
+                @else
+                    <p class="text-sm text-[#66746c]">Belum ada keputusan Operator UPTD.</p>
+                @endif
                 @if ($permohonan->status === 'sedang_direview')
                     <p class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-700">Sedang diperiksa oleh Operator UPTD.@if ($permohonan->reviewed_at !== null) Sejak {{ $formatDate($permohonan->reviewed_at) }}.@endif</p>
                 @endif
@@ -62,8 +74,14 @@
             <x-card>
                 <div class="border-b border-[#eef3ef] px-5 py-4"><h4 class="text-sm font-bold uppercase tracking-wide text-[#8a9990]">Status Penanganan</h4></div>
                 <div class="p-5">
-                    <div class="flex flex-wrap items-center gap-2"><span class="text-sm font-bold text-[#173b29]">{{ $kasus->kasus_code }}</span><x-kasus.handling-status-badge :status="$handling['status']" /></div>
-                    @if ($handling['status']['is_overdue'])<p class="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">Penanganan telah melewati target penyelesaian.</p>@else<p class="mt-3 text-xs text-[#8a9990]">Kasus dibuat {{ $formatDate($kasus->created_at) }} ketika permohonan diterima.</p>@endif
+                    <p class="text-sm font-bold text-[#173b29]">{{ $kasus->kasus_code }}</p>
+                    @if ($handling['status']['is_overdue'])<p class="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">Penanganan telah melewati target penyelesaian. Permohonan ini tetap berjalan; Anda tidak perlu mengajukan ulang hanya karena target terlewati.</p>@else<p class="mt-3 text-xs text-[#8a9990]">Kasus dibuat {{ $formatDate($kasus->created_at) }} ketika permohonan diterima.</p>@endif
+                    @if ($primaryStatus['legacy_note'])
+                        <p class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">{{ $primaryStatus['legacy_note'] }} @if($primaryStatus['legacy_reason']) Alasan: {{ $primaryStatus['legacy_reason'] }} @endif</p>
+                    @endif
+                    @if ($primaryStatus['completion_evidence_missing'])
+                        <p class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Data selesai lama: laporan akhir atau bukti foto belum tersedia. Riwayat selesai tetap dipertahankan.</p>
+                    @endif
                     @if ($handling['last_update_at'] !== null)<p class="mt-3 text-xs text-[#8a9990]">Update terakhir: {{ $formatDate($handling['last_update_at']) }}</p>@endif
                     @if ($kasus->current_status === 'selesai')
                         @if ($kasus->verified_at !== null)
@@ -123,7 +141,7 @@
                 <ol class="px-5 py-5">
                     @foreach ($handling['progress_timeline'] as $i => $item)
                         @php $isLast = $i === array_key_last($handling['progress_timeline']); @endphp
-                        <li class="relative flex gap-4 pb-6 last:pb-0">@if (! $isLast)<span class="absolute left-[11px] top-6 h-full w-0.5 bg-[#e4ece7]"></span>@endif<span class="relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $isLast ? 'bg-[#176b45] text-white' : 'bg-[#e8f4ed] text-[#176b45]' }}">{{ $isLast ? '•' : '✓' }}</span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-sm font-bold text-[#173b29]">{{ $item['label'] }}</p><p class="text-xs text-[#8a9990]">{{ $formatDate($item['waktu']) }}</p></div>@if ($item['actor'])<p class="mt-0.5 text-xs text-[#8a9990]">oleh {{ $item['actor'] }}</p>@endif @if ($item['catatan'])<p class="mt-2 whitespace-pre-line rounded-lg bg-[#fafcfb] p-2.5 text-xs leading-relaxed text-[#66746c]">{{ $item['catatan'] }}</p>@endif</div></li>
+                        <li class="relative flex gap-4 pb-6 last:pb-0">@if (! $isLast)<span class="absolute left-[11px] top-6 h-full w-0.5 bg-[#e4ece7]"></span>@endif<span class="relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $isLast ? 'bg-action-primary text-white' : 'bg-[#e8f4ed] text-[#176b45]' }}">{{ $isLast ? '•' : '✓' }}</span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-sm font-bold text-[#173b29]">{{ $item['label'] }}</p><p class="text-xs text-[#8a9990]">{{ $formatDate($item['waktu']) }}</p></div>@if ($item['actor'])<p class="mt-0.5 text-xs text-[#8a9990]">oleh {{ $item['actor'] }}</p>@endif @if ($item['catatan'])<p class="mt-2 whitespace-pre-line rounded-lg bg-[#fafcfb] p-2.5 text-xs leading-relaxed text-[#66746c]">{{ $item['catatan'] }}</p>@endif</div></li>
                     @endforeach
                 </ol>
             @endif
@@ -133,7 +151,14 @@
             <h3 class="mb-3 mt-8 text-sm font-bold uppercase tracking-wide text-[#8a9990]">Riwayat Perpanjangan</h3>
             <div class="space-y-4">
                 @foreach ($handling['extensions'] as $extension)
-                    <x-card class="p-5"><div class="flex flex-wrap items-center justify-between gap-3"><p class="text-sm font-bold text-[#173b29]">Permintaan Perpanjangan</p><span class="rounded-full bg-[#eef3ef] px-3 py-1 text-xs font-semibold text-[#66746c]">{{ $extension['status_label'] }}</span></div><p class="mt-2 text-xs text-[#8a9990]">Diajukan {{ $formatDate($extension['created_at']) }}</p><dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"><div><dt class="text-xs text-[#8a9990]">Target sebelumnya</dt><dd class="mt-1 font-semibold text-[#173b29]">{{ $formatDate($extension['current_deadline_at']) }}</dd></div><div><dt class="text-xs text-[#8a9990]">Usulan target baru</dt><dd class="mt-1 font-semibold text-[#173b29]">{{ $formatDate($extension['proposed_deadline_at']) }}</dd></div></dl><p class="mt-4 whitespace-pre-line rounded-xl bg-[#f3f8f4] p-3 text-sm leading-relaxed text-[#66746c]"><span class="font-semibold text-[#173b29]">Alasan:</span> {{ $extension['reason'] }}</p>@if ($extension['reviewed_at'])<p class="mt-3 text-xs text-[#8a9990]">Diproses {{ $formatDate($extension['reviewed_at']) }}.</p>@endif</x-card>
+                    <x-card class="p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3"><p class="text-sm font-bold text-[#173b29]">Permintaan Perpanjangan</p><span class="rounded-full bg-[#eef3ef] px-3 py-1 text-xs font-semibold text-[#66746c]">{{ $extension['status_label'] }}</span></div>
+                        <p class="mt-2 text-xs text-[#8a9990]">Diajukan {{ $formatDate($extension['created_at']) }}</p>
+                        <dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"><div><dt class="text-xs text-[#8a9990]">Target sebelumnya</dt><dd class="mt-1 font-semibold text-[#173b29]">{{ $formatDate($extension['current_deadline_at']) }}</dd></div><div><dt class="text-xs text-[#8a9990]">Usulan target baru</dt><dd class="mt-1 font-semibold text-[#173b29]">{{ $formatDate($extension['proposed_deadline_at']) }}</dd></div></dl>
+                        <p class="mt-4 whitespace-pre-line rounded-xl bg-[#f3f8f4] p-3 text-sm leading-relaxed text-[#66746c]"><span class="font-semibold text-[#173b29]">Alasan:</span> {{ $extension['reason'] }}</p>
+                        @if ($extension['status'] === 'rejected')<p class="mt-3 text-xs text-[#66746c]">Usulan ini ditolak; pengajuan ini tidak mengubah target penyelesaian.</p>@endif
+                        @if ($extension['reviewed_at'])<p class="mt-3 text-xs text-[#8a9990]">Diproses {{ $formatDate($extension['reviewed_at']) }}.</p>@endif
+                    </x-card>
                 @endforeach
             </div>
         @endif
@@ -158,11 +183,11 @@
             <ol class="px-5 py-5">
                 @foreach ($timeline as $i => $item)
                     @php $isLast = $i === array_key_last($timeline); $actorText = trim(($item['actor'] ?? '').($item['actor_role'] ? ' ('.$roleLabel($item['actor_role']).')' : '')); @endphp
-                    <li class="relative flex gap-4 pb-6 last:pb-0">@if (! $isLast)<span class="absolute left-[11px] top-6 h-full w-0.5 bg-[#e4ece7]"></span>@endif<span class="relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $isLast ? 'bg-[#176b45] text-white' : 'bg-[#e8f4ed] text-[#176b45]' }}">{{ $isLast ? '•' : '✓' }}</span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-sm font-bold text-[#173b29]">{{ $item['label'] }}</p><p class="text-xs text-[#8a9990]">{{ $formatDate($item['waktu']) }}</p></div>@if ($actorText !== '')<p class="mt-0.5 text-xs text-[#8a9990]">oleh {{ $actorText }}</p>@endif @if ($item['catatan'])<p class="mt-2 whitespace-pre-line rounded-lg bg-[#fafcfb] p-2.5 text-xs leading-relaxed text-[#66746c]">{{ $item['catatan'] }}</p>@endif</div></li>
+                    <li class="relative flex gap-4 pb-6 last:pb-0">@if (! $isLast)<span class="absolute left-[11px] top-6 h-full w-0.5 bg-[#e4ece7]"></span>@endif<span class="relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $isLast ? 'bg-action-primary text-white' : 'bg-[#e8f4ed] text-[#176b45]' }}">{{ $isLast ? '•' : '✓' }}</span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-sm font-bold text-[#173b29]">{{ $item['label'] }}</p><p class="text-xs text-[#8a9990]">{{ $formatDate($item['waktu']) }}</p></div>@if ($actorText !== '')<p class="mt-0.5 text-xs text-[#8a9990]">oleh {{ $actorText }}</p>@endif @if ($item['catatan'])<p class="mt-2 whitespace-pre-line rounded-lg bg-[#fafcfb] p-2.5 text-xs leading-relaxed text-[#66746c]">{{ $item['catatan'] }}</p>@endif</div></li>
                 @endforeach
             </ol>
         @endif
     </x-card>
 
-    <div class="mt-6 flex flex-wrap items-center gap-3"><a href="{{ route('permohonan.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">← Kembali ke Daftar</a></div>
+    <div class="mt-6 flex flex-wrap items-center gap-3"><a href="{{ route('permohonan.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">← Kembali ke Daftar</a></div>
 @endsection

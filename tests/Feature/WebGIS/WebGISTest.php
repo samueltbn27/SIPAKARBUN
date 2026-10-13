@@ -26,7 +26,7 @@ class WebGISTest extends TestCase
             ->assertSee('WebGIS & Monitoring Kasus')
             ->assertSee('Filter Monitoring')
             ->assertSee('Peta Persebaran Kasus')
-            ->assertSee('Status Penanganan')
+            ->assertSee('Status Kasus')
             ->assertSee('Ringkasan Kasus')
             ->assertSee('Kasus per Status')
             ->assertSee('Kasus per Komoditas')
@@ -36,7 +36,7 @@ class WebGISTest extends TestCase
             ->assertSeeInOrder([
                 'Filter Monitoring',
                 'Peta Persebaran Kasus',
-                'Status Penanganan',
+                'Status Kasus',
                 'Ringkasan Kasus',
                 'Kasus per Status',
             ]);

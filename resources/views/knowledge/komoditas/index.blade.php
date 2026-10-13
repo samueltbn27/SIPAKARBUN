@@ -28,7 +28,7 @@
                     <option value="tersedia" @selected(request('status') === 'tersedia')>Tersedia (Terverifikasi)</option>
                     <option value="quarantined" @selected(request('status') === 'quarantined')>Quarantine</option>
                 </select>
-                <button type="submit" class="rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115a39] transition">Filter</button>
+                <button type="submit" class="rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover transition">Filter</button>
             </form>
         </div>
 

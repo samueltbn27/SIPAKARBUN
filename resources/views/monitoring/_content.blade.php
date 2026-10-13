@@ -15,16 +15,21 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Total Kasus</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Total Permohonan</p>
                 <p data-dashboard-kpi="total" class="mt-3 text-3xl font-bold text-[#173b29]">0</p>
-                <p class="mt-1 text-xs text-[#77847c]">Kasus yang sesuai filter</p>
+                <p class="mt-1 text-xs text-[#77847c]">Satu entri per permohonan/kasus sesuai filter</p>
             </article>
             <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Kasus Aktif</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Menunggu Review</p>
+                <p data-dashboard-kpi="review" class="mt-3 text-3xl font-bold text-[#3869a1]">0</p>
+                <p class="mt-1 text-xs text-[#77847c]">Menunggu keputusan atau tinjauan data historis</p>
+            </article>
+            <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Dalam Penanganan</p>
                 <p data-dashboard-kpi="active" class="mt-3 text-3xl font-bold text-[#176b45]">0</p>
-                <p class="mt-1 text-xs text-[#77847c]">Seluruh status selain selesai</p>
+                <p class="mt-1 text-xs text-[#77847c]">Dalam Penanganan; POPT dan target sudah ditetapkan</p>
             </article>
             <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
                 <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Selesai</p>
@@ -32,9 +37,9 @@
                 <p class="mt-1 text-xs text-[#77847c]">Status selesai</p>
             </article>
             <article class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5">
-                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Melewati Batas Waktu</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#89968e]">Melewati Target Waktu</p>
                 <p data-dashboard-kpi="overdue" class="mt-3 text-3xl font-bold text-[#a83d32]">0</p>
-                <p class="mt-1 text-xs text-[#77847c]">Target penyelesaian terlewati</p>
+                <p class="mt-1 text-xs text-[#77847c]">Indikator tambahan dari kasus aktif</p>
             </article>
         </div>
     </section>

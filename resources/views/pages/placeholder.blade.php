@@ -16,7 +16,7 @@
             Menu <span class="font-semibold text-[#176b45]">{{ $title }}</span> akan tersedia pada tahap berikutnya. Sementara itu navigasi, otorisasi peran, dan kerangka aplikasi sudah aktif.
         </p>
         <a href="{{ route('dashboard') }}"
-           class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29]">
+           class="mt-6 inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-action-primary-hover">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
             Kembali ke Dashboard
         </a>

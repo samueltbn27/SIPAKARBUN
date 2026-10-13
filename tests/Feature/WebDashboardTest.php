@@ -142,8 +142,8 @@ class WebDashboardTest extends TestCase
             ->assertSee($diagnosis->kode)
             ->assertSee('Karat Daun Kopi')
             ->assertSee($permohonan->permohonan_code)
-            ->assertSee('Diajukan')
-            ->assertSee('Belum Ada Kasus');
+            ->assertSee('Menunggu Review')
+            ->assertDontSee('Belum Ada Kasus');
     }
 
     public function test_poktan_baru_melihat_empty_state(): void
@@ -173,7 +173,7 @@ class WebDashboardTest extends TestCase
         $response = $this->get('/dashboard')->assertOk();
 
         $response->assertSee('Permohonan Masuk')
-            ->assertSee('Kasus Berjalan')
+            ->assertSee('Dalam Penanganan')
             ->assertDontSee('Aktivitas Terakhir')
             ->assertDontSee('Kasus Aktif');
     }

@@ -13,7 +13,7 @@
 @endphp
 <div class="space-y-6">
     <div class="flex justify-end">
-        @if($canCreateKnowledge)<a href="{{ route('knowledge.solusi.create') }}" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">{{ $createLabel }}</a>@endif
+        @if($canCreateKnowledge)<a href="{{ route('knowledge.solusi.create') }}" class="bg-action-primary text-white hover:bg-action-primary-hover rounded-lg px-4 py-2 text-sm font-medium">{{ $createLabel }}</a>@endif
     </div>
 
     <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -33,7 +33,7 @@
                 <input type="checkbox" name="aktif_saja" id="aktif_saja" value="1" {{ request('aktif_saja') ? 'checked' : '' }} class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
                 <label for="aktif_saja" class="text-sm text-gray-700">Aktif saja</label>
             </div>
-            <button type="submit" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
+            <button type="submit" class="bg-action-primary text-white hover:bg-action-primary-hover rounded-lg px-4 py-2 text-sm font-medium">
                 Cari
             </button>
         </form>
@@ -52,7 +52,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse ($solusi as $s)
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-action-secondary-hover">
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $s->penyakit->nama ?? '-' }}</td>
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $s->judul }}</td>
                     <td class="px-4 py-3 text-gray-600">
@@ -63,7 +63,7 @@
                     </td>
                     <td class="px-4 py-3 text-right">
                         @if($canEditRecord($s))<div class="inline-flex items-center gap-2">
-                            <a href="{{ route('knowledge.solusi.edit', $s) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
+                            <a href="{{ route('knowledge.solusi.edit', $s) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-action-secondary-hover">
                                 Edit
                             </a>
                             @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.solusi.destroy', $s) }}" data-confirm-title="Hapus solusi?" data-confirm-message="Data yang dihapus tidak dapat dikembalikan." data-confirm-action="Hapus" data-confirm-tone="danger">

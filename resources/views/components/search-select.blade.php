@@ -117,7 +117,7 @@
             placeholder="{{ $placeholder }}"
             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-11 text-sm text-gray-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200"
         >
-        <button type="button" x-show="query" @click="clear()" aria-label="Hapus pilihan" class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-green-500" style="display: none;">&times;</button>
+        <button type="button" x-show="query" @click="clear()" aria-label="Hapus pilihan" class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 hover:bg-action-secondary-hover focus-visible:ring-2 focus-visible:ring-green-500" style="display: none;">&times;</button>
     </div>
     <ul
         x-ref="results"

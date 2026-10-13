@@ -15,7 +15,7 @@
     <div class="w-full max-w-lg">
         {{-- Logo --}}
         <div class="text-center mb-6">
-            <span class="brand-mark brand-mark--auth inline-flex items-center justify-center rounded-2xl bg-[#176b45] text-white mb-3 shadow-lg" style="width:3.5rem;height:3.5rem;">
+            <span class="brand-mark brand-mark--auth inline-flex items-center justify-center rounded-2xl bg-action-primary text-white mb-3 shadow-lg" style="width:3.5rem;height:3.5rem;">
                 <svg width="28" height="28" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
             </span>
             <h1 class="text-2xl font-extrabold tracking-tight text-[#173b29]">SIPAKARBUN</h1>
@@ -201,7 +201,7 @@
 
                 {{-- Submit --}}
                 <button type="submit"
-                        class="w-full rounded-lg bg-[#176b45] px-4 py-3 text-sm font-bold text-white hover:bg-[#115a39] transition-colors shadow-sm">
+                        class="w-full rounded-lg bg-action-primary px-4 py-3 text-sm font-bold text-white hover:bg-action-primary-hover transition-colors shadow-sm">
                     Daftar Sekarang
                 </button>
             </form>

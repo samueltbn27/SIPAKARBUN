@@ -12,6 +12,7 @@ use App\Models\PermohonanPenanganan;
 use App\Models\User;
 use App\Services\MockKelompokTaniReferensiClient;
 use App\Services\MockKomoditasReferensiClient;
+use App\Services\StatusTransitionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
@@ -48,8 +49,7 @@ class KasusFlowTest extends TestCase
     }
 
     /**
-     * Buat kasus penanganan berstatus 'diterima' lewat alur nyata:
-     * diagnosis → permohonan → review → operator accept.
+     * Fixture kasus historis yang diterima sebelum persetujuan dan penugasan atomik.
      */
     private function buatKasusDiterima(User $pemohon, User $operator): KasusPenanganan
     {
@@ -73,13 +73,18 @@ class KasusFlowTest extends TestCase
             'created_by' => $pemohon->id,
         ]);
 
-        Sanctum::actingAs($operator);
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")
-            ->assertOk();
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])
-            ->assertCreated();
+        // Historical fixture before atomic approval existed. This regression
+        // suite verifies that legacy assignment and technical transitions remain usable.
+        $case = KasusPenanganan::factory()->withApproval()->create([
+            'permohonan_id' => $permohonan->id,
+            'created_by' => $operator->id,
+            'current_status' => KasusPenanganan::STATUS_DITERIMA,
+            'latitude_kasus' => $permohonan->latitude_kasus,
+            'longitude_kasus' => $permohonan->longitude_kasus,
+        ]);
+        app(StatusTransitionService::class)->catatStatusAwal($case, $operator->id);
 
-        return $permohonan->fresh('kasus')->kasus;
+        return $case;
     }
 
     private function assignPopt(User $operator, User $popt, KasusPenanganan $kasus, ?string $catatan = null)

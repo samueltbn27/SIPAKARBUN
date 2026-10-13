@@ -33,7 +33,7 @@ class WebDiagnosisTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['admin', 'popt', 'operator_uptd', 'poktan'] as $role) {
+        foreach (['admin', 'popt', 'operator_uptd', 'poktan', 'pimpinan'] as $role) {
             Role::findOrCreate($role);
         }
 
@@ -104,7 +104,7 @@ class WebDiagnosisTest extends TestCase
     public function test_tamu_tidak_bisa_membuka_halaman_diagnosis(): void
     {
         $this->get('/diagnosis')->assertRedirect(route('login'));
-        $this->get('/diagnosis/history')->assertRedirect(route('login'));
+        $this->get('/diagnosis/history')->assertRedirect(route('login'))->assertDontSee('Tambah Diagnosis');
 
         $this->post('/diagnosis', [
             'commodity_id' => 1,
@@ -114,11 +114,11 @@ class WebDiagnosisTest extends TestCase
 
     public function test_role_non_poktan_diblokir_dari_diagnosis(): void
     {
-        foreach (['operator_uptd', 'popt', 'admin'] as $role) {
+        foreach (['operator_uptd', 'popt', 'admin', 'pimpinan'] as $role) {
             $this->loginSebagai($role);
 
             $this->get('/diagnosis')->assertForbidden();
-            $this->get('/diagnosis/history')->assertForbidden();
+            $this->get('/diagnosis/history')->assertForbidden()->assertDontSee('Tambah Diagnosis');
             $this->get('/diagnosis/1')->assertForbidden();
             $this->post('/diagnosis', [
                 'commodity_id' => 1,
@@ -441,9 +441,60 @@ class WebDiagnosisTest extends TestCase
         $this->fakeKnowledge();
         $this->loginSebagai('poktan');
 
-        $this->get('/diagnosis/history')
+        $response = $this->get(route('diagnosis.history'))
             ->assertOk()
-            ->assertSee('Belum ada riwayat diagnosis');
+            ->assertSee('Belum ada riwayat diagnosis')
+            ->assertSee('Mulai diagnosis pertama Anda untuk membantu mengenali kemungkinan penyakit tanaman.')
+            ->assertSee('Tambah Diagnosis');
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $ctas = $xpath->query('//a[@data-diagnosis-start]');
+
+        $this->assertCount(2, $ctas);
+        $this->assertCount(1, $xpath->query('//header//a[@data-diagnosis-start="header"]'));
+        $this->assertCount(1, $xpath->query('//main//a[@data-diagnosis-start="empty"]'));
+        foreach ($ctas as $cta) {
+            $this->assertSame(route('diagnosis.index'), $cta->getAttribute('href'));
+            $this->assertSame('Tambah Diagnosis', trim($cta->textContent));
+        }
+        $this->assertDatabaseCount('diagnoses', 0);
+    }
+
+    public function test_histori_dengan_data_memiliki_cta_tanpa_mengubah_riwayat(): void
+    {
+        $this->fakeKnowledge();
+        $user = $this->loginSebagai('poktan');
+        $diagnosis = $this->buatDiagnosisLangsung($user);
+        $before = $diagnosis->fresh()->getAttributes();
+
+        $response = $this->get(route('diagnosis.history'))->assertOk()
+            ->assertSee($diagnosis->kode)
+            ->assertSee('Tambah Diagnosis')
+            ->assertDontSee('data-diagnosis-start="empty"', false);
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $cta = (new \DOMXPath($dom))->query('//header//a[@data-diagnosis-start="header"]');
+        $this->assertCount(1, $cta);
+        $this->assertSame(route('diagnosis.index'), $cta->item(0)->getAttribute('href'));
+
+        $this->get($cta->item(0)->getAttribute('href'))->assertOk()->assertViewIs('diagnosis.create')
+            ->assertViewHas('initialStep', 1);
+        $this->get(route('diagnosis.history'))->assertOk()->assertSee($diagnosis->kode);
+        $this->assertSame($before, $diagnosis->fresh()->getAttributes());
+        $this->assertDatabaseCount('diagnoses', 1);
+    }
+
+    public function test_cta_riwayat_tidak_muncul_pada_halaman_diagnosis_lain(): void
+    {
+        $this->fakeKnowledge();
+        $this->loginSebagai('poktan');
+
+        $this->get(route('diagnosis.index'))->assertOk()
+            ->assertDontSee('data-diagnosis-start', false)
+            ->assertDontSee('Tambah Diagnosis');
     }
 
     public function test_histori_menampilkan_diagnosis_user_sendiri(): void
@@ -576,7 +627,9 @@ class WebDiagnosisTest extends TestCase
         $this->get('/diagnosis/history?q=tidak-ada')
             ->assertOk()
             ->assertSee('Tidak ada hasil yang cocok')
-            ->assertSee('Reset Filter');
+            ->assertSee('Reset Filter')
+            ->assertSee('data-diagnosis-start="header"', false)
+            ->assertDontSee('data-diagnosis-start="empty"', false);
     }
 
     public function test_histori_error_state_saat_referensi_komoditas_gagal(): void

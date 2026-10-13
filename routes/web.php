@@ -182,6 +182,7 @@ Route::middleware(['auth', 'role:popt'])->prefix('popt')->name('popt.')->group(f
     Route::get('/antrian', [PoptWorkflowController::class, 'antrian'])->name('antrian');
     Route::get('/penugasan/{id}', [PoptWorkflowController::class, 'show'])->whereNumber('id')->name('penugasan.show');
     Route::post('/penugasan/{id}/accept', [PoptWorkflowController::class, 'accept'])->whereNumber('id')->name('penugasan.accept');
+    Route::post('/penugasan/{id}/start', [PoptWorkflowController::class, 'start'])->whereNumber('id')->name('penugasan.start');
     Route::post('/penugasan/{id}/progress', [PoptWorkflowController::class, 'storeProgress'])->whereNumber('id')->name('penugasan.progress');
     Route::post('/penugasan/{id}/perpanjangan', [PoptWorkflowController::class, 'requestExtension'])->whereNumber('id')->name('penugasan.extension');
     Route::post('/penugasan/{id}/selesaikan', [PoptWorkflowController::class, 'complete'])->whereNumber('id')->name('penugasan.complete');

@@ -1,7 +1,7 @@
 import { getStatusConfig } from './statuses';
 
 // SVG geometry comes only from the local status catalog, never from case data.
-export function createStatusSymbol(status, { pin = false } = {}) {
+export function createStatusSymbol(status, { pin = false, overdue = false } = {}) {
     const config = getStatusConfig(status);
     const symbol = document.createElement('span');
     symbol.className = `webgis-status-symbol${pin ? ' webgis-status-symbol--pin' : ''}`;
@@ -22,5 +22,12 @@ export function createStatusSymbol(status, { pin = false } = {}) {
     path.setAttribute('d', config.iconPath);
     svg.append(path);
     symbol.append(svg);
+    if (overdue) {
+        const warning = document.createElement('span');
+        warning.className = 'webgis-status-warning';
+        warning.textContent = '!';
+        warning.title = 'Melewati Target Waktu';
+        symbol.append(warning);
+    }
     return symbol;
 }

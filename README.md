@@ -70,8 +70,10 @@ menunggu persetujuan dan harus diaktifkan melalui menu Pengguna oleh Admin.
 
 ## Akun Tester Demo
 
-Jalankan `SipakarbunDemoSeeder` secara eksplisit untuk membuat akun tester
-beserta dataset demo:
+Jalankan `SipakarbunDemoSeeder` secara eksplisit pada database demo terisolasi
+untuk membuat akun tester beserta dataset demo. Seeder menolak database
+campuran dan environment selain `local`/`testing`; jangan menjalankan reset
+pada database yang berisi referensi atau data pengguna nyata.
 
 ```bash
 php artisan db:seed --class=SipakarbunDemoSeeder
@@ -85,14 +87,28 @@ php artisan db:seed --class=SipakarbunDemoSeeder
 | Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 | Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 
+Password pada tabel adalah contoh konfigurasi `SIPAKARBUN_DEMO_PASSWORD`
+untuk akun baru. Password akun yang sudah ada tidak diganti saat seeding ulang.
+Dataset juga menyediakan empat akun Poktan tambahan dan satu POPT tambahan
+untuk menguji kepemilikan serta penugasan lintas pengguna.
+
 Skenario Pimpinan mencakup menu **WebGIS & Monitoring Kasus** dan
 **Laporan Monitoring**. Keduanya bersifat read-only.
 
-Dataset demo juga mencakup kasus menunggu tanpa penugasan, penugasan belum
-diterima, progress aktif, ditunda, melewati batas waktu, perpanjangan pending
-dan approved, laporan akhir dengan foto lokal, serta kasus selesai legacy tanpa
-laporan akhir. Monitoring memakai lima label: **Menunggu Penanganan**, **Dalam
-Penanganan**, **Ditunda**, **Melewati Batas Waktu**, dan **Selesai**.
+Dataset V2 memiliki 20 permohonan: **Menunggu Review (3)**, **Ditolak (3)**,
+**Dalam Penanganan (10)**, dan **Selesai (4)**.
+**Melewati Target Waktu (5)** adalah indikator tambahan, bukan kategori status.
+Persetujuan Operator wajib sekaligus memilih POPT dan target penyelesaian;
+penerimaan tugas dan mulai kerja tetap dicatat terpisah oleh POPT.
+Terdapat tiga pengajuan perpanjangan (pending, approved, rejected), dan seluruh
+kasus selesai memiliki laporan akhir serta dua ilustrasi PNG lokal berlabel
+DATA DEMO. Tidak dibuat contoh selesai tanpa laporan atau status utama Ditunda.
+
+Tanggal dihitung relatif saat dataset pertama dibuat. Seeding ulang menjaga
+tanggal, password, progress, laporan akhir, serta kasus yang sudah diarsipkan;
+gunakan database demo baru untuk mengulang simulasi dari awal. Petunjuk aman,
+daftar skenario, dan hasil verifikasi tersedia di
+[panduan demo status terpadu](/Users/hoesnicodes/Developer/SIPAKARBUN/docs/DEMO_STATUS_TERPADU.md).
 
 Nilai CF dan seluruh kasus Knowledge pada dataset ini adalah fixture simulasi
 untuk UAT, bukan validasi pakar lapangan. Data demo tidak menghubungi API

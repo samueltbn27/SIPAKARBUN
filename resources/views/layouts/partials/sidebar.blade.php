@@ -142,18 +142,18 @@
     {{-- Header --}}
     <div class="sidebar-header relative flex h-20 flex-shrink-0 items-center gap-3 border-b border-[#eef3ef] px-5"
          :class="sidebarCollapsed ? 'lg:justify-start lg:gap-0 lg:px-1.5' : ''">
-        <span class="brand-mark flex items-center justify-center rounded-xl bg-[#176b45] text-white flex-shrink-0" style="width:2.25rem;height:2.25rem;">
+        <span class="brand-mark flex items-center justify-center rounded-xl bg-action-primary text-white flex-shrink-0" style="width:2.25rem;height:2.25rem;">
             <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 4C10 4 5 8 5 15c0 2.2 1.8 4 4 4 7 0 11-6 11-15ZM4 20c3-4 6-6 10-8"/></svg>
         </span>
         <div class="sidebar-brand-copy min-w-0 lg:block" x-cloak :class="sidebarCollapsed ? 'lg:hidden' : ''">
             <div class="whitespace-nowrap text-base font-extrabold tracking-tight leading-none text-[#173b29]">SIPAKARBUN</div>
             <div class="mt-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wide leading-none text-[#8a9990]">Sistem Pakar Perkebunan</div>
         </div>
-        <button @click="sidebarCollapsed = !sidebarCollapsed" class="sidebar-collapse-toggle hidden rounded-lg p-2 text-[#87958c] transition-colors hover:bg-[#eff7f1] hover:text-[#176b45] lg:inline-flex" :class="sidebarCollapsed ? 'lg:static lg:ml-0 lg:h-7 lg:w-7 lg:p-1.5' : 'ml-auto'" :title="sidebarCollapsed ? 'Buka navigasi' : 'Ciutkan navigasi'" :aria-label="sidebarCollapsed ? 'Buka navigasi' : 'Ciutkan navigasi'" :aria-expanded="(!sidebarCollapsed).toString()">
+        <button @click="sidebarCollapsed = !sidebarCollapsed" class="sidebar-collapse-toggle hidden rounded-lg p-2 text-[#87958c] transition-colors hover:bg-action-secondary-hover hover:text-[#176b45] lg:inline-flex" :class="sidebarCollapsed ? 'lg:static lg:ml-0 lg:h-7 lg:w-7 lg:p-1.5' : 'ml-auto'" :title="sidebarCollapsed ? 'Buka navigasi' : 'Ciutkan navigasi'" :aria-label="sidebarCollapsed ? 'Buka navigasi' : 'Ciutkan navigasi'" :aria-expanded="(!sidebarCollapsed).toString()">
             <svg width="16" height="16" x-show="!sidebarCollapsed" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m15 6-6 6 6 6"/></svg>
             <svg width="16" height="16" x-show="sidebarCollapsed" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m9 6 6 6-6 6"/></svg>
         </button>
-        <button type="button" @click="sidebarOpen = false" class="ml-auto inline-flex rounded-lg p-2 text-[#87958c] transition-colors hover:bg-[#eff7f1] hover:text-[#176b45] lg:hidden" aria-label="Tutup navigasi">
+        <button type="button" @click="sidebarOpen = false" class="ml-auto inline-flex rounded-lg p-2 text-[#87958c] transition-colors hover:bg-action-secondary-hover hover:text-[#176b45] lg:hidden" aria-label="Tutup navigasi">
             <svg width="20" height="20" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
     </div>
@@ -170,7 +170,7 @@
                        aria-label="{{ $item['label'] }}"
                        @if($active) aria-current="page" @endif
                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
-                              {{ $active ? 'bg-[#e8f4ed] text-[#176b45] font-semibold' : 'text-[#66746c] hover:bg-[#f3f8f4] hover:text-[#176b45]' }}
+                              {{ $active ? 'bg-[#e8f4ed] text-[#176b45] font-semibold' : 'text-[#66746c] hover:bg-action-secondary-hover hover:text-[#176b45]' }}
                               {{ $item['route'] === '#' ? 'opacity-50 pointer-events-none' : '' }}"
                        :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''"
                        @click="sidebarOpen = false">
@@ -190,7 +190,7 @@
     {{-- User Profile + Logout --}}
     <div class="flex-shrink-0 border-t border-[#eef3ef] p-3" x-data="{ profileOpen: false }">
         <div class="relative">
-            <button @click="profileOpen = !profileOpen" class="flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-[#f3f8f4]" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''" title="Profil dan keluar" aria-label="Buka menu profil">
+            <button @click="profileOpen = !profileOpen" class="flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-action-secondary-hover" :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''" title="Profil dan keluar" aria-label="Buka menu profil">
                 <span class="flex items-center justify-center w-9 h-9 rounded-full bg-[#dcefe3] text-xs font-bold text-[#176b45] flex-shrink-0">{{ $initials }}</span>
                 <div class="sidebar-profile-copy min-w-0 flex-1 text-left lg:block" x-cloak :class="sidebarCollapsed ? 'lg:hidden' : ''">
                     <div class="text-sm font-semibold text-[#173b29] truncate">{{ $userName }}</div>
@@ -208,7 +208,7 @@
                     <div class="text-sm font-semibold text-[#173b29]">{{ $userName }}</div>
                     <div class="text-[11px] text-[#8b9790]">{{ auth()->user()?->email ?? '' }}</div>
                 </div>
-                <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm text-[#66746c] hover:bg-[#f3f8f4] hover:text-[#176b45] transition-colors opacity-50 pointer-events-none">
+                <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm text-[#66746c] hover:bg-action-secondary-hover hover:text-[#176b45] transition-colors opacity-50 pointer-events-none">
                     <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     Profil Saya
                 </a>

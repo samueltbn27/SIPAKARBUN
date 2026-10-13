@@ -21,6 +21,10 @@
 
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --color-action-primary: #176b45;
+    --color-action-primary-hover: #115a39;
+    --color-action-secondary: #fff;
+    --color-action-secondary-hover: #f3f8f4;
 }
 
 html { scroll-behavior: smooth; }
@@ -32,6 +36,8 @@ body {
     text-rendering: optimizeLegibility;
 }
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:is(a, button)[class~="bg-action-primary"] { background-color: var(--color-action-primary); color: #fff; transition: background-color .18s ease, color .18s ease; }
+:is(a, button)[class~="bg-action-primary"]:not(:disabled):not([aria-disabled="true"]):hover { background-color: var(--color-action-primary-hover); }
 .knowledge-form-width--standard { width: 100%; max-width: 64rem; margin-inline: auto; }
 .knowledge-form-width--complex { width: 100%; max-width: 72rem; margin-inline: auto; }
 .knowledge-form-card { border: 1px solid #e5e7eb; border-radius: .75rem; background: #fff; padding: 1.25rem; box-shadow: 0 1px 2px rgba(16, 42, 28, .04); }
@@ -100,7 +106,7 @@ a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .app-table__code { color: #176b45; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .76rem; font-weight: 700; }
 .app-table__action { display: inline-flex; align-items: center; justify-content: center; min-height: 2.1rem; border-radius: .6rem; padding: .45rem .75rem; font-size: .72rem; font-weight: 700; transition: border-color .2s, background-color .2s, color .2s; }
 .app-table__action--edit { border: 1px solid #d4e0d7; color: #526159; }
-.app-table__action--edit:hover { border-color: #a8c9b2; background: #f2f9f4; color: #176b45; }
+.app-table__action--edit:hover { border-color: #a8c9b2; background: var(--color-action-secondary-hover); color: #176b45; }
 .app-table__action--danger { background: #b33d34; color: #fff; }
 .app-table__action--danger:hover { background: #972f28; }
 .app-table__empty { color: #849189; }
@@ -110,6 +116,7 @@ a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .monitoring-chart-stage { background: linear-gradient(180deg, #fbfdfb, #f7faf8); }
 .webgis-status-symbol { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 38px; height: 38px; border: 2px solid #fff; border-radius: 50%; background: var(--status-color, #526159); color: #fff; box-shadow: 0 0 0 1px rgba(23, 59, 41, .12), 0 3px 8px rgba(23, 59, 41, .12); }
 .webgis-status-symbol > svg { position: relative; z-index: 1; display: block; width: 22px; height: 22px; }
+.webgis-status-warning { position: absolute; z-index: 2; top: -4px; right: -5px; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; background: #a83d32; color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
 .webgis-status-symbol--pin { width: 44px; height: 44px; border-width: 3px; box-shadow: 0 2px 8px rgba(23, 59, 41, .3); }
 .webgis-status-symbol--pin::after { position: absolute; bottom: -7px; left: 50%; width: 12px; height: 12px; content: ''; transform: translateX(-50%) rotate(45deg); border-right: 3px solid #fff; border-bottom: 3px solid #fff; background: var(--status-color, #526159); border-radius: 0 0 3px 0; }
 .webgis-status-marker { background: transparent; border: 0; }
@@ -184,13 +191,13 @@ a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .ui-confirm-dialog__title { margin-top: .15rem; font-size: 1rem; font-weight: 800; letter-spacing: -.015em; }
 .ui-confirm-dialog__message { margin-top: .35rem; color: #66746c; font-size: .82rem; line-height: 1.55; white-space: pre-line; }
 .ui-confirm-dialog__close { display: inline-flex; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border-radius: .7rem; color: #89968e; font-size: 1.4rem; line-height: 1; }
-.ui-confirm-dialog__close:hover { background: #f3f8f4; color: #176b45; }
+.ui-confirm-dialog__close:hover { background: var(--color-action-secondary-hover); color: #176b45; }
 .ui-confirm-dialog__actions { display: flex; justify-content: flex-end; gap: .65rem; border-top: 1px solid #eef3ef; padding: 1rem 1.35rem 1.25rem; }
 .ui-confirm-dialog__cancel, .ui-confirm-dialog__accept { min-height: 2.75rem; border-radius: .7rem; padding: .65rem 1rem; font-size: .82rem; font-weight: 700; }
-.ui-confirm-dialog__cancel { border: 1px solid #d6e0d9; background: #fff; color: #526159; }
-.ui-confirm-dialog__cancel:hover { border-color: #176b45; color: #176b45; }
-.ui-confirm-dialog__accept { background: #176b45; color: #fff; box-shadow: 0 7px 16px rgba(23, 107, 69, .16); }
-.ui-confirm-dialog__accept:hover { background: #115a39; }
+.ui-confirm-dialog__cancel { border: 1px solid #d6e0d9; background: var(--color-action-secondary); color: #526159; }
+.ui-confirm-dialog__cancel:hover { border-color: #176b45; background: var(--color-action-secondary-hover); color: #176b45; }
+.ui-confirm-dialog__accept { background: var(--color-action-primary); color: #fff; box-shadow: 0 7px 16px rgba(23, 107, 69, .16); }
+.ui-confirm-dialog__accept:hover { background: var(--color-action-primary-hover); }
 .ui-confirm-dialog__accept--danger { background: #b33d34; box-shadow: 0 7px 16px rgba(179, 61, 52, .14); }
 .ui-confirm-dialog__accept--danger:hover { background: #972f28; }
 .ui-confirm-dialog__cancel:focus-visible, .ui-confirm-dialog__accept:focus-visible, .ui-confirm-dialog__close:focus-visible { outline: 3px solid rgba(23, 107, 69, .25); outline-offset: 2px; }
@@ -263,8 +270,8 @@ a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .auth-check { display: inline-flex; align-items: center; gap: .55rem; font-weight: 600; }
 .auth-check input { width: 1rem; height: 1rem; accent-color: #176b45; }
 .auth-muted-action { color: #176b45; font-size: .84rem; font-weight: 700; }
-.auth-submit { display: inline-flex; height: 3.15rem; width: 100%; align-items: center; justify-content: center; gap: .65rem; border: 0; border-radius: .75rem; background: #176b45; color: #fff; font-size: .92rem; font-weight: 800; box-shadow: 0 10px 22px rgba(23, 107, 69, .18); transition: background .2s, transform .2s, box-shadow .2s; }
-.auth-submit:hover { background: #115a39; box-shadow: 0 13px 25px rgba(23, 107, 69, .22); transform: translateY(-1px); }
+.auth-submit { display: inline-flex; height: 3.15rem; width: 100%; align-items: center; justify-content: center; gap: .65rem; border: 0; border-radius: .75rem; background: var(--color-action-primary); color: #fff; font-size: .92rem; font-weight: 800; box-shadow: 0 10px 22px rgba(23, 107, 69, .18); transition: background .2s, transform .2s, box-shadow .2s; }
+.auth-submit:hover { background: var(--color-action-primary-hover); box-shadow: 0 13px 25px rgba(23, 107, 69, .22); transform: translateY(-1px); }
 .auth-submit:disabled { cursor: wait; opacity: .72; transform: none; }
 .auth-submit svg { width: 1.25rem; height: 1.25rem; }
 .auth-register { margin-top: 2rem; color: #7b877f; font-size: .84rem; text-align: center; }

@@ -36,7 +36,7 @@
                 </span>
                 <h2 class="mt-4 text-lg font-bold text-[#173b29]">Belum ada diagnosis untuk diajukan</h2>
                 <p class="mt-1 max-w-md text-sm text-[#66746c]">Jalankan diagnosis tanaman terlebih dahulu sebelum mengajukan permohonan penanganan.</p>
-                <a href="{{ route('diagnosis.index') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+                <a href="{{ route('diagnosis.index') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0 0l-4-4m4 4l4-4" /></svg>
                     Diagnosis Sekarang
                 </a>
@@ -65,7 +65,7 @@
                         </p>
                         <p class="mt-1 text-xs text-[#8a9990]">{{ $diagnosis->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y · H:i') ?? '—' }}</p>
                         <a href="{{ route('permohonan.create', ['diagnosis_id' => $diagnosis->id]) }}"
-                           class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+                           class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">
                             Ajukan Penanganan
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                         </a>
@@ -139,7 +139,7 @@
                 <template x-for="(label, i) in ['Isi Form', 'Review &amp; Kirim']" :key="i">
                     <div class="flex items-center gap-2">
                         <span class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-                              :class="step > i ? 'bg-[#176b45] text-white' : step === i + 1 ? 'bg-[#176b45] text-white ring-4 ring-[#176b45]/20' : 'bg-[#eef3ef] text-[#8a9990]'"
+                              :class="step > i ? 'bg-action-primary text-white' : step === i + 1 ? 'bg-action-primary text-white ring-4 ring-[#176b45]/20' : 'bg-[#eef3ef] text-[#8a9990]'"
                               x-text="i + 1"></span>
                         <span class="text-sm font-semibold" :class="step === i + 1 ? 'text-[#173b29]' : 'text-[#8a9990]'" x-text="label"></span>
                         <template x-if="i < 1">
@@ -227,7 +227,7 @@
                         <div class="mb-4 overflow-hidden rounded-2xl border border-[#dbe5df] bg-[#f3f8f4]">
                             <div id="case-location-map" data-case-location-map class="h-[280px] w-full sm:h-[320px] lg:h-[380px]" aria-label="Peta untuk memilih lokasi kasus"></div>
                             <div class="flex items-center gap-2 border-t border-[#dbe5df] bg-white px-3 py-2.5 text-xs text-[#66746c]">
-                                <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#176b45]"></span>
+                                <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-action-primary"></span>
                                 <span data-case-location-help>Lokasi kasus otomatis mengikuti lokasi Kelompok Tani Anda. Geser marker atau klik peta jika lokasi serangan berada di titik yang berbeda.</span>
                             </div>
                         </div>
@@ -305,7 +305,7 @@
                         <input type="file" name="evidences[]" id="evidences" multiple
                                accept="image/jpeg,image/png,image/webp"
                                @change="onFiles($event)"
-                               class="block w-full cursor-pointer rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-3 py-4 text-sm text-[#66746c] file:mr-3 file:rounded-lg file:border-0 file:bg-[#176b45] file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-[#173b29]">
+                               class="block w-full cursor-pointer rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-3 py-4 text-sm text-[#66746c] file:mr-3 file:rounded-lg file:border-0 file:bg-action-primary file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-action-primary-hover">
                         @error('evidences')
                             <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
                         @enderror
@@ -424,17 +424,17 @@
                 {{-- Navigasi wizard --}}
                 <div class="mt-6 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
                     <button type="button" x-show="step === 2" @click="prev()"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4] sm:w-auto">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover sm:w-auto">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                         Kembali
                     </button>
                     <button type="button" x-show="step === 1" @click="next()"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] sm:w-auto">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover sm:w-auto">
                         Tinjau Permohonan
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
                     <button type="submit" x-show="step === 2" :disabled="submitting"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                         <span x-show="! submitting">Kirim Permohonan</span>
                         <span x-show="submitting" class="inline-flex items-center gap-2">

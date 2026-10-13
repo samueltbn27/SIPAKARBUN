@@ -16,7 +16,7 @@
 
     <div class="mb-5 flex flex-col gap-3 rounded-2xl border border-[#dbe5df] bg-[#f5faf6] p-4 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-[#66746c]">Gejala baru akan ditinjau POPT. Laporan belum digunakan untuk diagnosis.</p>
-        <a href="{{ route('diagnosis.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Kembali ke Diagnosis</a>
+        <a href="{{ route('diagnosis.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Kembali ke Diagnosis</a>
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-[#e4ece7] bg-white shadow-sm">

@@ -38,8 +38,11 @@ export const providerFixtures = [
     },
     {
         name: 'postponed handling status',
-        raw: { case_id: 'postponed', monitoring_status: 'ditunda' },
-        assertCase: (testCase, assert) => assert.equal(testCase.status, 'ditunda'),
+        raw: { case_id: 'postponed', current_status: 'ditunda', monitoring_status: 'dalam_penanganan' },
+        assertCase: (testCase, assert) => {
+            assert.equal(testCase.status, 'dalam_penanganan');
+            assert.equal(testCase.technical_status, 'ditunda');
+        },
     },
     {
         name: 'completed handling status',

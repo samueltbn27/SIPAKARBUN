@@ -17,6 +17,8 @@ export const mockCases = [
             kecamatan: 'Sukasari',
         },
         status: 'in_progress',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Penanganan sedang dilaksanakan.',
         last_status_at: '2026-08-15T10:00:00+07:00',
         status_history: [
@@ -41,6 +43,8 @@ export const mockCases = [
             kecamatan: 'Cibinong',
         },
         status: 'assigned',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Kasus ditugaskan untuk verifikasi lapangan.',
         last_status_at: '2026-08-14T09:30:00+07:00',
         status_history: [
@@ -63,6 +67,8 @@ export const mockCases = [
             kecamatan: 'Cianjur',
         },
         status: 'under_review',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Hasil identifikasi sedang ditinjau.',
         last_status_at: '2026-08-13T14:15:00+07:00',
         status_history: [
@@ -86,6 +92,8 @@ export const mockCases = [
             kecamatan: 'Garut Kota',
         },
         status: 'postponed',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Kunjungan lapangan ditunda karena cuaca.',
         last_status_at: '2026-08-12T11:45:00+07:00',
         status_history: [
@@ -109,6 +117,8 @@ export const mockCases = [
             kecamatan: 'Cisaat',
         },
         status: 'ready_for_execution',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Rencana tindakan siap dijalankan.',
         last_status_at: '2026-08-11T08:20:00+07:00',
         status_history: [
@@ -133,6 +143,8 @@ export const mockCases = [
             kecamatan: 'Tawang',
         },
         status: 'completed',
+        monitoring_status: 'selesai',
+        is_overdue: false,
         last_note: 'Penanganan dan pemantauan telah selesai.',
         last_status_at: '2026-08-10T16:00:00+07:00',
         status_history: [
@@ -158,6 +170,8 @@ export const mockCases = [
             kecamatan: 'Subang',
         },
         status: 'assigned',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Menunggu jadwal pemeriksaan awal.',
         last_status_at: '2026-08-09T10:10:00+07:00',
         status_history: [
@@ -180,6 +194,8 @@ export const mockCases = [
             kecamatan: 'Sumber',
         },
         status: 'in_progress',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Aplikasi pengendalian sedang berlangsung.',
         last_status_at: '2026-08-08T13:25:00+07:00',
         status_history: [
@@ -204,6 +220,8 @@ export const mockCases = [
             kecamatan: 'Kuningan',
         },
         status: 'under_review',
+        monitoring_status: 'dalam_penanganan',
+        is_overdue: false,
         last_note: 'Dokumentasi kasus sedang diperiksa.',
         last_status_at: '2026-08-07T15:40:00+07:00',
         status_history: [
@@ -227,6 +245,8 @@ export const mockCases = [
             kecamatan: 'Dramaga',
         },
         status: 'completed',
+        monitoring_status: 'selesai',
+        is_overdue: false,
         last_note: 'Kasus selesai setelah evaluasi akhir.',
         last_status_at: '2026-08-06T09:05:00+07:00',
         status_history: [

@@ -71,7 +71,7 @@ function createCasePopup(caseData) {
 
     const statusRow = document.createElement('div');
     statusRow.className = 'mt-3 flex items-center gap-2';
-    statusRow.append(createStatusSymbol(caseData.status), statusBadge);
+    statusRow.append(createStatusSymbol(caseData.status, { overdue: caseData.is_overdue }), statusBadge);
     const statusDescription = document.createElement('p');
     statusDescription.className = 'text-xs leading-5 text-[#66746c]';
     statusDescription.textContent = statusConfig.description;
@@ -84,8 +84,11 @@ function createCasePopup(caseData) {
     appendPopupField(fields, 'Target penyelesaian', formatDateTime(caseData.effective_deadline_at));
     appendPopupField(fields, 'Progress terakhir', caseData.latest_progress?.note || 'Belum ada progress');
     if (caseData.is_overdue) {
-        appendPopupField(fields, 'Melewati target sejak', formatDateTime(caseData.overdue_since));
+        appendPopupField(fields, 'Melewati Target Waktu', formatDateTime(caseData.overdue_since));
     }
+    if (caseData.rejection_reason) appendPopupField(fields, 'Alasan Penolakan', caseData.rejection_reason);
+    if (caseData.legacy_note) appendPopupField(fields, 'Data lama', `${caseData.legacy_note} ${caseData.legacy_reason || ''}`);
+    if (caseData.history_note) appendPopupField(fields, 'Kelengkapan riwayat', caseData.history_note);
     if (caseData.status === 'selesai') {
         appendPopupField(fields, 'Laporan akhir', caseData.final_report_exists ? 'Tersedia' : 'Belum tersedia');
         appendPopupField(fields, 'Tanggal selesai', formatDateTime(caseData.completed_at));
@@ -102,10 +105,10 @@ function createCasePopup(caseData) {
     return popup;
 }
 
-function createStatusIcon(status) {
+function createStatusIcon(status, overdue = false) {
     return L.divIcon({
         className: 'webgis-status-marker',
-        html: createStatusSymbol(status, { pin: true }),
+        html: createStatusSymbol(status, { pin: true, overdue }),
         iconSize: [44, 50],
         iconAnchor: [22, 49],
         popupAnchor: [0, -44],
@@ -119,7 +122,7 @@ function renderCaseMarker(caseLayer, caseData) {
     }
 
     const config = getStatusConfig(caseData.status);
-    const markerLabel = `${caseData.case_code || 'Lokasi kasus'} — ${config.label}`;
+    const markerLabel = `${caseData.case_code || 'Lokasi kasus'} — ${config.label}${caseData.is_overdue ? ' · Melewati Target Waktu' : ''}`;
     const tooltip = document.createElement('div');
     tooltip.className = 'webgis-case-tooltip';
     const tooltipTitle = document.createElement('strong');
@@ -129,10 +132,16 @@ function renderCaseMarker(caseLayer, caseData) {
     const tooltipGroup = document.createElement('span');
     tooltipGroup.textContent = caseData.kelompok_tani?.nama || 'Kelompok tani belum tersedia';
     tooltip.append(tooltipTitle, tooltipStatus, tooltipGroup);
+    if (caseData.is_overdue) {
+        const warning = document.createElement('span');
+        warning.textContent = 'Melewati Target Waktu';
+        warning.className = 'text-red-700';
+        tooltip.append(warning);
+    }
 
     const marker = L.marker([caseData.latitude, caseData.longitude], {
         alt: markerLabel,
-        icon: createStatusIcon(caseData.status),
+        icon: createStatusIcon(caseData.status, caseData.is_overdue),
         title: markerLabel,
         riseOnHover: true,
     })
@@ -255,6 +264,7 @@ function renderStatusSummary(cases, filters) {
 function getFilterControls() {
     return {
         status: document.querySelector('[data-webgis-filter="status"]'),
+        overdue: document.querySelector('[data-webgis-filter="overdue"]'),
         commodity: document.querySelector('[data-webgis-filter="commodity"]'),
         regency: document.querySelector('[data-webgis-filter="regency"]'),
         district: document.querySelector('[data-webgis-filter="district"]'),
@@ -310,19 +320,21 @@ export function initializeWebGIS(container, cases) {
     });
 
     const renderFilteredCases = () => {
-        const filteredCases = applyFilters(mappableCases, filterState);
+        const filteredMonitoring = applyFilters(monitoringCases, filterState);
+        const filteredCases = filteredMonitoring.filter(hasValidCaseCoordinates);
         const markerCount = renderCases(map, caseLayer, filteredCases);
         const currentOpenCaseId = getOpenCaseId();
 
         if (
             currentOpenCaseId !== null
-            && !filteredCases.some((caseData) => String(caseData.case_id) === String(currentOpenCaseId))
+            && !filteredCases.some((caseData) => String(caseData.monitoring_id ?? caseData.case_id ?? caseData.request_id) === String(currentOpenCaseId))
         ) {
             closeCaseDetail();
         }
 
         if (caseCount) {
-            caseCount.textContent = `Menampilkan ${markerCount} dari ${mappableCases.length} kasus`;
+            const missingCoordinates = filteredMonitoring.length - markerCount;
+            caseCount.textContent = `Menampilkan ${markerCount} titik dari ${filteredMonitoring.length} entri sesuai filter${missingCoordinates ? ` · ${missingCoordinates} belum memiliki koordinat kasus yang valid` : ''}`;
         }
 
         if (emptyMessage) {
@@ -340,6 +352,7 @@ export function initializeWebGIS(container, cases) {
 
     const updateFilterOptions = () => {
         setSelectOptions(controls.status, getStatusOptions(), 'Semua Status');
+        setSelectOptions(controls.overdue, [{ value: '1', label: 'Melewati Target Waktu' }], 'Semua Target');
         setSelectOptions(controls.commodity, getUniqueCommodities(monitoringCases), 'Semua Komoditas');
         setSelectOptions(controls.disease, getUniqueDiseases(monitoringCases), 'Semua Penyakit');
         setSelectOptions(controls.popt, getUniquePopts(monitoringCases), 'Semua POPT');

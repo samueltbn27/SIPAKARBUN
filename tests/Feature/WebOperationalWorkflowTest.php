@@ -75,11 +75,11 @@ class WebOperationalWorkflowTest extends TestCase
             ->assertRedirect();
 
         $this->actingAs($operator)
-            ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'Layak ditangani'])
+            ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'Layak ditangani', 'popt_id' => $popt->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()])
             ->assertRedirect(route('operator.permohonan.show', $permohonan->id));
 
         $kasus = $permohonan->fresh('kasus')->kasus;
-        $this->assertSame(KasusPenanganan::STATUS_DITERIMA, $kasus->current_status);
+        $this->assertSame(KasusPenanganan::STATUS_DITUGASKAN, $kasus->current_status);
         $this->assertSame($caseLatitude, $kasus->latitude_kasus);
         $this->assertSame($caseLongitude, $kasus->longitude_kasus);
 
@@ -113,8 +113,8 @@ class WebOperationalWorkflowTest extends TestCase
 
         $this->actingAs($operator)->post(route('operator.permohonan.review', $pertama->id));
         $this->actingAs($operator)->post(route('operator.permohonan.review', $kedua->id));
-        $this->actingAs($operator)->post(route('operator.permohonan.accept', $pertama->id));
-        $this->actingAs($operator)->post(route('operator.permohonan.accept', $kedua->id));
+        $this->actingAs($operator)->post(route('operator.permohonan.accept', $pertama->id), ['popt_id' => $poptSaya->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()]);
+        $this->actingAs($operator)->post(route('operator.permohonan.accept', $kedua->id), ['popt_id' => $poptLain->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()]);
         $kasusSaya = $pertama->fresh('kasus')->kasus;
         $kasusLain = $kedua->fresh('kasus')->kasus;
         $this->actingAs($operator)->post(route('operator.kasus.assign', $kasusSaya->id), ['popt_id' => $poptSaya->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()]);

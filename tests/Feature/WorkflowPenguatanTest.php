@@ -13,6 +13,7 @@ use App\Models\PermohonanPenanganan;
 use App\Models\User;
 use App\Services\MockKelompokTaniReferensiClient;
 use App\Services\MockKomoditasReferensiClient;
+use App\Services\StatusTransitionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
@@ -77,11 +78,18 @@ class WorkflowPenguatanTest extends TestCase
     {
         $permohonan = $this->buatPermohonanDiajukan($pemohon);
 
-        Sanctum::actingAs($operator);
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")->assertOk();
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])->assertCreated();
+        // Historical fixture before atomic approval existed. This regression
+        // suite verifies that legacy assignment and technical transitions remain usable.
+        $case = KasusPenanganan::factory()->withApproval()->create([
+            'permohonan_id' => $permohonan->id,
+            'created_by' => $operator->id,
+            'current_status' => KasusPenanganan::STATUS_DITERIMA,
+            'latitude_kasus' => $permohonan->latitude_kasus,
+            'longitude_kasus' => $permohonan->longitude_kasus,
+        ]);
+        app(StatusTransitionService::class)->catatStatusAwal($case, $operator->id);
 
-        return $permohonan->fresh('kasus')->kasus;
+        return $case;
     }
 
     private function tugaskan(User $operator, User $popt, KasusPenanganan $kasus): void
@@ -140,7 +148,7 @@ class WorkflowPenguatanTest extends TestCase
 
         $this->actingAs($operator)
             ->from(route('operator.permohonan.show', $permohonan->id))
-            ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'ok'])
+            ->post(route('operator.permohonan.accept', $permohonan->id), ['catatan' => 'ok', 'popt_id' => $this->buatUser('popt')->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()])
             ->assertRedirect(route('operator.permohonan.show', $permohonan->id))
             ->assertSessionHasErrors('permohonan_id');
 
@@ -368,7 +376,7 @@ class WorkflowPenguatanTest extends TestCase
         $this->postJson("/api/kasus/{$kasus->id}/batal", ['alasan' => 'Perlu verifikasi ulang lapangan.'])->assertOk();
 
         // Putuskan ulang → kasus baru lahir.
-        $this->postJson("/api/operator/permohonan/{$permohonanId}/accept", ['catatan' => 'ok'])->assertCreated();
+        $this->postJson("/api/operator/permohonan/{$permohonanId}/accept", ['catatan' => 'ok', 'popt_id' => $this->buatUser('popt')->id, 'deadline_at' => now()->addDays(7)->toDateTimeString()])->assertCreated();
 
         $this->assertDatabaseHas('keputusan_permohonan', [
             'permohonan_id' => $permohonanId,

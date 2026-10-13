@@ -7,7 +7,7 @@
 <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="rounded-lg border border-[#d6ebe0] bg-[#f7fcf9] px-4 py-3 text-sm text-[#315e47]">Metode yang sudah digunakan aturan aktif sebaiknya dibuat sebagai versi baru agar histori tidak berubah.</div>
-        @if(auth()->user()?->hasRole('admin'))<a href="{{ route('knowledge.cf-methods.create') }}" class="rounded-lg bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#115a39]">Tambah Metode</a>@endif
+        @if(auth()->user()?->hasRole('admin'))<a href="{{ route('knowledge.cf-methods.create') }}" class="rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Tambah Metode</a>@endif
     </div>
     <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table class="min-w-full divide-y divide-gray-200">
@@ -21,7 +21,7 @@
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
             @forelse($methods as $method)
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-action-secondary-hover">
                     <td class="px-4 py-3"><div class="font-semibold text-gray-900">{{ $method->name }}</div><div class="mt-1 max-w-xl text-xs text-gray-500">{{ $method->description ?: 'Belum tersedia' }}</div></td>
                     <td class="px-4 py-3 text-sm text-gray-700">{{ $method->version }}</td>
                     <td class="px-4 py-3 text-sm text-gray-700">{{ count($method->scaleOptions()) }} tingkat</td>

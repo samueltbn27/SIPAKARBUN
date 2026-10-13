@@ -17,7 +17,7 @@
             <h1 class="break-words text-xl font-extrabold tracking-tight text-[#173b29] sm:text-2xl">Daftar Penyakit</h1>
             <p class="mt-1 text-sm leading-6 text-[#66746c]">Kelola data penyakit untuk basis pengetahuan.</p>
         </div>
-        @if($canCreateKnowledge)<a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#115a39]">{{ $createLabel }}</a>@endif
+        @if($canCreateKnowledge)<a href="{{ route('knowledge.penyakit.create') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-action-primary px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-action-primary-hover">{{ $createLabel }}</a>@endif
     </div>
 
     <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -29,7 +29,7 @@
                 <input type="checkbox" name="aktif_saja" id="aktif_saja" value="1" {{ request('aktif_saja') ? 'checked' : '' }} class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
                 <label for="aktif_saja" class="text-sm text-gray-700">Aktif saja</label>
             </div>
-            <button type="submit" class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
+            <button type="submit" class="bg-action-primary text-white hover:bg-action-primary-hover rounded-lg px-4 py-2 text-sm font-medium">
                 Cari
             </button>
         </form>
@@ -51,7 +51,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse ($penyakit as $p)
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-action-secondary-hover">
                     <td class="px-4 py-3 font-mono text-gray-700">{{ $p->kode }}</td>
                     <td class="px-4 py-3 font-medium text-gray-900">
                         <div class="flex items-center gap-3">
@@ -87,7 +87,7 @@
                     </td>
                     <td class="px-4 py-3 text-right">
                         @if($canEditRecord($p))<div class="inline-flex items-center gap-2">
-                            <a href="{{ route('knowledge.penyakit.edit', $p) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100">
+                            <a href="{{ route('knowledge.penyakit.edit', $p) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-action-secondary-hover">
                                 Edit
                             </a>
                             @if($canManageKnowledge)<form method="POST" action="{{ route('knowledge.penyakit.destroy', $p) }}" data-confirm-title="Hapus penyakit?" data-confirm-message="Data yang dihapus tidak dapat dikembalikan." data-confirm-action="Hapus" data-confirm-tone="danger">

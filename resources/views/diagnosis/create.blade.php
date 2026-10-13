@@ -21,7 +21,7 @@
             <h2 class="mt-4 text-lg font-bold text-[#173b29]">Data diagnosis belum dapat dimuat. Silakan coba lagi.</h2>
             <p class="mt-1 max-w-md text-sm text-[#66746c]">Periksa koneksi Anda, lalu muat ulang halaman untuk mencoba kembali.</p>
             <a href="{{ route('diagnosis.index') }}"
-               class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29]">
+               class="mt-6 inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-action-primary-hover">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 Muat Ulang
             </a>
@@ -448,9 +448,9 @@
                                     class="flex min-h-11 w-full flex-col items-center gap-1 rounded-xl border px-1.5 py-2 text-[11px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45] sm:w-auto sm:flex-row sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs"
                                     :class="step === s.n
                                         ? 'border-[#176b45] bg-[#e8f4ed] text-[#176b45]'
-                                        : (s.n < maxVisited ? 'border-[#176b45]/30 bg-white text-[#176b45] hover:bg-[#f3f8f4]' : 'border-[#e4ece7] bg-white text-[#a0aba4]')">
+                                        : (s.n < maxVisited ? 'border-[#176b45]/30 bg-white text-[#176b45] hover:bg-action-secondary-hover' : 'border-[#e4ece7] bg-white text-[#a0aba4]')">
                                 <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
-                                      :class="step === s.n ? 'bg-[#176b45] text-white' : (s.n < maxVisited ? 'bg-[#e8f4ed] text-[#176b45]' : 'bg-[#eef3ef] text-[#a0aba4]')"
+                                      :class="step === s.n ? 'bg-action-primary text-white' : (s.n < maxVisited ? 'bg-[#e8f4ed] text-[#176b45]' : 'bg-[#eef3ef] text-[#a0aba4]')"
                                       x-text="s.n"></span>
                                 <span x-text="s.label"></span>
                             </button>
@@ -484,7 +484,7 @@
                         </div>
                         <div class="flex shrink-0 gap-2">
                             <button type="button" @click="reset()"
-                                    class="rounded-xl border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Mulai Ulang</button>
+                                    class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] transition-colors hover:bg-action-secondary-hover">Mulai Ulang</button>
                         </div>
                     </div>
                 </div>
@@ -529,7 +529,7 @@
                                             <span class="block text-xs text-[#8a9990]" x-text="k.kode ?? ''"></span>
                                         </span>
                                         <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border"
-                                              :class="Number(commodityId) === Number(k.id) ? 'border-[#176b45] bg-[#176b45] text-white' : 'border-[#dbe5df] text-transparent'">
+                                              :class="Number(commodityId) === Number(k.id) ? 'border-[#176b45] bg-action-primary text-white' : 'border-[#dbe5df] text-transparent'">
                                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                                         </span>
                                     </button>
@@ -568,7 +568,7 @@
                              class="mt-4 rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-4 py-12 text-center">
                             <p class="text-sm font-semibold text-[#66746c]">Tidak ada gejala untuk komoditas ini</p>
                             <p class="mt-1 text-xs text-[#8a9990]">Coba pilih komoditas lain.</p>
-                            <button type="button" @click="prev()" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Kembali</button>
+                            <button type="button" @click="prev()" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Kembali</button>
                         </div>
 
                         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" x-show="!gejalaLoading && filteredGejala().length > 0" x-cloak>
@@ -599,7 +599,7 @@
                                 <p class="text-sm font-semibold text-[#173b29]">Gejala yang Anda amati belum ada di daftar?</p>
                                 <p class="mt-1 text-xs leading-5 text-[#66746c]">Laporkan pengamatan dan foto ke POPT. Laporan ini tidak menjalankan diagnosis.</p>
                             </div>
-                            <button type="button" @click="openReport()" class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#176b45] bg-white px-4 py-2.5 text-sm font-semibold text-[#176b45] transition-colors hover:bg-[#e8f4ed]">
+                            <button type="button" @click="openReport()" class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#176b45] bg-white px-4 py-2.5 text-sm font-semibold text-[#176b45] transition-colors hover:bg-action-secondary-hover">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" /></svg>
                                 Gejala saya belum ada? Laporkan
                             </button>
@@ -621,8 +621,8 @@
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala dipilih'"></span>
                             <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-                                <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
-                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Lanjut</button>
+                                <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Kembali</button>
+                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Lanjut</button>
                             </div>
                         </div>
                     </x-card>
@@ -655,7 +655,7 @@
                                                     :tabindex="confValue(id) === lvl.value || (confIndex(id) < 0 && lvl.value === levels[0].value) ? 0 : -1"
                                                     class="flex min-h-12 items-center justify-center gap-2 rounded-lg border px-3 py-3 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45]"
                                                     :class="confValue(id) === lvl.value
-                                                        ? 'border-[#176b45] bg-[#176b45] text-white'
+                                                        ? 'border-[#176b45] bg-action-primary text-white'
                                                         : 'border-[#dbe5df] bg-white text-[#66746c] hover:border-[#176b45]/40'">
                                                 <span class="block" x-text="lvl.label"></span>
                                                 <svg x-show="confValue(id) === lvl.value" class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -669,8 +669,8 @@
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <span class="text-xs font-semibold text-[#8a9990]" x-text="selected.length + ' gejala dipilih · Pastikan pilihan sesuai dengan kondisi tanaman.'"></span>
                             <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-                                <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
-                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Tinjau Pilihan</button>
+                                <button type="button" @click="prev()" class="min-h-11 rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Kembali</button>
+                                <button type="button" @click="next()" class="min-h-11 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Tinjau Pilihan</button>
                             </div>
                         </div>
                     </x-card>
@@ -721,9 +721,9 @@
                         </div>
 
                         <div class="mt-4 flex flex-col gap-3 border-t border-[#eef3ef] pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali</button>
+                            <button type="button" @click="prev()" class="rounded-xl border border-[#dbe5df] bg-white px-4 py-2 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Kembali</button>
                             <button type="submit" :disabled="submitting || selected.length === 0"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#173b29] disabled:cursor-not-allowed disabled:opacity-60">
+                                     class="inline-flex items-center gap-2 rounded-xl bg-action-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-action-primary-hover disabled:cursor-not-allowed disabled:opacity-60">
                                 <svg x-show="!submitting" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                                 <svg x-show="submitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                 <span x-text="submitting ? 'Menganalisis gejala…' : 'Lihat Hasil'"></span>
@@ -740,7 +740,7 @@
                             <h2 id="report-modal-title" class="text-lg font-bold text-[#173b29]">Laporkan gejala baru</h2>
                             <p id="report-modal-description" class="mt-1 text-xs leading-5 text-[#66746c]">POPT akan meninjau laporan sebelum gejala dapat digunakan untuk diagnosis.</p>
                         </div>
-                        <button type="button" @click="closeReport()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-[#66746c] hover:bg-[#f3f8f4]" aria-label="Tutup formulir laporan">&times;</button>
+                        <button type="button" @click="closeReport()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-[#66746c] hover:bg-action-secondary-hover" aria-label="Tutup formulir laporan">&times;</button>
                     </div>
 
                     <div class="p-5 sm:p-6">
@@ -753,8 +753,8 @@
                                 <p class="mt-1 text-sm leading-6 text-[#66746c]">POPT akan meninjau pengamatan Anda. Laporan ini akan dilampirkan pada diagnosis, tetapi belum digunakan untuk menentukan hasilnya.</p>
                                 <p class="mt-3 inline-flex rounded-lg bg-white px-3 py-2 font-mono text-sm font-bold text-[#176b45]" x-text="reportCode"></p>
                                 <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-                                    <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Lihat laporan saya</a>
-                                    <button type="button" @click="closeReport()" class="min-h-11 rounded-xl border border-[#dbe5df] px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali ke gejala</button>
+                                    <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">Lihat laporan saya</a>
+                                    <button type="button" @click="closeReport()" class="min-h-11 rounded-xl border border-[#dbe5df] px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Kembali ke gejala</button>
                                 </div>
                             </div>
                         </template>
@@ -783,7 +783,7 @@
 
                             <div>
                                 <label for="report-image" class="mb-1.5 block text-sm font-semibold text-[#34483b]">Foto gejala <span class="font-normal text-[#8a9990]">(opsional)</span></label>
-                                <input x-ref="reportImage" id="report-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" @change="previewReportImage($event)" class="block w-full cursor-pointer rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-3 py-3 text-sm text-[#66746c] file:mr-3 file:rounded-lg file:border-0 file:bg-[#176b45] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white">
+                                <input x-ref="reportImage" id="report-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" @change="previewReportImage($event)" class="block w-full cursor-pointer rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-3 py-3 text-sm text-[#66746c] file:mr-3 file:rounded-lg file:border-0 file:bg-action-primary file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white">
                                 <p class="mt-1 text-xs text-[#8a9990]">JPG, PNG, atau WebP; maksimal 5 MB.</p>
                                 <p class="mt-1 text-xs text-red-600" x-show="reportErrors.image?.length" x-text="reportErrors.image?.[0]"></p>
                                 <div x-show="reportImagePreview" x-cloak class="mt-3 flex items-start gap-3 rounded-xl border border-[#e4ece7] p-2.5">
@@ -794,8 +794,8 @@
 
                             <p x-show="reportError" x-cloak class="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700" role="alert" x-text="reportError"></p>
                             <div class="flex flex-col-reverse gap-2 border-t border-[#eef3ef] pt-4 sm:flex-row sm:justify-end">
-                                <button type="button" @click="closeReport()" class="min-h-11 rounded-xl border border-[#dbe5df] px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Batal</button>
-                                <button type="submit" :disabled="reportSubmitting" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29] disabled:cursor-wait disabled:opacity-60">
+                                <button type="button" @click="closeReport()" class="min-h-11 rounded-xl border border-[#dbe5df] px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Batal</button>
+                                <button type="submit" :disabled="reportSubmitting" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover disabled:cursor-wait disabled:opacity-60">
                                     <svg x-show="reportSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                     <span x-text="reportSubmitting ? 'Mengirim…' : 'Kirim laporan ke POPT'"></span>
                                 </button>

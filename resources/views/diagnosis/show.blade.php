@@ -101,8 +101,8 @@
             </span>
             <h2 class="mt-4 text-lg font-bold text-[#173b29]">Tidak ada penyakit yang cocok</h2>
             <p class="mt-1 max-w-md text-sm text-[#66746c]">Gejala yang dipilih tidak cukup untuk mendeteksi penyakit. Coba lakukan diagnosis ulang dengan gejala lain.</p>
-            <a href="{{ route('diagnosis.index') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Diagnosis Ulang</a>
-            <a href="{{ route('diagnosis.history') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">
+            <a href="{{ route('diagnosis.index') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">Diagnosis Ulang</a>
+            <a href="{{ route('diagnosis.history') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Kembali
             </a>
@@ -134,7 +134,7 @@
                     </div>
                 </div>
                 <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-[#eef3ef]">
-                    <div class="h-full rounded-full bg-[#176b45]" style="width: {{ min(100, round(max(0.0, (float) $primary->cf_value) * 100, 2)) }}%"></div>
+                    <div class="h-full rounded-full bg-action-primary" style="width: {{ min(100, round(max(0.0, (float) $primary->cf_value) * 100, 2)) }}%"></div>
                 </div>
             </div>
         </x-card>
@@ -223,7 +223,7 @@
                         @foreach ($diagnosis->results as $result)
                             <li class="flex items-center justify-between gap-3 px-5 py-3.5">
                                 <div class="flex min-w-0 items-center gap-3">
-                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold {{ $loop->first ? 'bg-[#176b45] text-white' : 'bg-[#eef3ef] text-[#8a9990]' }}">{{ $result->ranking }}</span>
+                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold {{ $loop->first ? 'bg-action-primary text-white' : 'bg-[#eef3ef] text-[#8a9990]' }}">{{ $result->ranking }}</span>
                                     <span class="text-sm font-semibold {{ $loop->first ? 'text-[#173b29]' : 'text-[#66746c]' }}">{{ $result->disease_name_snapshot }}</span>
                                 </div>
                                 <div class="shrink-0 text-right">
@@ -258,7 +258,7 @@
         <div class="mt-6 flex flex-wrap items-center gap-3">
             @if ($bolehAjukan)
                 <a href="{{ route('permohonan.create', ['diagnosis_id' => $diagnosis->id]) }}"
-                   class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+                   class="inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     Ajukan Penanganan
                 </a>
@@ -270,12 +270,12 @@
                 </span>
             @endif
             <a href="{{ route('diagnosis.index') }}"
-               class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">
+               class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0 0l-4-4m4 4l4-4" /></svg>
                 Diagnosis Baru
             </a>
             <a href="{{ route('diagnosis.history') }}"
-               class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">
+               class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">
                 Kembali
             </a>
         </div>

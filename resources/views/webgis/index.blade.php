@@ -11,6 +11,7 @@
         ['id' => 'commodity', 'label' => 'Komoditas'],
         ['id' => 'disease', 'label' => 'Penyakit'],
         ['id' => 'status', 'label' => 'Status'],
+        ['id' => 'overdue', 'label' => 'Target Waktu'],
         ['id' => 'popt', 'label' => 'POPT'],
     ];
 
@@ -43,6 +44,9 @@
                             class="w-full rounded-lg border border-[#d6e0d9] bg-[#f7faf8] px-3 py-2.5 text-sm text-[#526159] outline-none disabled:cursor-not-allowed disabled:opacity-80">
                         @if($filter['id'] === 'status')
                             <option value="">Semua Status</option>
+                        @elseif($filter['id'] === 'overdue')
+                            <option value="">Semua Target</option>
+                            <option value="1">Melewati Target Waktu</option>
                         @elseif($filter['id'] === 'district')
                             <option value="">Pilih Kabupaten terlebih dahulu</option>
                         @else
@@ -95,7 +99,7 @@
 
     <section class="soft-card rounded-xl border border-[#e6eee8] bg-white p-5 sm:p-6" aria-labelledby="status-heading">
         <div class="flex flex-col gap-1 mb-5">
-            <h2 id="status-heading" class="text-base font-bold text-[#173b29]">Status Penanganan</h2>
+            <h2 id="status-heading" class="text-base font-bold text-[#173b29]">Status Kasus</h2>
             <p class="text-sm leading-6 text-[#66746c]">Ringkasan kondisi penanganan kasus berdasarkan data yang ditampilkan.</p>
         </div>
         <div data-webgis-status-summary class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" aria-label="Status penanganan dan jumlah kasus">
@@ -119,7 +123,7 @@
             <h2 id="case-detail-heading" data-case-detail="case-code" tabindex="-1" class="mt-1 truncate text-lg font-bold text-[#173b29]">-</h2>
         </div>
         <button type="button" data-case-detail-close
-                class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-2xl leading-none text-[#526159] transition hover:bg-[#f0f5f1] hover:text-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#b8d7c3]"
+                class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-2xl leading-none text-[#526159] transition hover:bg-action-secondary-hover hover:text-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#b8d7c3]"
                 aria-label="Tutup detail kasus">
             <span aria-hidden="true">&times;</span>
         </button>
@@ -130,10 +134,12 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h3 id="case-summary-heading" class="text-sm font-bold text-[#173b29]">Ringkasan Kasus</h3>
                 <span data-case-detail="status">-</span>
+                <span data-case-detail="overdue" hidden class="rounded-lg bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">Melewati Target Waktu</span>
             </div>
+            <p data-case-detail="rejection-reason" hidden class="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700" aria-label="Alasan Penolakan"></p>
+            <p data-case-detail="legacy-note" hidden class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800"></p>
             <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div class="rounded-lg bg-[#fffaf0] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Status permohonan</dt><dd data-case-detail="request-status" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
-                <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Status penanganan</dt><dd data-case-detail="handling-status" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
+                <div class="rounded-lg bg-[#f7faf8] p-3 sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kode Permohonan</dt><dd data-case-detail="request-code" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3 sm:col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Poktan</dt><dd data-case-detail="kelompok-tani" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Komoditas</dt><dd data-case-detail="commodity" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>
                 <div class="rounded-lg bg-[#f7faf8] p-3"><dt class="text-[10px] font-semibold uppercase tracking-wide text-[#89968e]">Kode komoditas</dt><dd data-case-detail="commodity-code" class="mt-1 text-sm font-semibold text-[#526159]">-</dd></div>

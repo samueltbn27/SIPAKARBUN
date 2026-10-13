@@ -35,7 +35,7 @@ class OperatorWorkflowPhase3Test extends TestCase
 
     private function kasus(string $status = KasusPenanganan::STATUS_DITERIMA): KasusPenanganan
     {
-        return KasusPenanganan::factory()->create(['current_status' => $status]);
+        return KasusPenanganan::factory()->withApproval()->create(['current_status' => $status]);
     }
 
     private function assign(KasusPenanganan $kasus, User $operator, User $popt, Carbon $deadline): void
@@ -140,7 +140,7 @@ class OperatorWorkflowPhase3Test extends TestCase
             ->assertOk()
             ->assertSee('Target Penyelesaian')
             ->assertSee('Menunggu POPT menerima penugasan')
-            ->assertSee('Melewati Batas Waktu')
+            ->assertSee('Melewati Target Waktu')
             ->assertSee('Permintaan Perpanjangan')
             ->assertSee('Akses kebun tertutup sementara.');
     }

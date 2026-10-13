@@ -12,7 +12,7 @@
             <p class="mt-2 max-w-md text-sm text-[#66746c]">
                 Anda tidak memiliki izin untuk membuka halaman ini. Menu yang Anda lihat menyesuaikan peran Anda saat ini.
             </p>
-            <a href="{{ route('dashboard') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#173b29]">
+            <a href="{{ route('dashboard') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-action-primary-hover">
                 Kembali ke Dashboard
             </a>
         </div>
@@ -31,7 +31,7 @@
         <div class="max-w-md rounded-2xl bg-white p-10 text-center">
             <h1 class="text-3xl font-extrabold tracking-tight text-[#173b29]">403 · Akses Ditolak</h1>
             <p class="mt-2 text-sm text-[#66746c]">Silakan masuk dengan akun yang sesuai untuk mengakses halaman ini.</p>
-            <a href="{{ route('login') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Masuk</a>
+            <a href="{{ route('login') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">Masuk</a>
         </div>
     </body>
     </html>

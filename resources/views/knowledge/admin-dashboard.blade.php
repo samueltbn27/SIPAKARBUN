@@ -82,7 +82,7 @@
                     <div class="flex items-center gap-1.5 flex-shrink-0">
                         <form method="POST" action="{{ route('knowledge.pengguna.approve', $user) }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-[#176b45] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#115a39] transition" title="Setujui">
+                            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-action-primary px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-action-primary-hover transition" title="Setujui">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                             </button>
                         </form>
@@ -166,7 +166,7 @@
                             {{-- Toggle active/inactive --}}
                             <form method="POST" action="{{ route('knowledge.pengguna.toggle', $user) }}">
                                 @csrf
-                                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-[#e4ece7] bg-white p-1.5 text-[#8b9790] hover:bg-[#f3f8f4] transition" title="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-[#e4ece7] bg-white p-1.5 text-[#8b9790] hover:bg-action-secondary-hover transition" title="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
                                     @if($user->is_active)
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                                     @else

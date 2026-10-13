@@ -29,7 +29,7 @@ class KasusPenangananResource extends JsonResource
             : null;
         $penugasanTerakhir = $this->relationLoaded('penugasanPopt')
             ? $this->penugasanPopt->sortByDesc('assigned_at')->first()
-            : null;
+            : ($this->relationLoaded('penugasanTerakhir') ? $this->penugasanTerakhir : null);
         $penugasan = $penugasanAktif ?? $penugasanTerakhir;
         $riwayat = $this->relationLoaded('riwayatStatus')
             ? $this->riwayatStatus
@@ -55,7 +55,14 @@ class KasusPenangananResource extends JsonResource
             'is_overdue' => $monitoring['is_overdue'],
             'effective_deadline_at' => $monitoring['effective_deadline_at']?->toIso8601String(),
             'overdue_since' => $monitoring['overdue_since']?->toIso8601String(),
-            'selesai_terverifikasi' => $this->current_status === \App\Models\KasusPenanganan::STATUS_SELESAI && $this->verified_at !== null,
+            'legacy_status' => $monitoring['legacy_status'],
+            'legacy_note' => $monitoring['legacy_note'],
+            'legacy_reason' => $monitoring['legacy_reason'],
+            'completion_evidence_missing' => $monitoring['completion_evidence_missing'],
+            'history_incomplete' => $monitoring['history_incomplete'],
+            'history_issues' => $monitoring['history_issues'],
+            'history_note' => $monitoring['history_note'],
+            'selesai_terverifikasi' => $this->current_status === KasusPenanganan::STATUS_SELESAI && $this->verified_at !== null,
             'verified_by' => $this->verified_by,
             'verified_at' => $this->verified_at?->toIso8601String(),
             'can_delete_case' => $request->user()?->hasRole('admin') === true
@@ -96,7 +103,7 @@ class KasusPenangananResource extends JsonResource
                 'catatan' => $penugasan->catatan,
                 'assigned_at' => $penugasan->assigned_at?->toIso8601String(),
                 'accepted_at' => $penugasan->accepted_at?->toIso8601String(),
-                'deadline_at' => $penugasan->deadline_at?->toIso8601String(),
+                'deadline_at' => app(MonitoringStatusService::class)->assignmentDeadline($penugasan)?->toIso8601String(),
             ],
             'latest_progress' => $progressTerakhir === null ? null : [
                 'note' => $progressTerakhir->catatan,
@@ -112,6 +119,8 @@ class KasusPenangananResource extends JsonResource
             'riwayat_status' => $riwayat->map(fn ($riwayat) => [
                 'previous_status' => $riwayat->previous_status,
                 'status' => $riwayat->status,
+                'label' => config('kasus.labels.'.$riwayat->status, $riwayat->status),
+                'monitoring_status' => app(MonitoringStatusService::class)->caseKey($riwayat->status),
                 'catatan' => $riwayat->catatan,
                 'note' => $riwayat->catatan,
                 'actor_id' => $riwayat->actor_id,

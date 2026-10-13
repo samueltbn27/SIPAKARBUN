@@ -117,6 +117,12 @@ class PoptController extends Controller
         ], 201);
     }
 
+    public function start(AcceptAssignmentRequest $request, int $id)
+    {
+        return new KasusPenangananResource($this->handlingService->startHandling($id, $request->user())
+            ->load(['permohonan', 'penugasanAktif.popt', 'riwayatStatus']));
+    }
+
     public function complete(CompleteHandlingRequest $request, int $id)
     {
         $kasus = $this->handlingService->completeHandling(

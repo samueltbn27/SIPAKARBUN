@@ -51,6 +51,17 @@ class StatusTransitionService
             ]);
         }
 
+        // Includes legacy Operator intervention endpoints: no caller may
+        // create a new completion without the same final report/evidence.
+        if ($tujuan === self::STATUS_SELESAI) {
+            $report = $kasus->finalReport()->withCount('evidences')->first();
+            if ($report === null || $report->submitted_at === null
+                || trim($report->ringkasan_tindakan) === '' || trim($report->hasil_penanganan) === ''
+                || trim($report->rekomendasi) === '' || $report->evidences_count < LaporanAkhirEvidenceService::MIN_REQUIRED_FILES) {
+                throw ValidationException::withMessages(['status' => 'Penyelesaian kasus wajib melalui laporan akhir yang valid dan minimal satu foto bukti.']);
+            }
+        }
+
         return DB::transaction(function () use ($kasus, $sekarang, $tujuan, $catatan, $actorId): KasusPenanganan {
             RiwayatStatusPenanganan::create([
                 'kasus_id' => $kasus->id,

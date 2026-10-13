@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\KasusPenanganan;
+use App\Models\KeputusanPermohonan;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -13,6 +14,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class KasusPenangananFactory extends Factory
 {
     protected $model = KasusPenanganan::class;
+
+    /** Explicit approval fixture; default factories still allow incomplete legacy data. */
+    public function withApproval(): self
+    {
+        return $this->afterCreating(function (KasusPenanganan $case): void {
+            $case->permohonan->update(['status' => PermohonanPenanganan::STATUS_DITERIMA]);
+            KeputusanPermohonan::factory()->create([
+                'permohonan_id' => $case->permohonan_id,
+                'operator_id' => $case->created_by,
+            ]);
+        });
+    }
 
     public function definition(): array
     {

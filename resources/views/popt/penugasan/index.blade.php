@@ -4,15 +4,7 @@
 @section('subtitle', 'Kasus yang sedang dan pernah Anda tangani.')
 
 @php
-    $statusLabels = [
-        'diterima' => 'Diterima',
-        'ditugaskan' => 'Ditugaskan',
-        'sedang_direview' => 'Sedang Direview',
-        'ditunda' => 'Ditunda',
-        'siap_dieksekusi' => 'Siap Dieksekusi',
-        'dalam_pelaksanaan' => 'Dalam Pelaksanaan',
-        'selesai' => 'Selesai',
-    ];
+    $statusLabels = app(\App\Services\MonitoringStatusService::class)->labels();
 @endphp
 
 @section('content')
@@ -26,7 +18,7 @@
                 @endforeach
             </select>
         </label>
-        <button class="w-full rounded-lg bg-[#176b45] px-4 py-2 text-sm font-semibold text-white sm:w-auto">Filter</button>
+        <button class="w-full rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-white sm:w-auto">Filter</button>
     </form>
 
     <div class="overflow-hidden rounded-xl border border-[#e6eee8] bg-white">
@@ -50,9 +42,9 @@
                             <td class="px-4 py-3 font-mono text-xs">{{ $item->kasus_code }}</td>
                             <td class="px-4 py-3">{{ $item->permohonan?->kelompok_tani_name_snapshot ?: '-' }}</td>
                             <td class="px-4 py-3">{{ $item->komoditas_name_snapshot ?: '-' }}<br><span class="text-xs text-gray-500">{{ $item->penyakit_name_snapshot ?: '-' }}</span></td>
-                            <td class="px-4 py-3"><span class="rounded-full bg-[#eef6f1] px-2.5 py-1 text-xs font-semibold text-[#176b45]">{{ $statusLabels[$item->current_status] ?? $item->current_status }}</span></td>
-                            <td class="px-4 py-3">{{ $latestAssignment?->deadline_at?->format('d-m-Y H:i') ?? 'Belum ditentukan' }}</td>
-                            <td class="px-4 py-3">{{ $monitoringStatuses[$item->id]['is_overdue'] ?? false ? 'Melewati Batas Waktu' : (($monitoringStatuses[$item->id]['label'] ?? null) === 'Selesai' ? 'Selesai' : ($latestAssignment?->deadline_at ? 'Tepat Waktu' : 'Target belum tersedia')) }}</td>
+                            <td class="px-4 py-3"><x-kasus.handling-status-badge :status="$monitoringStatuses[$item->id]" />@if($monitoringStatuses[$item->id]['history_note'])<p class="mt-2 text-xs text-amber-800">{{ $monitoringStatuses[$item->id]['history_note'] }}</p>@endif</td>
+                            <td class="px-4 py-3">{{ $monitoringStatuses[$item->id]['effective_deadline_at']?->format('d-m-Y H:i') ?? 'Belum ditentukan' }}</td>
+                            <td class="px-4 py-3">{{ $monitoringStatuses[$item->id]['history_incomplete'] ? 'Perlu tinjauan data historis' : ($monitoringStatuses[$item->id]['is_overdue'] ?? false ? 'Melewati Target Waktu' : (($monitoringStatuses[$item->id]['label'] ?? null) === 'Selesai' ? 'Selesai' : ($monitoringStatuses[$item->id]['effective_deadline_at'] ? 'Tepat Waktu' : 'Target belum tersedia'))) }}</td>
                             <td class="px-4 py-3 text-right"><a href="{{ route('popt.penugasan.show', $item->id) }}" class="font-semibold text-[#176b45]">Lihat Penugasan</a></td>
                         </tr>
                     @empty

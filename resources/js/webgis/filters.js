@@ -1,5 +1,6 @@
 export const EMPTY_FILTERS = {
     status: '',
+    overdue: '',
     commodity: '',
     regency: '',
     district: '',
@@ -77,6 +78,7 @@ export function getDistrictsForRegency(cases, regencyCode) {
 export function applyFilters(cases, filters) {
     return cases.filter((caseData) => (
         (!filters.status || caseData.status === filters.status)
+        && (!filters.overdue || caseData.is_overdue === true)
         && (!filters.commodity || normalizeFilterValue(caseData.komoditas?.id) === filters.commodity)
         && (!filters.regency || normalizeFilterValue(caseData.wilayah?.kode_kabupaten) === filters.regency)
         && (!filters.district || normalizeFilterValue(caseData.wilayah?.kode_kecamatan) === filters.district)

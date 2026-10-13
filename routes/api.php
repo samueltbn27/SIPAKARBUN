@@ -5,6 +5,7 @@ use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\GejalaController;
 use App\Http\Controllers\KasusController;
 use App\Http\Controllers\KnowledgeApiController;
+use App\Http\Controllers\MonitoringCaseController;
 use App\Http\Controllers\OperatorPermohonanController;
 use App\Http\Controllers\PenyakitController;
 use App\Http\Controllers\PermohonanController;
@@ -61,6 +62,9 @@ Route::middleware(['auth:sanctum', 'role:operator_uptd'])
 | Kasus Penanganan — shared M2 → M3 read contract
 |--------------------------------------------------------------------------
 */
+Route::get('/monitoring/kasus', [MonitoringCaseController::class, 'index'])
+    ->middleware(['auth:sanctum', 'role:admin|operator_uptd|pimpinan']);
+
 Route::middleware(['auth:sanctum', 'role:admin|operator_uptd|popt|pimpinan'])
     ->prefix('kasus')
     ->group(function (): void {
@@ -105,6 +109,7 @@ Route::middleware(['auth:sanctum', 'role:popt'])
             ->whereNumber('assignment');
         Route::post('/kasus/{id}/accept', [PoptController::class, 'accept'])
             ->whereNumber('id');
+        Route::post('/kasus/{id}/start', [PoptController::class, 'start'])->whereNumber('id');
         Route::post('/kasus/{id}/progress', [PoptController::class, 'storeProgress'])
             ->whereNumber('id');
         Route::post('/kasus/{id}/perpanjangan', [PoptController::class, 'requestExtension'])

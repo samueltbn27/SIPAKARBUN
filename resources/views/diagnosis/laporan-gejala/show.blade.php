@@ -94,7 +94,7 @@
                         <label for="additional_information" class="block text-xs font-semibold text-[#66746c]">Informasi tambahan</label>
                         <textarea id="additional_information" name="additional_information" rows="4" maxlength="2000" required class="w-full rounded-xl border border-[#dbe5df] px-3 py-2.5 text-sm focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20" placeholder="Contoh: gejala mulai terlihat sejak tiga hari lalu.">{{ old('additional_information') }}</textarea>
                         @error('additional_information')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-                        <button type="submit" class="min-h-11 w-full rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Kirim informasi ke POPT</button>
+                        <button type="submit" class="min-h-11 w-full rounded-xl bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">Kirim informasi ke POPT</button>
                     </form>
                 </x-card>
             @elseif ($laporan->status === \App\Models\LaporanGejala::STATUS_DRAFT_DIBUAT)
@@ -109,7 +109,7 @@
                 </x-card>
             @endif
 
-            <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#dbe5df] bg-white px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Kembali ke laporan saya</a>
+            <a href="{{ route('diagnosis.reports.index') }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#dbe5df] bg-white px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Kembali ke laporan saya</a>
         </div>
     </div>
 @endsection

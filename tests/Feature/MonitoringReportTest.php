@@ -129,7 +129,7 @@ class MonitoringReportTest extends TestCase
             ->assertDontSee('KS-REPORT-PAGE-OTHER');
     }
 
-    public function test_overdue_monitoring_status_dapat_difilter_dan_deadline_ditampilkan(): void
+    public function test_overdue_indicator_dapat_difilter_tanpa_mengganti_status_utama(): void
     {
         $popt = $this->makeUser('popt', 'POPT Overdue');
         $case = $this->makeCase([
@@ -142,10 +142,11 @@ class MonitoringReportTest extends TestCase
 
         $this->actingAs($this->makeUser('pimpinan'));
 
-        $this->get('/laporan-monitoring?status=melewati_batas_waktu')
+        $this->get('/laporan-monitoring?status=dalam_penanganan&overdue=1')
             ->assertOk()
             ->assertSee('KS-REPORT-OVERDUE')
-            ->assertSee('Melewati Batas Waktu')
+            ->assertSee('Dalam Penanganan')
+            ->assertSee('Melewati Target Waktu')
             ->assertSee('Target Penyelesaian')
             ->assertSee('>1<', false);
     }
@@ -169,7 +170,7 @@ class MonitoringReportTest extends TestCase
             'created_by' => $owner->id,
         ]);
 
-        $case = KasusPenanganan::factory()->create([
+        $case = KasusPenanganan::factory()->withApproval()->create([
             'permohonan_id' => $permohonan->id,
             'kasus_code' => $attributes['case_code'] ?? 'KS-REPORT-'.fake()->unique()->numberBetween(1000, 9999),
             'current_status' => $attributes['status'] ?? KasusPenanganan::STATUS_DITERIMA,

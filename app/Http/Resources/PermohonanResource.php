@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\MonitoringStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,6 +25,8 @@ class PermohonanResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $monitoring = app(MonitoringStatusService::class)->resolveRequest($this->resource);
+
         return [
             'permohonan_id' => $this->id,
             'permohonan_code' => $this->permohonan_code,
@@ -49,6 +52,13 @@ class PermohonanResource extends JsonResource
             ],
             'catatan_pemohon' => $this->catatan_pemohon,
             'status' => $this->status,
+            'monitoring_status' => $monitoring['key'],
+            'monitoring_status_label' => $monitoring['label'],
+            'is_overdue' => $monitoring['is_overdue'],
+            'history_incomplete' => $monitoring['history_incomplete'],
+            'history_issues' => $monitoring['history_issues'],
+            'history_note' => $monitoring['history_note'],
+            'effective_deadline_at' => $monitoring['effective_deadline_at']?->toIso8601String(),
             'evidences' => PermohonanEvidenceResource::collection($this->whenLoaded('evidences')),
             'keputusan' => $this->whenLoaded('keputusan') && $this->keputusan !== null ? [
                 'keputusan' => $this->keputusan->keputusan,

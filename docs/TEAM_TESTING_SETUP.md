@@ -50,6 +50,12 @@ monolith development. Sinkronisasi Disbun tidak diperlukan untuk demo dasar.
 
 ## 4. Migrasi, seed demo, storage, dan build
 
+Gunakan database demo terisolasi. Panduan membuat SQLite baru tanpa mengubah
+`.env` atau database aktif tersedia di
+[panduan demo status terpadu](/Users/hoesnicodes/Developer/SIPAKARBUN/docs/DEMO_STATUS_TERPADU.md).
+
+Setelah konfigurasi koneksi mengarah ke database demo kosong/khusus fixture V2:
+
 ```bash
 php artisan migrate
 php artisan db:seed --class=SipakarbunDemoSeeder
@@ -57,102 +63,109 @@ php artisan storage:link
 npm run build
 ```
 
-`SipakarbunDemoSeeder` sengaja tidak dipanggil oleh `DatabaseSeeder`. Seeder
-menolak environment `production`, dapat dijalankan berulang kali, dan tidak
-menghapus data existing. Ia memasang reference fixture offline, Knowledge UAT,
-akun tester, gambar lokal, serta study case monitoring.
+`SipakarbunDemoSeeder` tidak dipanggil oleh `DatabaseSeeder`. Seeder hanya
+menerima environment `local`/`testing` dan menolak database yang bercampur
+akun, transaksi, atau referensi di luar fixture V2. Tidak ada reset otomatis.
+Jangan memakai `migrate:fresh` untuk mengatasi penolakan tersebut.
 
-Jalankan aplikasi:
+Seeder memasang fixture komoditas offline, Knowledge UAT, akun tester,
+ilustrasi lokal, dan 20 skenario monitoring. Pengulangan tidak mengubah
+password, tanggal, laporan/progress, keputusan, atau arsip yang sudah ada.
+Gunakan database terisolasi baru bila ingin memulai simulasi dari awal.
+
+Jalankan aplikasi dengan koneksi database demo yang sudah dipilih:
 
 ```bash
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Buka <http://127.0.0.1:8000/login>. Untuk hot reload, jalankan `npm run dev` di
-terminal kedua. Jika port 8000 terpakai, gunakan `php artisan serve --port=8001`.
+Buka halaman login pada port tersebut. Jika port 8000 terpakai, gunakan 8001.
 
 ## 5. Akun tester
 
-| Role | Email | Password | UAT utama |
-|---|---|---|---|
-| Admin | `admin.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | WebGIS, arsip kasus selesai, Knowledge |
-| Operator UPTD | `operator.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Review, terima/tolak, assign POPT, publish |
-| POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Penugasan, status teknis, Draft Knowledge |
-| Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | Diagnosis dan permohonan |
-| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` | WebGIS & Monitoring dan Laporan Monitoring read-only |
+| Role | Email | Password awal contoh |
+| --- | --- | --- |
+| Admin | `admin.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Operator UPTD | `operator.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| POPT | `popt.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Poktan | `poktan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
+| Pimpinan | `pimpinan.tester@sipakarbun.local` | `SIPAKARBUN-Tester-2026!` |
 
-Tidak ada role `pakar`. Admin demo dibuat hanya oleh demo seeder; role admin
-tetap tidak tersedia pada form register/user provisioning biasa.
+Password berasal dari `SIPAKARBUN_DEMO_PASSWORD` saat akun pertama dibuat;
+seeder tidak mengganti password akun yang sudah ada. Akun tambahan:
+
+- `popt.dua.tester@sipakarbun.local`
+- `poktan.kopi-garut.tester@sipakarbun.local`
+- `poktan.kakao.tester@sipakarbun.local`
+- `poktan.cengkeh.tester@sipakarbun.local`
+- `poktan.kelapa.tester@sipakarbun.local`
+
+Lima akun Poktan masing-masing memiliki kelompok sendiri. Tidak ada role
+`pakar`; Admin tidak tersedia pada pendaftaran biasa.
 
 ## 6. Study case demo
 
-Kode stabil berikut dibuat idempotent oleh seeder. Semua koordinat kasus
-berbeda dari koordinat reference Poktan agar kontrak lokasi kasus dapat diuji.
+Kode `PM-DEMO-V2-NNN` stabil untuk identifikasi skenario; tanggal historisnya
+relatif terhadap waktu seed pertama. Kasus yang telah diterima menggunakan
+kode `KS-DEMO-V2-NNN`. Namespace identitas fixture tetap dipertahankan.
+Database hasil verifikasi empat status ada pada `storage/app/demo-status-v3/validated-20261013.sqlite`;
+database V2 sebelumnya tidak ditulis ulang. Detail 20 skenario terdapat pada panduan demo.
 
-| Scenario | Request | Case | Status | Assigned POPT | Tujuan |
-|---|---|---|---|---|---|
-| Menunggu tanpa penugasan | `PM-20260101-9001` | `KS-20260101-9001` | diterima / diterima | — | Assignment Operator |
-| Menunggu, belum diterima POPT | `PM-20260101-9002` | `KS-20260101-9002` | diterima / ditugaskan | POPT Demo | Penugasan Saya |
-| Dalam penanganan, diterima | `PM-20260101-9003` | `KS-20260101-9003` | diterima / dalam_pelaksanaan | POPT Demo | Acceptance workflow |
-| Selesai dengan laporan akhir | `PM-20260101-9004` | `KS-20260101-9004` | diterima / selesai | POPT Demo | Foto evidence, history, delete |
-| Ditolak | `PM-20260101-9005` | — | ditolak | — | Keputusan Operator |
-| Ditunda | `PM-20260101-9006` | `KS-20260101-9006` | diterima / ditunda | POPT Demo | KPI Ditunda |
-| Melewati batas waktu + progress | `PM-20260101-9007` | `KS-20260101-9007` | diterima / dalam_pelaksanaan | POPT Demo | KPI overdue dan progress |
-| Perpanjangan pending | `PM-20260101-9008` | `KS-20260101-9008` | diterima / dalam_pelaksanaan | POPT Demo | Review Operator |
-| Perpanjangan approved | `PM-20260101-9009` | `KS-20260101-9009` | diterima / dalam_pelaksanaan | POPT Demo | Deadline efektif baru |
-| Selesai legacy | `PM-20260101-9010` | `KS-20260101-9010` | diterima / selesai | POPT Demo | Kasus tanpa laporan akhir |
+| Nomor | Kondisi | Status utama |
+| --- | --- | --- |
+| 001–003 | Baru diajukan / masih direview, belum ada keputusan atau penugasan | Menunggu Review |
+| 004–006 | Keputusan penolakan dengan alasan | Ditolak |
+| 007–008 | Ditugaskan / diterima POPT, belum bekerja | Dalam Penanganan |
+| 009–010 | Belum bekerja dan target terlewati | Dalam Penanganan + indikator terlambat |
+| 011–012 | Progress sesuai target / melewati target | Dalam Penanganan |
+| 013 | Perpanjangan pending, target lama tetap | Dalam Penanganan + indikator terlambat |
+| 014 | Perpanjangan approved, target baru berlaku | Dalam Penanganan |
+| 015 | Perpanjangan rejected, target lama tetap | Dalam Penanganan + indikator terlambat |
+| 016 | Pemantauan masih sesuai target | Dalam Penanganan |
+| 017–020 | Laporan akhir lengkap, dua PNG setiap laporan | Selesai |
 
-Kasus `KS-20260101-9004` boleh dipakai untuk UAT Hapus Kasus karena sudah
-selesai. Setelah dihapus/diarsipkan, jalankan ulang seeder demo untuk
-memulihkannya melalui `withTrashed()->restore()`.
+KPI awal: total permohonan 20, menunggu review 3, dalam penanganan 10, selesai 4, melewati target 5.
+Jumlah kategori utama adalah 3 + 3 + 10 + 4 = 20. Keterlambatan adalah
+subset kasus aktif dan tidak ditambahkan lagi ke total.
 
-Reference penting:
+Kelompok menggunakan nama `DEMO FIKTIF ...` dan identitas bernamespace
+`DEMO-SIPAKARBUN-V2-...`, tanpa memakai ID asli kelompok Disbun. Nilai source
+`disbun` dipertahankan hanya untuk kompatibilitas kontrak adapter lokal;
+fixture tidak berasal dari sinkronisasi API dan bukan data resmi Disbun.
+Koordinat kasus disimpan terpisah dan berbeda dari titik administratif kelompok.
 
-- `ANUGRAH TANI`, external ID `5004`, KAB GARUT / Tarogong Kaler,
-  reference `-7.1719511, 107.8224774`.
-- `AROSTA`, external ID `5488`, KAB SUMEDANG / Wado,
-  reference `-7.0029856, 108.1337070`.
-- Lokasi kasus `KS-20260101-9001` adalah `-7.0250000, 107.5190000`, bukan
-  koordinat reference Poktan.
+Mengarsipkan `KS-DEMO-V2-017` tidak akan dipulihkan oleh seeding ulang.
+Gunakan database demo baru untuk mengulang UAT hapus/arsip dari awal.
 
 ## 7. Study Case UAT end-to-end
 
-1. Login sebagai Poktan, buka **Diagnosis**, pilih `Kopi Arabika`, lalu pilih
-   gejala `Muncul bercak kuning muda pada permukaan bawah daun` dan `Pada
-   bercak terlihat serbuk seperti tepung berwarna jingga`. Hasil yang
-   diharapkan memuat **Karat Daun Kopi**.
-2. Pilih **Ajukan Penanganan**, pilih Kelompok Tani, pastikan reference
-   kecamatan/kabupaten dan koordinat tampil, lalu klik titik aktual pada map
-   picker sebelum submit.
-3. Login Operator UPTD, buka permohonan, mulai review lalu terima. Checkpoint:
-   `request_status=diterima`, `handling_status=diterima`, dan POPT belum ada.
-4. Assign `POPT Demo`; status handling menjadi `ditugaskan`.
-5. Login POPT dan lanjutkan status melalui `sedang_direview`,
-   `siap_dieksekusi`, `dalam_pelaksanaan`, lalu `selesai`.
-6. Login kembali sebagai Poktan untuk membaca status dan history milik sendiri.
-7. Login Pimpinan atau Admin, buka `/webgis`, lalu periksa filter, marker,
-   popup, drawer, KPI, dan grafik. Pastikan marker memakai koordinat kasus,
-   bukan koordinat Poktan, serta tidak ada marker `[0,0]`.
-8. Sebagai Pimpinan, buka **Laporan Monitoring**, uji filter periode,
-   kabupaten/kota, komoditas, penyakit, dan status. Pastikan ringkasan serta
-   tabel berubah mengikuti filter dan tidak menyediakan aksi perubahan data.
-9. Sebagai Admin, uji pembatalan modal Hapus Kasus lalu, bila diperlukan,
-   hapus kasus selesai yang ditandai di atas.
+1. Login Poktan utama. Kelompok yang terhubung adalah DEMO FIKTIF Kopi
+   Sumedang. Riwayatnya memiliki contoh dari keempat status utama.
+2. Jalankan Diagnosis kopi dengan gejala fixture lalu ajukan penanganan.
+   Konfirmasi lokasi kasus aktual pada peta.
+3. Login Operator, review permohonan. Penolakan wajib disertai alasan.
+   Persetujuan wajib sekaligus memilih POPT aktif dan target masa depan;
+   keputusan, kasus, penugasan, dan target tersimpan dalam satu transaksi.
+4. Login POPT: Terima Penugasan → tinjau → Mulai Penanganan → Tambah Progress.
+   Status sudah Dalam Penanganan sejak persetujuan dan penugasan Operator.
+   Terima tugas dan mulai kerja mencatat aktivitas aktual tanpa menambah status utama.
+5. Ajukan perpanjangan jika perlu. Operator memutuskan; hanya persetujuan
+   yang mengubah target aktif. Pekerjaan tetap berjalan selama menunggu.
+6. Selesaikan melalui laporan akhir lengkap dan minimal satu foto valid.
+7. Login Poktan untuk membaca progress/laporan miliknya dan pastikan data
+   Poktan lain tidak dapat diakses.
+8. Login Pimpinan: buka WebGIS dan Laporan Monitoring; bandingkan status,
+   KPI, marker, grafik, serta filter. Pimpinan tidak mempunyai aksi perubahan.
 
-### UAT deadline, progress, dan laporan akhir
+UAT khusus waktu dan histori:
 
-1. Login sebagai POPT dan buka `KS-20260101-9002`. Pastikan tombol terima
-   tersedia dan status awal masih menunggu.
-2. Buka `KS-20260101-9007` untuk memeriksa progress dan label **Melewati Batas
-   Waktu**. Buka `KS-20260101-9008` untuk melihat perpanjangan **Menunggu
-   Persetujuan**, lalu login Operator dan pastikan permintaan tersebut muncul
-   di review.
-3. Buka `KS-20260101-9009` dan pastikan deadline penugasan sudah mengikuti
-   perpanjangan approved. `KS-20260101-9004` memiliki satu foto laporan akhir
-   lokal; `KS-20260101-9010` sengaja tidak memiliki laporan akhir untuk menguji
-   kompatibilitas data legacy.
-4. Jangan menganggap kasus demo atau nilai CF sebagai rekomendasi budidaya.
-   Untuk data produksi, gunakan sumber dan proses validasi resmi UPTD/Disbun.
+- `KS-DEMO-V2-009`: Dalam Penanganan dan Melewati Target Waktu.
+- `KS-DEMO-V2-012`: Dalam Penanganan dan Melewati Target Waktu.
+- `KS-DEMO-V2-013`/`014`/`015`: pending/approved/rejected perpanjangan.
+- `KS-DEMO-V2-017`: selesai sebelum target; `018`: selesai sesudah target.
+  Keduanya tidak dihitung aktif/terlambat setelah selesai.
+- Semua laporan akhir berisi dua ilustrasi lokal berlabel DATA DEMO,
+  bukan foto kasus nyata. Data simulasi bukan rekomendasi budidaya resmi.
 
 ### POPT sebagai kontributor Knowledge
 

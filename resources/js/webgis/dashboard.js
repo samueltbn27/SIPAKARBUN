@@ -81,6 +81,7 @@ function setSelectOptions(select, options, defaultLabel) {
 function getDashboardControls() {
     return {
         status: document.querySelector('[data-dashboard-filter="status"]'),
+        overdue: document.querySelector('[data-dashboard-filter="overdue"]'),
         commodity: document.querySelector('[data-dashboard-filter="commodity"]'),
         regency: document.querySelector('[data-dashboard-filter="regency"]'),
         district: document.querySelector('[data-dashboard-filter="district"]'),
@@ -118,6 +119,7 @@ function refreshDistrictOptions(controls, filters, cases) {
 function updateKpis(summary) {
     const kpis = {
         total: summary.total,
+        review: summary.review,
         active: summary.active,
         completed: summary.completed,
         overdue: summary.overdue,
@@ -291,6 +293,7 @@ export function initializeMonitoringDashboard(cases, {
 
     if (manageControls) {
         setSelectOptions(resolvedControls.status, getStatusOptions(), 'Semua Status');
+        setSelectOptions(resolvedControls.overdue, [{ value: '1', label: 'Melewati Target Waktu' }], 'Semua Target');
         setSelectOptions(resolvedControls.commodity, getUniqueCommodities(cases), 'Semua Komoditas');
         setSelectOptions(resolvedControls.disease, getUniqueDiseases(cases), 'Semua Penyakit');
         setSelectOptions(resolvedControls.popt, getUniquePopts(cases), 'Semua POPT');

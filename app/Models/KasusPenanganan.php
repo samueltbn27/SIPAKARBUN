@@ -16,10 +16,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Karakteristik komoditas & penyakit di-snapshot saat kasus dibuat agar
  * API untuk Mahasiswa 3 stabil walau referensi berubah sesudahnya.
  *
- * `current_status` adalah status AKTIF untuk query cepat; SETIAP transisi
+ * `current_status` adalah status teknis untuk workflow; SETIAP transisi
  * tercatat append-only di `riwayat_status_penanganan`. Status awal setelah
- * permohonan diterima = `diterima` (menunggu penugasan POPT), lalu menjadi
- * `ditugaskan` setelah POPT di-assign (fase berikutnya).
+ * persetujuan Operator = `diterima`, lalu `ditugaskan` dalam transaksi
+ * yang sama. Status utama langsung Dalam Penanganan; waktu mulai kerja
+ * tetap mengikuti tindakan POPT yang sebenarnya.
  */
 class KasusPenanganan extends Model
 {

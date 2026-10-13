@@ -36,7 +36,8 @@ class OperatorWorkflowController extends Controller
     public function permohonanIndex(Request $request): View
     {
         $permohonan = $this->permohonanService->permohonanOperator(
-            $request->only(['status', 'per_page', 'created_from', 'created_to']),
+            $request->only(['per_page', 'created_from', 'created_to'])
+                + ['monitoring_status' => $request->string('status')->toString()],
         );
 
         return view('operator.permohonan.index', compact('permohonan'));
@@ -45,8 +46,10 @@ class OperatorWorkflowController extends Controller
     public function permohonanShow(int $id): View
     {
         $permohonan = $this->permohonanService->detailPermohonan($id);
+        $popts = User::role('popt')->where('is_active', true)->orderBy('name')->get();
+        $primaryStatus = $this->monitoringStatusService->resolveRequest($permohonan);
 
-        return view('operator.permohonan.show', compact('permohonan'));
+        return view('operator.permohonan.show', compact('permohonan', 'popts', 'primaryStatus'));
     }
 
     public function review(Request $request, int $id): RedirectResponse
@@ -64,10 +67,12 @@ class OperatorWorkflowController extends Controller
             $permohonan,
             $request->user(),
             $request->validated('catatan'),
+            (int) $request->validated('popt_id'),
+            $request->validated('deadline_at'),
         );
 
         return redirect()->route('operator.permohonan.show', $id)
-            ->with('success', "Permohonan diterima. Kasus {$kasus->kasus_code} menunggu penugasan POPT.");
+            ->with('success', "Permohonan diterima. Kasus {$kasus->kasus_code} masuk Dalam Penanganan dengan POPT dan target penyelesaian yang ditetapkan.");
     }
 
     public function reject(TolakPermohonanRequest $request, int $id): RedirectResponse
@@ -86,7 +91,7 @@ class OperatorWorkflowController extends Controller
     public function kasusIndex(Request $request): View
     {
         $kasus = $this->kasusService->kasusOperator(
-            $request->only(['status', 'per_page']),
+            $request->only(['per_page']) + ['monitoring_status' => $request->string('status')->toString()],
         );
 
         return view('operator.kasus.index', compact('kasus'));

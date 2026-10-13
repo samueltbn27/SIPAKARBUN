@@ -3,15 +3,7 @@
 @section('title', 'Detail Penugasan')
 
 @php
-    $statusLabels = [
-        'diterima' => 'Diterima',
-        'ditugaskan' => 'Ditugaskan',
-        'sedang_direview' => 'Sedang Direview',
-        'ditunda' => 'Ditunda',
-        'siap_dieksekusi' => 'Siap Dieksekusi',
-        'dalam_pelaksanaan' => 'Dalam Pelaksanaan',
-        'selesai' => 'Selesai',
-    ];
+    $statusLabels = config('kasus.labels');
     $extensionStatusLabels = [
         'pending' => 'Menunggu Persetujuan Operator',
         'approved' => 'Disetujui',
@@ -29,8 +21,8 @@
         <a href="{{ route('popt.penugasan') }}" class="text-sm text-[#176b45]">← Penugasan saya</a>
         <div class="mt-2 flex flex-wrap items-center gap-3">
             <h1 class="text-2xl font-bold text-[#173b29]">{{ $kasus->kasus_code }}</h1>
-            <span class="rounded-full bg-[#eef6f1] px-3 py-1.5 text-sm font-semibold text-[#176b45]">{{ $statusLabels[$kasus->current_status] ?? $kasus->current_status }}</span>
-            <span class="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700">{{ $monitoring['label'] }}</span>
+            <x-kasus.handling-status-badge :status="$monitoring" />
+            <x-kasus.overdue-indicator :is-overdue="$monitoring['is_overdue']" />
             @if($kasus->isSelesaiTerverifikasi())
                 <span class="rounded-full bg-[#e8f4ed] px-3 py-1.5 text-sm font-semibold text-[#176b45]">Terverifikasi Operator</span>
             @elseif($kasus->current_status === 'selesai')
@@ -38,6 +30,10 @@
             @endif
         </div>
     </div>
+
+    @if($monitoring['history_note'])
+        <p class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="note">{{ $monitoring['history_note'] }}</p>
+    @endif
 
     @if(session('success'))
         <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">{{ session('success') }}</div>
@@ -65,10 +61,10 @@
             <dl class="mt-4 space-y-3 text-sm">
                 <div><dt class="text-gray-500">Ditugaskan kepada</dt><dd>{{ $assignment?->popt?->name ?? '-' }}</dd></div>
                 <div><dt class="text-gray-500">Tanggal Penugasan</dt><dd>{{ $assignment?->assigned_at?->format('d-m-Y H:i') ?? '-' }}</dd></div>
-                <div><dt class="text-gray-500">Target Penyelesaian</dt><dd>{{ $assignment?->deadline_at?->format('d-m-Y H:i') ?? 'Belum ditentukan' }}</dd></div>
+                <div><dt class="text-gray-500">Target Penyelesaian</dt><dd>{{ $monitoring['effective_deadline_at']?->format('d-m-Y H:i') ?? 'Belum ditentukan' }}</dd></div>
                 <div><dt class="text-gray-500">Catatan Operator</dt><dd class="whitespace-pre-line">{{ $assignment?->catatan ?: 'Tidak ada catatan.' }}</dd></div>
                 <div><dt class="text-gray-500">Status Penerimaan</dt><dd>{{ $assignment?->accepted_at ? 'Penugasan diterima pada '.$assignment->accepted_at->format('d-m-Y H:i') : 'Menunggu POPT menerima penugasan' }}</dd></div>
-                <div><dt class="text-gray-500">Status Waktu</dt><dd>{{ $monitoring['is_overdue'] ? 'Melewati Batas Waktu' : ($assignment?->deadline_at ? ($monitoring['label'] === 'Selesai' ? 'Selesai' : 'Tepat Waktu') : 'Target belum tersedia') }}</dd></div>
+                <div><dt class="text-gray-500">Status Waktu</dt><dd>{{ $monitoring['history_incomplete'] ? 'Perlu tinjauan data historis' : ($monitoring['is_overdue'] ? 'Melewati Target Waktu' : ($monitoring['effective_deadline_at'] ? ($monitoring['label'] === 'Selesai' ? 'Selesai' : 'Tepat Waktu') : 'Target belum tersedia')) }}</dd></div>
             </dl>
         </div>
     </section>
@@ -79,10 +75,21 @@
             <p class="mt-1 text-sm text-[#66746c]">Terima penugasan untuk mulai mencatat kegiatan penanganan.</p>
             <form method="POST" action="{{ route('popt.penugasan.accept', $kasus->id) }}" class="mt-4">
                 @csrf
-                <button class="min-h-11 w-full rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Terima Penugasan</button>
+                <button class="min-h-11 w-full rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Terima Penugasan</button>
             </form>
         </section>
     @elseif($isActive && $isAccepted)
+        @if($kasus->current_status !== 'dalam_pelaksanaan')
+            <section class="rounded-xl border border-[#cfe2d5] bg-[#f5faf6] p-5">
+                <h2 class="font-bold text-[#173b29]">{{ $kasus->current_status === 'ditunda' ? 'Lanjutkan Penanganan' : 'Mulai Penanganan' }}</h2>
+                <p class="mt-1 text-sm text-[#66746c]">Kasus sudah Dalam Penanganan sejak persetujuan Operator. Gunakan aksi ini saat benar-benar memulai pekerjaan agar waktunya tercatat.</p>
+                @if($monitoring['legacy_note'])<p class="mt-2 text-xs text-amber-800">{{ $monitoring['legacy_note'] }} {{ $monitoring['legacy_reason'] }}</p>@endif
+                <form method="POST" action="{{ route('popt.penugasan.start', $kasus->id) }}" class="mt-4">
+                    @csrf
+                    <button class="min-h-11 w-full rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">{{ $kasus->current_status === 'ditunda' ? 'Lanjutkan Penanganan' : 'Mulai Penanganan' }}</button>
+                </form>
+            </section>
+        @endif
         <section class="grid gap-5 lg:grid-cols-2">
             <div class="rounded-xl border border-[#e6eee8] bg-white p-5">
                 <h2 class="font-bold text-[#173b29]">Tambah Progress</h2>
@@ -91,7 +98,7 @@
                     @csrf
                     <label for="catatan-progress" class="block text-sm font-medium text-gray-700">Catatan Progress <span class="text-red-600">*</span></label>
                     <textarea id="catatan-progress" name="catatan" rows="5" maxlength="2000" required class="w-full rounded-lg border-gray-300 text-sm" placeholder="Contoh: Pemeriksaan kondisi tanaman di lapangan.">{{ old('catatan') }}</textarea>
-                    <button class="min-h-11 w-full rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white">Tambah Progress</button>
+                    <button class="min-h-11 w-full rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white">Tambah Progress</button>
                 </form>
             </div>
 
@@ -99,12 +106,12 @@
                 <h2 class="font-bold text-[#173b29]">Ajukan Perpanjangan</h2>
                 @if($pendingExtension)
                     <p class="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Permintaan perpanjangan sedang menunggu keputusan Operator.</p>
-                @elseif(! $activeAssignment->deadline_at)
+                @elseif(! $monitoring['effective_deadline_at'])
                     <p class="mt-2 text-sm text-gray-500">Target Penyelesaian belum ditentukan, sehingga perpanjangan belum dapat diajukan.</p>
                 @else
                     <form method="POST" action="{{ route('popt.penugasan.extension', $kasus->id) }}" class="mt-4 space-y-3">
                         @csrf
-                        <div class="rounded-lg bg-gray-50 p-3 text-sm"><span class="block text-xs text-gray-500">Target Penyelesaian Saat Ini</span>{{ $activeAssignment->deadline_at->format('d-m-Y H:i') }}</div>
+                        <div class="rounded-lg bg-gray-50 p-3 text-sm"><span class="block text-xs text-gray-500">Target Penyelesaian Saat Ini</span>{{ $monitoring['effective_deadline_at']->format('d-m-Y H:i') }}</div>
                         <label for="proposed-deadline" class="block text-sm font-medium text-gray-700">Usulan Target Baru <span class="text-red-600">*</span></label>
                         <input id="proposed-deadline" name="proposed_deadline_at" type="datetime-local" required class="w-full rounded-lg border-gray-300 text-sm" value="{{ old('proposed_deadline_at') }}">
                         <label for="extension-reason" class="block text-sm font-medium text-gray-700">Alasan Perpanjangan <span class="text-red-600">*</span></label>
@@ -142,7 +149,7 @@
                     <p class="mt-1 text-xs text-gray-500">Minimal 1 dan maksimal 5 foto. Format JPEG, PNG, atau WebP; maksimal 5 MB per foto.</p>
                     <div id="photo-preview" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
                 </div>
-                <button class="min-h-11 w-full rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Submit Laporan &amp; Selesaikan</button>
+                <button class="min-h-11 w-full rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">Submit Laporan &amp; Selesaikan</button>
             </form>
         </section>
     @elseif($kasus->current_status === 'selesai')

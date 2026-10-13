@@ -7,7 +7,7 @@
 <div class="mx-auto max-w-[1500px] space-y-6">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div><p class="text-xs font-semibold uppercase tracking-wide text-[#176b45]">Operator UPTD</p><h1 class="mt-1 text-2xl font-bold text-[#173b29]">Selamat datang, {{ auth()->user()?->name }}</h1><p class="mt-1 text-sm text-[#77847c]">Kelola knowledge dan proses alur permohonan penanganan.</p></div>
-        <a href="{{ route('operator.permohonan') }}" class="rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white">Lihat Permohonan Masuk</a>
+        <a href="{{ route('operator.permohonan') }}" class="rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white">Lihat Permohonan Masuk</a>
     </div>
     <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
         @foreach([

@@ -6,7 +6,7 @@
 @section('content')
 <div class="mx-auto max-w-4xl space-y-6">
     <section class="rounded-xl border border-[#d6ebe0] bg-[#f7fcf9] p-5 sm:p-6">
-        <div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Metode CF</p><h2 class="mt-1 text-xl font-bold text-[#173b29]">{{ $cfMethod->name }}</h2><p class="mt-1 text-sm text-[#66746c]">Versi {{ $cfMethod->version }} · {{ $cfMethod->is_active ? 'Aktif' : 'Nonaktif' }}</p></div>@if(auth()->user()?->hasRole('admin'))<a href="{{ route('knowledge.cf-methods.edit', $cfMethod) }}" class="rounded-lg bg-[#176b45] px-3 py-2 text-sm font-semibold text-white">Edit</a>@endif</div>
+        <div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-[#66746c]">Metode CF</p><h2 class="mt-1 text-xl font-bold text-[#173b29]">{{ $cfMethod->name }}</h2><p class="mt-1 text-sm text-[#66746c]">Versi {{ $cfMethod->version }} · {{ $cfMethod->is_active ? 'Aktif' : 'Nonaktif' }}</p></div>@if(auth()->user()?->hasRole('admin'))<a href="{{ route('knowledge.cf-methods.edit', $cfMethod) }}" class="rounded-lg bg-action-primary px-3 py-2 text-sm font-semibold text-white">Edit</a>@endif</div>
         <p class="mt-5 whitespace-pre-line text-sm leading-6 text-gray-800">{{ $cfMethod->description ?: 'Belum tersedia' }}</p>
     </section>
     <section class="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">

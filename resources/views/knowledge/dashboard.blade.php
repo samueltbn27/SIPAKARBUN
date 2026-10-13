@@ -34,7 +34,7 @@
                     </div>
                 </div>
                 <div class="space-y-4 text-xs">
-                    <div class="flex items-center gap-3"><i class="w-2.5 h-2.5 rounded-full bg-[#176b45]"></i><span class="text-[#6c7971] w-14">Aktif</span><strong class="text-[#173b29]">{{ $ks['aktif'] }} <span class="font-normal text-[#9aa59e]">({{ $ks['aktif_pct'] }}%)</span></strong></div>
+                    <div class="flex items-center gap-3"><i class="w-2.5 h-2.5 rounded-full bg-action-primary"></i><span class="text-[#6c7971] w-14">Aktif</span><strong class="text-[#173b29]">{{ $ks['aktif'] }} <span class="font-normal text-[#9aa59e]">({{ $ks['aktif_pct'] }}%)</span></strong></div>
                     <div class="flex items-center gap-3"><i class="w-2.5 h-2.5 rounded-full bg-[#d7a735]"></i><span class="text-[#6c7971] w-14">Draft</span><strong class="text-[#173b29]">{{ $ks['draft'] }} <span class="font-normal text-[#9aa59e]">({{ $ks['draft_pct'] }}%)</span></strong></div>
                     <div class="flex items-center gap-3"><i class="w-2.5 h-2.5 rounded-full bg-[#dce4df]"></i><span class="text-[#6c7971] w-14">Nonaktif</span><strong class="text-[#173b29]">{{ $ks['nonaktif'] }} <span class="font-normal text-[#9aa59e]">({{ $ks['nonaktif_pct'] }}%)</span></strong></div>
                 </div>

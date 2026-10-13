@@ -37,7 +37,7 @@
         <input type="search" id="cari-komoditas" x-model="search" placeholder="Cari nama atau kode komoditas..." class="{{ $fieldClass }}">
         <div class="mt-4 grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2" role="group" aria-label="Komoditas terkait">
             @foreach ($komoditas as $item)
-                <label x-show="@js(mb_strtolower($item->nama . ' ' . $item->kode)).includes(search.trim().toLocaleLowerCase())" class="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 px-3 py-3 text-sm text-gray-700 hover:bg-gray-50">
+                <label x-show="@js(mb_strtolower($item->nama . ' ' . $item->kode)).includes(search.trim().toLocaleLowerCase())" class="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 px-3 py-3 text-sm text-gray-700 hover:bg-action-secondary-hover">
                     <input type="checkbox" name="komoditas_id[]" value="{{ $item->id }}" @checked(in_array((string) $item->id, $checkedCommodities)) class="mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-200">
                     <span><span class="block font-medium">{{ $item->nama }}</span><span class="font-mono text-xs text-gray-500">{{ $item->kode }}</span></span>
                 </label>

@@ -43,6 +43,7 @@ class PermohonanService
         private readonly KomoditasReferensiClient $komoditasClient,
         private readonly EvidenceFileHandler $evidenceFileHandler,
         private readonly StatusTransitionService $statusTransition,
+        private readonly KasusService $kasusService,
     ) {}
 
     /**
@@ -176,42 +177,56 @@ class PermohonanService
     }
 
     /**
-     * Operator mulai mereview permohonan (status → sedang_direview) dan
-     * mencatat siapa yang mereview. Tanpa transaksi: cukup satu update.
+     * Conditional update: an old review request cannot undo a final decision.
      */
     public function review(PermohonanPenanganan $permohonan, int $operatorId): PermohonanPenanganan
     {
-        $this->pastikanBelumDiputuskan($permohonan);
+        return DB::transaction(function () use ($permohonan, $operatorId): PermohonanPenanganan {
+            PermohonanPenanganan::query()->whereKey($permohonan->id)
+                ->whereIn('status', [PermohonanPenanganan::STATUS_DIAJUKAN, PermohonanPenanganan::STATUS_SEDANG_DIREVIEW])
+                ->doesntHave('keputusan')->update([
+                    'status' => PermohonanPenanganan::STATUS_SEDANG_DIREVIEW,
+                    'reviewed_by' => $operatorId,
+                    'reviewed_at' => now(),
+                ]);
+            $permohonan = PermohonanPenanganan::query()->lockForUpdate()->findOrFail($permohonan->id);
+            $this->pastikanBelumDiputuskan($permohonan);
 
-        $permohonan->update([
-            'status' => PermohonanPenanganan::STATUS_SEDANG_DIREVIEW,
-            'reviewed_by' => $operatorId,
-            'reviewed_at' => now(),
-        ]);
+            Log::info('Permohonan mulai direview.', [
+                'permohonan_id' => $permohonan->id,
+                'operator_id' => $operatorId,
+            ]);
 
-        Log::info('Permohonan mulai direview.', [
-            'permohonan_id' => $permohonan->id,
-            'operator_id' => $operatorId,
-        ]);
-
-        return $permohonan->fresh();
+            return $permohonan->fresh();
+        }, attempts: 5);
     }
 
     /**
-     * Terima permohonan: catat keputusan DITERIMA lalu lahirkan
-     * KasusPenanganan (satu transaksi). Wajib sudah direview dulu.
+     * Approve, snapshot the case and assign POPT/target atomically.
+     * Row locking and a conditional claim prevent
+     * duplicate decisions/cases/assignments, including stale concurrent callers.
      */
-    public function terima(PermohonanPenanganan $permohonan, User $operator, ?string $catatan): KasusPenanganan
-    {
-        return DB::transaction(function () use ($permohonan, $operator, $catatan): KasusPenanganan {
-            $this->pastikanBelumDiputuskan($permohonan);
-            $this->pastikanSudahDireview($permohonan);
+    public function terima(
+        PermohonanPenanganan $permohonan,
+        User $operator,
+        ?string $catatan,
+        ?int $poptId = null,
+        ?string $deadlineAt = null,
+    ): KasusPenanganan {
+        abort_unless($operator->hasRole('operator_uptd'), 403, 'Hanya Operator UPTD yang dapat menyetujui permohonan.');
+        if ($poptId === null || $deadlineAt === null || trim($deadlineAt) === '') {
+            throw ValidationException::withMessages(array_filter([
+                'popt_id' => $poptId === null ? 'POPT wajib dipilih sebelum menyetujui permohonan.' : null,
+                'deadline_at' => $deadlineAt === null || trim($deadlineAt) === '' ? 'Target penyelesaian wajib diisi sebelum menyetujui permohonan.' : null,
+            ]));
+        }
 
-            $permohonan->update([
-                'status' => PermohonanPenanganan::STATUS_DITERIMA,
-                'reviewed_by' => $operator->getKey(),
-                'reviewed_at' => $permohonan->reviewed_at ?? now(),
-            ]);
+        return DB::transaction(function () use ($permohonan, $operator, $catatan, $poptId, $deadlineAt): KasusPenanganan {
+            $permohonan = $this->claimDecision($permohonan->id, PermohonanPenanganan::STATUS_DITERIMA, $operator);
+            $popt = User::query()->lockForUpdate()->find($poptId);
+            if ($popt === null) {
+                throw ValidationException::withMessages(['popt_id' => 'POPT yang dipilih tidak ditemukan.']);
+            }
 
             KeputusanPermohonan::create([
                 'permohonan_id' => $permohonan->id,
@@ -223,6 +238,7 @@ class PermohonanService
 
             $kasus = $this->buatKasusDariPermohonan($permohonan, $operator);
             $this->statusTransition->catatStatusAwal($kasus, (int) $operator->getKey());
+            $kasus = $this->kasusService->assignPopt($kasus, $popt, $operator, $catatan, $deadlineAt);
 
             Log::info('Permohonan diterima, kasus dibuat.', [
                 'permohonan_id' => $permohonan->id,
@@ -231,7 +247,7 @@ class PermohonanService
             ]);
 
             return $kasus;
-        });
+        }, attempts: 5);
     }
 
     /**
@@ -240,15 +256,12 @@ class PermohonanService
      */
     public function tolak(PermohonanPenanganan $permohonan, User $operator, string $catatan): PermohonanPenanganan
     {
-        return DB::transaction(function () use ($permohonan, $operator, $catatan): PermohonanPenanganan {
-            $this->pastikanBelumDiputuskan($permohonan);
-            $this->pastikanSudahDireview($permohonan);
+        if (trim($catatan) === '') {
+            throw ValidationException::withMessages(['catatan' => 'Alasan penolakan wajib diisi.']);
+        }
 
-            $permohonan->update([
-                'status' => PermohonanPenanganan::STATUS_DITOLAK,
-                'reviewed_by' => $operator->getKey(),
-                'reviewed_at' => $permohonan->reviewed_at ?? now(),
-            ]);
+        return DB::transaction(function () use ($permohonan, $operator, $catatan): PermohonanPenanganan {
+            $permohonan = $this->claimDecision($permohonan->id, PermohonanPenanganan::STATUS_DITOLAK, $operator);
 
             KeputusanPermohonan::create([
                 'permohonan_id' => $permohonan->id,
@@ -264,7 +277,7 @@ class PermohonanService
             ]);
 
             return $permohonan->fresh();
-        });
+        }, attempts: 5);
     }
 
     /**
@@ -279,9 +292,14 @@ class PermohonanService
                 'keputusan',
                 'kasus.penugasanAktif.popt',
                 'kasus.penugasanTerakhir.popt',
+                'kasus.riwayatStatus',
+                'kasus.progressTerakhir',
+                'kasus.finalReport.evidences',
                 'evidences',
             ])
             ->where('created_by', $userId);
+
+        app(MonitoringStatusService::class)->applyRequestFilter($query, $filters['monitoring_status'] ?? null);
 
         return $this->filterQuery($query, $filters)->latest('id')->paginate($this->perPage($filters));
     }
@@ -292,7 +310,9 @@ class PermohonanService
     public function permohonanOperator(array $filters = []): LengthAwarePaginator
     {
         $query = PermohonanPenanganan::query()
-            ->with(['diagnosis.results', 'diagnosis.symptoms', 'keputusan', 'kasus', 'evidences', 'creator']);
+            ->with(['diagnosis.results', 'diagnosis.symptoms', 'keputusan', 'kasus.penugasanAktif.popt', 'kasus.penugasanTerakhir', 'kasus.riwayatStatus', 'kasus.finalReport.evidences', 'evidences', 'creator']);
+
+        app(MonitoringStatusService::class)->applyRequestFilter($query, $filters['monitoring_status'] ?? null);
 
         return $this->filterQuery($query, $filters)->latest('id')->paginate($this->perPage($filters));
     }
@@ -336,7 +356,7 @@ class PermohonanService
             PermohonanPenanganan::STATUS_DITOLAK,
         ], true);
 
-        if ($sudahDiputus) {
+        if ($sudahDiputus || $permohonan->keputusan()->exists()) {
             throw ValidationException::withMessages([
                 'permohonan_id' => 'Permohonan sudah diputuskan ('.$permohonan->status.').',
             ]);
@@ -350,6 +370,33 @@ class PermohonanService
                 'permohonan_id' => 'Permohonan harus direview terlebih dahulu sebelum diputuskan.',
             ]);
         }
+    }
+
+    /**
+     * The first statement must be a write. SQLite's deferred transactions
+     * cannot safely upgrade two simultaneous read locks to writer locks.
+     * The conditional claim serializes decisions on SQLite and row-locking
+     * databases; any later validation/storage failure rolls back this claim.
+     */
+    private function claimDecision(int $id, string $status, User $operator): PermohonanPenanganan
+    {
+        $claimed = PermohonanPenanganan::query()->whereKey($id)
+            ->where('status', PermohonanPenanganan::STATUS_SEDANG_DIREVIEW)
+            ->doesntHave('keputusan')->doesntHave('kasus')->update([
+                'status' => $status,
+                'reviewed_by' => $operator->id,
+            ]);
+        $permohonan = PermohonanPenanganan::query()->lockForUpdate()->findOrFail($id);
+        if ($claimed !== 1) {
+            $this->pastikanBelumDiputuskan($permohonan);
+            $this->pastikanSudahDireview($permohonan);
+            throw ValidationException::withMessages(['permohonan_id' => 'Permohonan sudah memiliki kasus aktif. Tinjau riwayat tersebut tanpa membuat kasus duplikat.']);
+        }
+        if ($permohonan->reviewed_at === null) {
+            $permohonan->update(['reviewed_at' => now()]);
+        }
+
+        return $permohonan;
     }
 
     private function buatKasusDariPermohonan(PermohonanPenanganan $permohonan, User $operator): KasusPenanganan

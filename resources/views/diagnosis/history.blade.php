@@ -1,7 +1,17 @@
 @extends('layouts.app')
 
 @section('title', 'Riwayat Diagnosis')
-@section('subtitle', 'Lihat kembali gejala, hasil, dan rekomendasi diagnosis Anda.')
+@section('subtitle', 'Lihat kembali hasil diagnosis yang pernah Anda lakukan.')
+
+@role('poktan')
+    @section('topbar-actions')
+        <a href="{{ route('diagnosis.index') }}" data-diagnosis-start="header"
+           class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#115a39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45] sm:w-auto">
+            <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" /></svg>
+            Tambah Diagnosis
+        </a>
+    @endsection
+@endrole
 
 @php
     $komoditasNama = fn (int $commodityId): string => $komoditasMap[$commodityId] ?? ('Komoditas #'.$commodityId);
@@ -19,7 +29,7 @@
 @section('content')
     <x-page-header
         title="Riwayat Diagnosis"
-        subtitle="Daftar diagnosis yang pernah Anda jalankan beserta hasilnya."
+        subtitle="Lihat kembali hasil diagnosis yang pernah Anda lakukan."
         :breadcrumbs="[
             ['label' => 'Dashboard', 'url' => route('dashboard')],
             ['label' => 'Riwayat Diagnosis'],
@@ -66,12 +76,12 @@
                 </div>
                 <div class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-5">
                     <button type="submit"
-                            class="inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
+                            class="inline-flex items-center gap-2 rounded-xl bg-action-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         Terapkan Filter
                     </button>
                     <a href="{{ route('diagnosis.history') }}"
-                       class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">
+                       class="inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         Reset
                     </a>
@@ -115,20 +125,23 @@
                 @if ($hasFilters)
                     Coba ubah kata kunci, komoditas, tanggal, atau urutan yang Anda pilih.
                 @else
-                    Anda belum pernah menjalankan diagnosis. Mulai diagnosis tanaman pertama Anda.
+                    Mulai diagnosis pertama Anda untuk membantu mengenali kemungkinan penyakit tanaman.
                 @endif
             </p>
             @if ($hasFilters)
                 <a href="{{ route('diagnosis.history') }}"
-                   class="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">
+                   class="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#dbe5df] bg-white px-5 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     Reset Filter
                 </a>
             @else
-                <a href="{{ route('diagnosis.index') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0 0l-4-4m4 4l4-4" /></svg>
-                    Diagnosis Sekarang
-                </a>
+                @role('poktan')
+                    <a href="{{ route('diagnosis.index') }}" data-diagnosis-start="empty"
+                       class="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176b45] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#115a39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b45] sm:w-auto">
+                        <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" /></svg>
+                        Tambah Diagnosis
+                    </a>
+                @endrole
             @endif
         </x-card>
     @else
@@ -176,7 +189,7 @@
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <a href="{{ route('diagnosis.show', $diagnosis->id) }}"
-                                       class="inline-flex items-center gap-1 rounded-lg border border-[#dbe5df] bg-white px-3 py-1.5 text-xs font-semibold text-[#176b45] hover:bg-[#f3f8f4]">
+                                       class="inline-flex items-center gap-1 rounded-lg border border-[#dbe5df] bg-white px-3 py-1.5 text-xs font-semibold text-[#176b45] hover:bg-action-secondary-hover">
                                         Detail
                                         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                                     </a>
@@ -213,7 +226,7 @@
                     </p>
                     <p class="mt-1 text-xs text-[#8a9990]">{{ $diagnosis->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y · H:i') ?? '—' }}</p>
                     <a href="{{ route('diagnosis.show', $diagnosis->id) }}"
-                       class="mt-3 inline-flex items-center gap-1 rounded-lg border border-[#dbe5df] bg-white px-3 py-1.5 text-xs font-semibold text-[#176b45] hover:bg-[#f3f8f4]">
+                       class="mt-3 inline-flex items-center gap-1 rounded-lg border border-[#dbe5df] bg-white px-3 py-1.5 text-xs font-semibold text-[#176b45] hover:bg-action-secondary-hover">
                         Detail
                         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </a>

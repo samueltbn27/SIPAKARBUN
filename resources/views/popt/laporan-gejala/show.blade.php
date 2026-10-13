@@ -64,7 +64,7 @@
                         <input type="hidden" name="action" value="duplikat">
                         <label for="duplicate-note" class="block text-xs font-semibold text-[#66746c]">Alasan duplikat</label>
                         <textarea id="duplicate-note" name="review_note" rows="2" maxlength="2000" class="w-full rounded-xl border border-[#dbe5df] px-3 py-2.5 text-sm focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20" placeholder="Sebutkan gejala atau laporan yang serupa.">{{ old('review_note') }}</textarea>
-                        <button type="submit" class="min-h-11 w-full rounded-xl border border-[#dbe5df] bg-white px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4]">Tandai sebagai duplikat</button>
+                        <button type="submit" class="min-h-11 w-full rounded-xl border border-[#dbe5df] bg-white px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover">Tandai sebagai duplikat</button>
                     </form>
 
                     <form method="POST" action="{{ route('popt.laporan-gejala.review', $laporan) }}" class="mt-5 space-y-3 border-t border-[#eef3ef] pt-5">
@@ -73,12 +73,12 @@
                         <label for="draft_symptom_name" class="block text-xs font-semibold text-[#66746c]">Nama gejala untuk draft</label>
                         <input id="draft_symptom_name" name="draft_symptom_name" value="{{ old('draft_symptom_name') }}" maxlength="150" class="w-full rounded-xl border border-[#dbe5df] px-3 py-2.5 text-sm focus:border-[#176b45] focus:outline-none focus:ring-2 focus:ring-[#176b45]/20" placeholder="Contoh: Daun menggulung disertai bercak putih">
                         <p class="text-xs leading-5 text-[#8a9990]">Deskripsi dan foto laporan akan disalin ke draft gejala. Admin/Operator tetap perlu meninjau dan memublikasikannya.</p>
-                        <button type="submit" class="min-h-11 w-full rounded-xl bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#173b29]">Buat draft gejala</button>
+                        <button type="submit" class="min-h-11 w-full rounded-xl bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover">Buat draft gejala</button>
                     </form>
                 </x-card>
             </div>
         @endif
 
-        <a href="{{ route('popt.laporan-gejala.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#dbe5df] bg-white px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-[#f3f8f4] lg:col-start-2">Kembali ke antrean</a>
+        <a href="{{ route('popt.laporan-gejala.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#dbe5df] bg-white px-4 py-2.5 text-sm font-semibold text-[#66746c] hover:bg-action-secondary-hover lg:col-start-2">Kembali ke antrean</a>
     </div>
 @endsection

@@ -54,6 +54,14 @@ class OperatorPermohonanApiTest extends TestCase
         return $user;
     }
 
+    private function approvalData(?string $note = 'ok'): array
+    {
+        $popt = User::factory()->create();
+        $popt->assignRole('popt');
+
+        return ['popt_id' => $popt->id, 'deadline_at' => now()->addDays(7)->toDateTimeString(), 'catatan' => $note];
+    }
+
     /**
      * Buat permohonan dalam status diajukan lengkap dengan diagnosis
      * pemohon (dengan hasil CF peringkat-1 untuk pembentukan kasus).
@@ -155,12 +163,10 @@ class OperatorPermohonanApiTest extends TestCase
 
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")->assertOk();
 
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", [
-            'catatan' => 'Disetujui',
-        ])
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", $this->approvalData('Disetujui'))
             ->assertCreated()
             ->assertJsonPath('data.permohonan_id', $permohonan->id)
-            ->assertJsonPath('data.status', 'diterima')
+            ->assertJsonPath('data.status', 'ditugaskan')
             ->assertJsonPath('data.komoditas.nama', 'Kopi Arabika')
             ->assertJsonPath('data.penyakit.nama', 'Karat Daun Kopi');
 
@@ -176,7 +182,7 @@ class OperatorPermohonanApiTest extends TestCase
 
         $this->assertDatabaseHas('kasus_penanganan', [
             'permohonan_id' => $permohonan->id,
-            'current_status' => 'diterima',
+            'current_status' => 'ditugaskan',
             'komoditas_id' => 1,
             'komoditas_name_snapshot' => 'Kopi Arabika',
             'penyakit_name_snapshot' => 'Karat Daun Kopi',
@@ -192,7 +198,7 @@ class OperatorPermohonanApiTest extends TestCase
         $permohonan = $this->buatPermohonanDiajukan($this->buatUserPoktan());
         Sanctum::actingAs($operator);
 
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", $this->approvalData())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permohonan_id']);
 
@@ -214,7 +220,7 @@ class OperatorPermohonanApiTest extends TestCase
 
         Sanctum::actingAs($operator);
 
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", $this->approvalData())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['permohonan_id']);
 
@@ -282,12 +288,12 @@ class OperatorPermohonanApiTest extends TestCase
         Sanctum::actingAs($operator);
 
         $this->postJson("/api/operator/permohonan/{$permohonan->id}/review")->assertOk();
-        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", ['catatan' => 'ok'])->assertCreated();
+        $this->postJson("/api/operator/permohonan/{$permohonan->id}/accept", $this->approvalData())->assertCreated();
 
         $this->getJson("/api/operator/permohonan/{$permohonan->id}")
             ->assertOk()
             ->assertJsonPath('data.keputusan.keputusan', KeputusanPermohonan::KEPUTUSAN_DITERIMA)
-            ->assertJsonPath('data.kasus.status', 'diterima');
+            ->assertJsonPath('data.kasus.status', 'ditugaskan');
     }
 
     public function test_non_operator_tidak_bisa_mengambil_keputusan(): void

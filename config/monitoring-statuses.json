@@ -1,0 +1,38 @@
+{
+    "menunggu_review": {
+        "isActiveHandling": false,
+        "label": "Menunggu Review",
+        "description": "Permohonan menunggu keputusan Operator UPTD.",
+        "iconPath": "M9 5h6m-6 4h6m-6 4h3M6 3h12v18H6z",
+        "markerClass": "bg-[#3869a1] text-white",
+        "badgeClass": "bg-blue-50 text-blue-700",
+        "chartColor": "#3869a1"
+    },
+    "ditolak": {
+        "isActiveHandling": false,
+        "label": "Ditolak",
+        "description": "Permohonan ditolak oleh Operator; lihat alasan keputusan.",
+        "iconPath": "M8 8l8 8M16 8l-8 8M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",
+        "markerClass": "bg-[#a83d32] text-white",
+        "badgeClass": "bg-red-50 text-red-700",
+        "chartColor": "#a83d32"
+    },
+    "dalam_penanganan": {
+        "isActiveHandling": true,
+        "label": "Dalam Penanganan",
+        "description": "Permohonan disetujui, POPT ditugaskan, dan target penyelesaian ditetapkan. Kegiatan lapangan mengikuti riwayat aktual POPT.",
+        "iconPath": "M14.7 6.3a5 5 0 0 0-6.4 6.4l-5 5a2.1 2.1 0 0 0 3 3l5-5a5 5 0 0 0 6.4-6.4l-3 3-3-3z",
+        "markerClass": "bg-[#176b45] text-white",
+        "badgeClass": "bg-[#e2f0e8] text-[#176b45]",
+        "chartColor": "#176b45"
+    },
+    "selesai": {
+        "isActiveHandling": false,
+        "label": "Selesai",
+        "description": "Penanganan kasus telah diselesaikan.",
+        "iconPath": "M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6",
+        "markerClass": "bg-[#526159] text-white",
+        "badgeClass": "bg-[#edf1ee] text-[#526159]",
+        "chartColor": "#526159"
+    }
+}

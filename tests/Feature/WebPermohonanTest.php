@@ -181,7 +181,7 @@ class WebPermohonanTest extends TestCase
         $response->assertSee($permohonan->permohonan_code)
             ->assertSee('Karat Daun Kopi')
             ->assertSee('Kopi Arabika')
-            ->assertSee('Diajukan')
+            ->assertSee('Menunggu Review')
             ->assertDontSee('Gapoktan Tani Makmur');
     }
 
@@ -204,7 +204,7 @@ class WebPermohonanTest extends TestCase
 
         $this->actingAs($pemohon);
 
-        $this->get('/permohonan?status=diajukan')
+        $this->get('/permohonan?status=menunggu_review')
             ->assertOk()
             ->assertSee($ditunda->permohonan_code);
 
@@ -227,17 +227,17 @@ class WebPermohonanTest extends TestCase
             ->assertSee('Tanggal Pengajuan')
             ->assertSee('Komoditas')
             ->assertSee('Diagnosis')
-            ->assertSee('Status Permohonan')
-            ->assertSee('Status Penanganan')
+            ->assertSee('Status')
+            ->assertSee('Target Penyelesaian')
             ->assertSee('Aksi');
     }
 
-    public function test_index_membedakan_status_permohonan_dan_penanganan(): void
+    public function test_index_uses_one_unified_status_before_and_after_case_creation(): void
     {
         $user = $this->buatUserPoktan();
         $diagnosis = $this->buatDiagnosis($user);
 
-        // Permohonan tanpa kasus -> status penanganan belum tersedia.
+        // A request has a primary status even before a handling case exists.
         $permohonan = PermohonanPenanganan::factory()->create([
             'diagnosis_id' => $diagnosis->id,
             'kelompok_tani_id' => 1,
@@ -250,11 +250,11 @@ class WebPermohonanTest extends TestCase
         $this->get('/permohonan')
             ->assertOk()
             ->assertSee($permohonan->permohonan_code)
-            ->assertSee('Permohonan: Diajukan')
-            ->assertSee('Diajukan')
-            ->assertSee('Belum tersedia');
+            ->assertSee('Menunggu Review')
+            ->assertSee('Belum ditetapkan')
+            ->assertViewHas('handlingStatuses', fn ($statuses) => $statuses[$permohonan->id]['key'] === 'menunggu_review');
 
-        // Permohonan diterima + kasus ditugaskan -> status sederhana menunggu penanganan.
+        // Incomplete legacy assignment remains visible and requires Operator review.
         $kasusPermohonan = PermohonanPenanganan::factory()->create([
             'diagnosis_id' => $this->buatDiagnosis($user)->id,
             'status' => PermohonanPenanganan::STATUS_DITERIMA,
@@ -270,8 +270,8 @@ class WebPermohonanTest extends TestCase
         $this->get('/permohonan')
             ->assertSee($kasusPermohonan->permohonan_code)
             ->assertSee('KS-20260819-0007')
-            ->assertSee('Diterima')
-            ->assertSee('Menunggu Penanganan');
+            ->assertSee('Menunggu Review')
+            ->assertViewHas('handlingStatuses', fn ($statuses) => $statuses[$kasusPermohonan->id]['key'] === 'menunggu_review');
     }
 
     public function test_index_filter_tanggal(): void
@@ -978,6 +978,7 @@ class WebPermohonanTest extends TestCase
             $penugasan = PenugasanPopt::factory()->aktif()->create([
                 'kasus_id' => $kasus->id,
                 'popt_id' => $popt->id,
+                'deadline_at' => now()->addDays(3),
                 'assigned_by' => $operator->id,
                 'catatan' => 'Kerjakan segera.',
                 'assigned_at' => now()->subDays(4),
@@ -1014,7 +1015,7 @@ class WebPermohonanTest extends TestCase
         return [$permohonan, $kasus];
     }
 
-    public function test_show_menampilkan_status_permohonan_dan_penanganan_terpisah(): void
+    public function test_show_keeps_operator_decision_as_history_and_one_primary_handling_status(): void
     {
         $pemohon = $this->buatUserPoktan();
         $operator = $this->buatUserDenganRole('operator_uptd');
@@ -1026,10 +1027,11 @@ class WebPermohonanTest extends TestCase
 
         $this->get('/permohonan/'.$permohonan->id)
             ->assertOk()
-            ->assertSee('Status Permohonan')
+            ->assertSee('Keputusan Operator')
             ->assertSee('Status Penanganan')
             ->assertSee('Diterima')
             ->assertSee('Dalam Penanganan')
+            ->assertViewHas('primaryStatus', fn ($status) => $status['key'] === 'dalam_penanganan')
             ->assertSee($kasus->kasus_code);
     }
 

@@ -29,7 +29,7 @@ class PoptWorkflowController extends Controller
     {
         $kasus = $this->kasusService->kasusPopt(
             (int) $request->user()->id,
-            $request->only(['status', 'per_page']),
+            $request->only(['per_page']) + ['monitoring_status' => $request->string('status')->toString()],
         );
         $monitoringStatuses = [];
 
@@ -94,6 +94,14 @@ class PoptWorkflowController extends Controller
 
         return redirect()->route('popt.penugasan.show', $id)
             ->with('success', 'Progress berhasil ditambahkan.');
+    }
+
+    public function start(AcceptAssignmentRequest $request, int $id): RedirectResponse
+    {
+        $this->handlingService->startHandling($id, $request->user());
+
+        return redirect()->route('popt.penugasan.show', $id)
+            ->with('success', 'Penanganan berhasil dimulai.');
     }
 
     public function requestExtension(StorePerpanjanganRequest $request, int $id): RedirectResponse

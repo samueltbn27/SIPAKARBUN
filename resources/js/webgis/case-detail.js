@@ -1,4 +1,4 @@
-import { getRequestStatusLabel, getStatusConfig } from './statuses';
+import { getStatusConfig } from './statuses';
 import { createStatusSymbol } from './status-icon';
 import { deleteCase } from './data-provider';
 import { requestConfirmation } from '../confirm-dialog';
@@ -47,8 +47,10 @@ function getDrawerElements() {
         closeButton: document.querySelector('[data-case-detail-close]'),
         caseCode: document.querySelector('[data-case-detail="case-code"]'),
         statusBadge: document.querySelector('[data-case-detail="status"]'),
-        requestStatus: document.querySelector('[data-case-detail="request-status"]'),
-        handlingStatus: document.querySelector('[data-case-detail="handling-status"]'),
+        requestCode: document.querySelector('[data-case-detail="request-code"]'),
+        overdue: document.querySelector('[data-case-detail="overdue"]'),
+        rejectionReason: document.querySelector('[data-case-detail="rejection-reason"]'),
+        legacyNote: document.querySelector('[data-case-detail="legacy-note"]'),
         kelompokTani: document.querySelector('[data-case-detail="kelompok-tani"]'),
         commodity: document.querySelector('[data-case-detail="commodity"]'),
         commodityCode: document.querySelector('[data-case-detail="commodity-code"]'),
@@ -133,7 +135,7 @@ function renderTimeline(history) {
 
         const statusLabel = document.createElement('h4');
         statusLabel.className = 'text-sm font-bold text-[#173b29]';
-        statusLabel.textContent = config.label;
+        statusLabel.textContent = entry.label || config.label;
         heading.append(statusLabel);
 
         if (index === sortedHistory.length - 1) {
@@ -181,14 +183,21 @@ function renderCaseDetail(caseData) {
     setText(drawerElements.updatedAt, formatDateTime(caseData.last_status_at));
     setText(drawerElements.lastNote, caseData.last_note);
     setText(drawerElements.latestProgress, caseData.latest_progress?.note ?? 'Belum ada progress');
+    if (drawerElements.overdue) drawerElements.overdue.hidden = !caseData.is_overdue;
+    setText(drawerElements.rejectionReason, caseData.rejection_reason);
+    if (drawerElements.rejectionReason) drawerElements.rejectionReason.hidden = !caseData.rejection_reason;
+    const legacyNote = [caseData.history_note, caseData.legacy_note, caseData.legacy_reason,
+        caseData.completion_evidence_missing ? 'Data selesai lama: laporan akhir atau bukti foto belum tersedia.' : null,
+    ].filter(Boolean).join(' ');
+    setText(drawerElements.legacyNote, legacyNote);
+    if (drawerElements.legacyNote) drawerElements.legacyNote.hidden = !legacyNote;
 
     if (drawerElements.statusBadge) {
         drawerElements.statusBadge.className = `inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ${config.badgeClass}`;
         drawerElements.statusBadge.textContent = caseData.monitoring_status_label || config.label;
     }
 
-    setText(drawerElements.requestStatus, getRequestStatusLabel(caseData.request_status));
-    setText(drawerElements.handlingStatus, caseData.monitoring_status_label || config.label);
+    setText(drawerElements.requestCode, caseData.request_code);
 
     renderTimeline(caseData.status_history);
 
@@ -306,7 +315,7 @@ export function openCaseDetail(caseData) {
             : null;
     }
 
-    openCaseId = caseData.case_id;
+    openCaseId = caseData.monitoring_id ?? caseData.case_id ?? caseData.request_id;
     openCaseData = caseData;
     renderCaseDetail(caseData);
 

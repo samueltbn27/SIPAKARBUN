@@ -42,8 +42,8 @@
     </section>
 
     <div class="flex flex-wrap gap-3">
-        @if ($canEditRecord)<a href="{{ route('knowledge.gejala.edit', $gejala) }}" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">Edit Gejala</a>@endif
-        <a href="{{ route('knowledge.gejala.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">Kembali</a>
+        @if ($canEditRecord)<a href="{{ route('knowledge.gejala.edit', $gejala) }}" class="rounded-lg bg-action-primary px-4 py-2 text-sm font-medium text-white hover:bg-action-primary-hover">Edit Gejala</a>@endif
+        <a href="{{ route('knowledge.gejala.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-action-secondary-hover">Kembali</a>
     </div>
 </div>
 @endsection

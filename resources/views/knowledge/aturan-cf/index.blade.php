@@ -14,7 +14,7 @@
     <div class="space-y-6">
         <div class="flex flex-wrap justify-end gap-3">
             @if($canCreateKnowledge)<a href="{{ route('knowledge.aturan-cf.create') }}"
-               class="inline-flex items-center justify-center bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
+               class="inline-flex items-center justify-center bg-action-primary text-white hover:bg-action-primary-hover rounded-lg px-4 py-2 text-sm font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -36,11 +36,11 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="submit"
-                            class="bg-green-600 text-white hover:bg-green-700 rounded-lg px-4 py-2 text-sm font-medium">
+                            class="bg-action-primary text-white hover:bg-action-primary-hover rounded-lg px-4 py-2 text-sm font-medium">
                         Filter
                     </button>
                     <a href="{{ route('knowledge.aturan-cf.index') }}"
-                       class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                       class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-action-secondary-hover">
                         Reset
                     </a>
                 </div>
@@ -63,7 +63,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @forelse($aturanCf as $aturan)
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-action-secondary-hover">
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->penyakit?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $aturan->gejala?->nama ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-700">

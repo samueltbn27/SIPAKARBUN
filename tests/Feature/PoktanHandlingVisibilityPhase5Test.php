@@ -52,7 +52,7 @@ class PoktanHandlingVisibilityPhase5Test extends TestCase
             'created_by' => $poktan->id,
             'created_at' => now()->subDays(5),
         ]);
-        $kasus = KasusPenanganan::factory()->create([
+        $kasus = KasusPenanganan::factory()->withApproval()->create([
             'permohonan_id' => $permohonan->id,
             'current_status' => $status,
         ]);
@@ -70,16 +70,16 @@ class PoktanHandlingVisibilityPhase5Test extends TestCase
         return [$permohonan, $kasus, $popt];
     }
 
-    public function test_accepted_case_without_assignment_shows_waiting_state(): void
+    public function test_legacy_accepted_case_without_assignment_shows_review_and_missing_data(): void
     {
         $poktan = $this->user('poktan');
         [$permohonan] = $this->caseFor($poktan, KasusPenanganan::STATUS_DITERIMA);
 
         $this->actingAs($poktan)->get(route('permohonan.show', $permohonan->id))
             ->assertOk()
-            ->assertSee('Menunggu Penanganan')
+            ->assertSee('Menunggu Review')->assertSee('Data historis perlu ditinjau Operator.')
             ->assertSee('Belum ditugaskan')
-            ->assertSee('Belum tersedia');
+            ->assertSee('Perlu tinjauan data historis');
     }
 
     public function test_assigned_but_not_accepted_shows_popt_and_waiting_copy(): void
@@ -89,7 +89,7 @@ class PoktanHandlingVisibilityPhase5Test extends TestCase
 
         $this->actingAs($poktan)->get(route('permohonan.show', $permohonan->id))
             ->assertOk()
-            ->assertSee('Menunggu Penanganan')
+            ->assertSee('Dalam Penanganan')
             ->assertSee($popt->name)
             ->assertSee('Menunggu POPT menerima penugasan.')
             ->assertSee('Tepat Waktu');
@@ -152,9 +152,9 @@ class PoktanHandlingVisibilityPhase5Test extends TestCase
         [$postponed] = $this->caseFor($poktan, KasusPenanganan::STATUS_DITUNDA, now()->addDay()->toDateTimeString());
         [$postponedOverdue] = $this->caseFor($poktan, KasusPenanganan::STATUS_DITUNDA, now()->subDay()->toDateTimeString());
 
-        $this->actingAs($poktan)->get(route('permohonan.show', $overdue->id))->assertOk()->assertSee('Melewati Batas Waktu');
-        $this->get(route('permohonan.show', $postponed->id))->assertOk()->assertSee('Ditunda');
-        $this->get(route('permohonan.show', $postponedOverdue->id))->assertOk()->assertSee('Melewati Batas Waktu');
+        $this->actingAs($poktan)->get(route('permohonan.show', $overdue->id))->assertOk()->assertSee('Dalam Penanganan')->assertSee('Melewati Target Waktu');
+        $this->get(route('permohonan.show', $postponed->id))->assertOk()->assertSee('Dalam Penanganan')->assertSee('Catatan data lama: penanganan pernah ditunda.');
+        $this->get(route('permohonan.show', $postponedOverdue->id))->assertOk()->assertSee('Dalam Penanganan')->assertSee('Melewati Target Waktu');
     }
 
     public function test_extension_history_uses_friendly_labels_and_effective_deadline(): void

@@ -10,6 +10,7 @@ use App\Models\Diagnosis;
 use App\Models\KeputusanPermohonan;
 use App\Models\PermohonanPenanganan;
 use App\Models\User;
+use App\Services\MonitoringStatusService;
 use App\Services\PermohonanService;
 use App\Services\PoktanHandlingViewService;
 use Illuminate\Http\RedirectResponse;
@@ -45,6 +46,7 @@ class PermohonanController extends Controller
         private readonly KelompokTaniReferensiClient $kelompokTaniClient,
         private readonly KomoditasReferensiClient $komoditasClient,
         private readonly PoktanHandlingViewService $poktanHandlingView,
+        private readonly MonitoringStatusService $monitoringStatus,
     ) {}
 
     public function index(Request $request): View
@@ -56,15 +58,14 @@ class PermohonanController extends Controller
 
         $permohonan = $this->service->permohonanPemohon(
             userId: (int) $user->id,
-            filters: $request->only(['status', 'per_page', 'created_from', 'created_to']),
+            filters: $request->only(['per_page', 'created_from', 'created_to'])
+                + ['monitoring_status' => $request->string('status')->toString()],
         );
 
         [$komoditasMap, $komoditasError] = $this->muatKomoditas();
         $handlingStatuses = $permohonan->getCollection()
             ->mapWithKeys(fn (PermohonanPenanganan $item): array => [
-                $item->id => $item->kasus === null
-                    ? null
-                    : $this->poktanHandlingView->status($item->kasus),
+                $item->id => $this->monitoringStatus->resolveRequest($item),
             ])
             ->all();
 
@@ -203,6 +204,7 @@ class PermohonanController extends Controller
 
         $kasus = $permohonan->kasus;
         $handling = $kasus === null ? null : $this->poktanHandlingView->present($kasus);
+        $primaryStatus = $this->monitoringStatus->resolveRequest($permohonan);
         $timeline = $this->bangunTimeline($permohonan);
 
         return view('permohonan.show', compact(
@@ -211,6 +213,7 @@ class PermohonanController extends Controller
             'kasus',
             'handling',
             'timeline',
+            'primaryStatus',
         ));
     }
 

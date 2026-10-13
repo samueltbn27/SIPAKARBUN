@@ -10,11 +10,11 @@ use App\Models\RiwayatStatusPenanganan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * KasusService — business logic kasus penanganan (kontrak §13).
@@ -32,7 +32,7 @@ class KasusService
     public function __construct(
         private readonly StatusTransitionService $transitionService,
         private readonly PerpanjanganPenugasanService $extensionService,
-        private readonly MonitoringStatusService $monitoringStatusService,
+        private readonly MonitoringCaseService $monitoringCaseService,
     ) {}
 
     /**
@@ -52,7 +52,11 @@ class KasusService
             ]);
         }
 
-        $deadline = Carbon::parse($deadlineAt);
+        try {
+            $deadline = Carbon::parse($deadlineAt);
+        } catch (Throwable) {
+            throw ValidationException::withMessages(['deadline_at' => 'Target penyelesaian harus berupa tanggal dan waktu yang valid.']);
+        }
         if (! $deadline->isAfter(now())) {
             throw ValidationException::withMessages([
                 'deadline_at' => 'Target penyelesaian harus berada di masa depan.',
@@ -66,6 +70,12 @@ class KasusService
         }
 
         return DB::transaction(function () use ($kasus, $popt, $operator, $catatan, $deadline): KasusPenanganan {
+            // Serializes both initial assignment and reassignment even when
+            // there is no active assignment row to lock yet.
+            $kasus = KasusPenanganan::query()->lockForUpdate()->findOrFail($kasus->id);
+            if ($kasus->current_status === KasusPenanganan::STATUS_SELESAI) {
+                throw ValidationException::withMessages(['kasus_id' => 'Kasus sudah selesai, tidak dapat diberi penugasan baru.']);
+            }
             $activeAssignment = PenugasanPopt::query()
                 ->where('kasus_id', $kasus->id)
                 ->where('status', PenugasanPopt::STATUS_AKTIF)
@@ -145,6 +155,8 @@ class KasusService
         $query = KasusPenanganan::query()
             ->with($this->readContractRelations());
 
+        app(MonitoringStatusService::class)->applyFilter($query, $filters['monitoring_status'] ?? null);
+
         if (! empty($filters['status'])) {
             $query->where('current_status', $filters['status']);
         }
@@ -158,59 +170,19 @@ class KasusService
      */
     public function monitoringReport(array $filters = []): LengthAwarePaginator
     {
-        return $this->monitoringQuery($filters)
-            ->with(['permohonan', 'penugasanAktif.popt', 'penugasanTerakhir.popt'])
-            ->latest('kasus_penanganan.created_at')
-            ->latest('kasus_penanganan.id')
-            ->paginate(15)
-            ->withQueryString();
+        return $this->monitoringCaseService->paginate($filters);
     }
 
-    /** @return array{total: int, active: int, completed: int, overdue: int} */
+    /** @return array{total: int, review: int, active: int, completed: int, overdue: int, by_status: array<string, int>} */
     public function monitoringSummary(array $filters = []): array
     {
-        $query = $this->monitoringQuery($filters);
-
-        $total = (clone $query)->count();
-        $completedQuery = clone $query;
-        $this->monitoringStatusService->applyFilter($completedQuery, MonitoringStatusService::STATUS_SELESAI);
-        $completed = $completedQuery->count();
-        $overdueQuery = clone $query;
-        $this->monitoringStatusService->applyFilter($overdueQuery, MonitoringStatusService::STATUS_MELEWATI_BATAS_WAKTU);
-        $overdue = $overdueQuery->count();
-
-        return [
-            'total' => $total,
-            'active' => $total - $completed,
-            'completed' => $completed,
-            'overdue' => $overdue,
-        ];
+        return $this->monitoringCaseService->summary($filters);
     }
 
     /** @return array{regencies: Collection, commodities: Collection, diseases: Collection} */
     public function monitoringFilterOptions(): array
     {
-        return [
-            'regencies' => PermohonanPenanganan::query()
-                ->whereHas('kasus')
-                ->whereNotNull('kabupaten')
-                ->where('kabupaten', '!=', '')
-                ->distinct()
-                ->orderBy('kabupaten')
-                ->pluck('kabupaten'),
-            'commodities' => KasusPenanganan::query()
-                ->whereNotNull('komoditas_name_snapshot')
-                ->where('komoditas_name_snapshot', '!=', '')
-                ->distinct()
-                ->orderBy('komoditas_name_snapshot')
-                ->pluck('komoditas_name_snapshot'),
-            'diseases' => KasusPenanganan::query()
-                ->whereNotNull('penyakit_name_snapshot')
-                ->where('penyakit_name_snapshot', '!=', '')
-                ->distinct()
-                ->orderBy('penyakit_name_snapshot')
-                ->pluck('penyakit_name_snapshot'),
-        ];
+        return $this->monitoringCaseService->filterOptions();
     }
 
     /**
@@ -224,6 +196,8 @@ class KasusService
         $query = KasusPenanganan::query()
             ->whereHas('penugasanPopt', fn ($q) => $q->where('popt_id', $poptId))
             ->with($this->readContractRelations());
+
+        app(MonitoringStatusService::class)->applyFilter($query, $filters['monitoring_status'] ?? null);
 
         if (! empty($filters['status'])) {
             $query->where('current_status', $filters['status']);
@@ -407,13 +381,13 @@ class KasusService
     private function readContractRelations(): array
     {
         return [
-            'permohonan',
+            'permohonan.keputusan',
             'penugasanAktif.popt',
             'penugasanTerakhir.popt',
             'penugasanPopt.popt',
             'riwayatStatus',
             'progressTerakhir',
-            'finalReport',
+            'finalReport.evidences',
             'verifier',
         ];
     }
@@ -421,34 +395,5 @@ class KasusService
     private function perPage(array $filters): int
     {
         return max(1, min((int) ($filters['per_page'] ?? 15), 100));
-    }
-
-    private function monitoringQuery(array $filters = []): Builder
-    {
-        $query = KasusPenanganan::query();
-
-        if (! empty($filters['date_from'])) {
-            $query->whereDate('kasus_penanganan.created_at', '>=', $filters['date_from']);
-        }
-
-        if (! empty($filters['date_to'])) {
-            $query->whereDate('kasus_penanganan.created_at', '<=', $filters['date_to']);
-        }
-
-        if (! empty($filters['regency'])) {
-            $query->whereHas('permohonan', fn (Builder $relation) => $relation->where('kabupaten', $filters['regency']));
-        }
-
-        if (! empty($filters['commodity'])) {
-            $query->where('komoditas_name_snapshot', $filters['commodity']);
-        }
-
-        if (! empty($filters['disease'])) {
-            $query->where('penyakit_name_snapshot', $filters['disease']);
-        }
-
-        $this->monitoringStatusService->applyFilter($query, $filters['status'] ?? null);
-
-        return $query;
     }
 }

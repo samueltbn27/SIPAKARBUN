@@ -67,11 +67,28 @@ class PoptHandlingService
         });
     }
 
+    public function startHandling(int $kasusId, User $popt): KasusPenanganan
+    {
+        return DB::transaction(function () use ($kasusId, $popt): KasusPenanganan {
+            [$kasus, $assignment] = $this->activeAssignment($kasusId, $popt, true);
+            $this->assertAcceptedAndOpen($kasus, $assignment);
+            if ($kasus->current_status === KasusPenanganan::STATUS_DALAM_PELAKSANAAN) {
+                throw ValidationException::withMessages(['kasus_id' => 'Penanganan sudah dimulai.']);
+            }
+
+            return $this->beginHandling($kasus, $popt);
+        });
+    }
+
     public function addProgress(int $kasusId, User $popt, string $catatan): ProgresPenanganan
     {
         return DB::transaction(function () use ($kasusId, $popt, $catatan): ProgresPenanganan {
             [$kasus, $assignment] = $this->activeAssignment($kasusId, $popt, true);
             $this->assertAcceptedAndOpen($kasus, $assignment);
+
+            // Recording actual work also starts/resumes handling for older
+            // clients, without treating assignment acceptance as field work.
+            $this->beginHandling($kasus, $popt);
 
             return ProgresPenanganan::create([
                 'kasus_id' => $kasus->id,
@@ -92,7 +109,8 @@ class PoptHandlingService
             [$kasus, $assignment] = $this->activeAssignment($kasusId, $popt, true);
             $this->assertAcceptedAndOpen($kasus, $assignment);
 
-            if ($assignment->deadline_at === null) {
+            $currentDeadline = app(MonitoringStatusService::class)->assignmentDeadline($assignment);
+            if ($currentDeadline === null) {
                 throw ValidationException::withMessages([
                     'proposed_deadline_at' => 'Penugasan lama belum memiliki Target Penyelesaian sehingga perpanjangan belum dapat diajukan.',
                 ]);
@@ -106,7 +124,7 @@ class PoptHandlingService
                 ]);
             }
 
-            if (! $proposedDeadline->isAfter($assignment->deadline_at)) {
+            if (! $proposedDeadline->isAfter($currentDeadline)) {
                 throw ValidationException::withMessages([
                     'proposed_deadline_at' => 'Usulan target baru harus lebih lambat daripada Target Penyelesaian saat ini.',
                 ]);
@@ -132,7 +150,7 @@ class PoptHandlingService
                 'kasus_id' => $kasus->id,
                 'penugasan_popt_id' => $assignment->id,
                 'requested_by' => $popt->id,
-                'current_deadline_at' => $assignment->deadline_at,
+                'current_deadline_at' => $currentDeadline,
                 'proposed_deadline_at' => $proposedDeadline,
                 'reason' => $reason,
                 'status' => PerpanjanganPenugasan::STATUS_PENDING,
@@ -183,6 +201,8 @@ class PoptHandlingService
                         'kasus_id' => 'Laporan akhir untuk kasus ini sudah tersedia.',
                     ]);
                 }
+
+                $kasus = $this->beginHandling($kasus, $popt);
 
                 $report = $kasus->finalReport()->create([
                     'penugasan_popt_id' => $assignment->id,
@@ -275,5 +295,27 @@ class PoptHandlingService
                 'accepted_at' => 'Terima Penugasan terlebih dahulu sebelum melakukan aksi ini.',
             ]);
         }
+    }
+
+    /** Keep existing technical transitions and their append-only records. */
+    private function beginHandling(KasusPenanganan $kasus, User $popt): KasusPenanganan
+    {
+        if ($kasus->current_status === KasusPenanganan::STATUS_DITUNDA) {
+            $kasus = $this->transitionService->pindahkan($kasus, KasusPenanganan::STATUS_SEDANG_DIREVIEW,
+                'POPT melanjutkan penanganan yang sebelumnya ditunda.', (int) $popt->id);
+        }
+        if ($kasus->current_status === KasusPenanganan::STATUS_SEDANG_DIREVIEW) {
+            $kasus = $this->transitionService->pindahkan($kasus, KasusPenanganan::STATUS_SIAP_DIEKSEKUSI,
+                'POPT menyelesaikan tinjauan dan memulai penanganan.', (int) $popt->id);
+        }
+        if ($kasus->current_status === KasusPenanganan::STATUS_SIAP_DIEKSEKUSI) {
+            $kasus = $this->transitionService->pindahkan($kasus, KasusPenanganan::STATUS_DALAM_PELAKSANAAN,
+                'Penanganan dimulai oleh POPT.', (int) $popt->id);
+        }
+        if ($kasus->current_status !== KasusPenanganan::STATUS_DALAM_PELAKSANAAN) {
+            throw ValidationException::withMessages(['kasus_id' => 'Kasus belum dapat mulai ditangani. Terima dan tinjau penugasan terlebih dahulu.']);
+        }
+
+        return $kasus;
     }
 }

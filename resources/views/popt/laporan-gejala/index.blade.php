@@ -22,7 +22,7 @@
                 @endforeach
             </select>
         </label>
-        <button type="submit" class="min-h-11 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Terapkan filter</button>
+        <button type="submit" class="min-h-11 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Terapkan filter</button>
         @if ($status)<a href="{{ route('popt.laporan-gejala.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#dbe5df] px-4 py-2 text-sm font-semibold text-[#66746c]">Reset</a>@endif
     </form>
 

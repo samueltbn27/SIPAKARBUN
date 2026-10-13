@@ -2,23 +2,22 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
 /**
- * TerimaPermohonanRequest — aksi Operator UPTD menyetujui permohonan.
- * Catatan keputusan bersifat opsional.
+ * Approval includes an active POPT and a future target in the same operation.
  */
-class TerimaPermohonanRequest extends FormRequest
+class TerimaPermohonanRequest extends AssignPoptRequest
 {
     public function authorize(): bool
     {
         return $this->user()?->hasRole('operator_uptd') === true;
     }
 
-    public function rules(): array
+    public function messages(): array
     {
-        return [
-            'catatan' => ['nullable', 'string', 'max:2000'],
-        ];
+        return array_merge(parent::messages(), [
+            'popt_id.required' => 'Pilih POPT yang bertanggung jawab sebelum menyetujui permohonan.',
+            'popt_id.exists' => 'POPT yang dipilih tidak ditemukan.',
+            'deadline_at.required' => 'Target penyelesaian wajib diisi sebelum menyetujui permohonan.',
+        ]);
     }
 }

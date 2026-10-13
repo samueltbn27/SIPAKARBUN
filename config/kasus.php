@@ -19,6 +19,9 @@
 
 return [
 
+    // Shared by PHP presenters and the WebGIS bundle.
+    'monitoring' => json_decode(file_get_contents(__DIR__.'/monitoring-statuses.json'), true, 512, JSON_THROW_ON_ERROR),
+
     /*
     |--------------------------------------------------------------------------
     | Daftar status yang dikenali (referensi validasi request).

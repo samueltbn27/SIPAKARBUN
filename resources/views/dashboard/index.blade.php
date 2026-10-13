@@ -43,7 +43,7 @@
             </div>
             <div class="shrink-0">
                 <span class="inline-flex items-center gap-2 rounded-full bg-[#e8f4ed] px-4 py-2 text-sm font-semibold text-[#176b45]">
-                    <span class="h-2 w-2 rounded-full bg-[#176b45]"></span>
+                    <span class="h-2 w-2 rounded-full bg-action-primary"></span>
                     {{ $roleLabel }}
                 </span>
             </div>
@@ -82,22 +82,7 @@
     {{-- Aktivitas terakhir — khusus role poktan (diagnosis & permohonan terbaru) --}}
     @if ($role === 'poktan' && ! empty($recents))
         @php
-            $statusLabels = [
-                'diajukan' => ['Diajukan', 'bg-blue-50 text-blue-700'],
-                'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
-                'diterima' => ['Diterima', 'bg-[#e8f4ed] text-[#176b45]'],
-                'ditolak' => ['Ditolak', 'bg-red-50 text-red-700'],
-            ];
-            $penangananLabels = [
-                'diterima' => ['Menunggu Penugasan', 'bg-blue-50 text-blue-700'],
-                'ditugaskan' => ['POPT Ditugaskan', 'bg-indigo-50 text-indigo-700'],
-                'sedang_direview' => ['Sedang Direview', 'bg-amber-50 text-amber-700'],
-                'ditunda' => ['Ditunda', 'bg-slate-100 text-slate-600'],
-                'siap_dieksekusi' => ['Siap Dieksekusi', 'bg-sky-50 text-sky-700'],
-                'dalam_pelaksanaan' => ['Dalam Pelaksanaan', 'bg-purple-50 text-purple-700'],
-                'selesai' => ['Selesai', 'bg-[#e8f4ed] text-[#176b45]'],
-            ];
-            $status = fn (array $map, string $value): array => $map[$value] ?? [\Illuminate\Support\Str::headline($value), 'bg-[#eef3ef] text-[#66746c]'];
+            $monitoringStatus = app(\App\Services\MonitoringStatusService::class);
         @endphp
 
         <div x-data="{ ready: false }" x-init="setTimeout(() => ready = true, 500)">
@@ -140,7 +125,7 @@
                     @if ($recents['recent_diagnoses']->isEmpty())
                         <div class="mt-4 rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-4 py-8 text-center">
                             <p class="text-sm font-semibold text-[#66746c]">Belum ada diagnosis</p>
-                            <a href="{{ route('diagnosis.index') }}" class="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Diagnosis Sekarang</a>
+                            <a href="{{ route('diagnosis.index') }}" class="mt-2 inline-flex items-center gap-2 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Diagnosis Sekarang</a>
                         </div>
                     @else
                         <ul class="mt-4 divide-y divide-[#eef3ef]">
@@ -182,17 +167,13 @@
                     @if ($recents['recent_permohonan']->isEmpty())
                         <div class="mt-4 rounded-xl border border-dashed border-[#dbe5df] bg-[#fafcfb] px-4 py-8 text-center">
                             <p class="text-sm font-semibold text-[#66746c]">Belum ada permohonan</p>
-                            <a href="{{ route('diagnosis.index') }}" class="mt-2 inline-flex items-center gap-2 rounded-xl bg-[#176b45] px-4 py-2 text-sm font-semibold text-white hover:bg-[#173b29]">Diagnosis Sekarang</a>
+                            <a href="{{ route('diagnosis.index') }}" class="mt-2 inline-flex items-center gap-2 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-white hover:bg-action-primary-hover">Diagnosis Sekarang</a>
                         </div>
                     @else
                         <ul class="mt-4 divide-y divide-[#eef3ef]">
                             @foreach ($recents['recent_permohonan'] as $p)
                                 @php
-[$statusLabel, $statusClass] = $status($statusLabels, (string) $p->status);
-                    $kasus = $p->kasus;
-                    [$penangananLabel, $penangananClass] = $kasus === null
-                        ? ['Belum Ada Kasus', 'bg-[#eef3ef] text-[#8a9990]']
-                        : $status($penangananLabels, (string) $kasus->current_status);
+                                    $primaryStatus = $monitoringStatus->resolveRequest($p);
                                     $komoditasNama = $recents['komoditas_map'][(int) ($p->diagnosis?->commodity_id ?? 0)] ?? ('Komoditas #'.($p->diagnosis?->commodity_id ?? 0));
                                 @endphp
                                 <li>
@@ -203,8 +184,8 @@
                                             <span class="mt-0.5 block text-[11px] text-[#8a9990]">{{ $p->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y · H:i') ?? '—' }}</span>
                                         </span>
                                         <span class="flex shrink-0 flex-col items-end gap-1">
-                                            <span class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
-                                            <span class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold {{ $penangananClass }}">{{ $penangananLabel }}</span>
+                                            <x-kasus.handling-status-badge :status="$primaryStatus" />
+                                            <x-kasus.overdue-indicator :is-overdue="$primaryStatus['is_overdue']" />
                                         </span>
                                     </a>
                                 </li>
@@ -223,7 +204,7 @@
             @foreach ($quick as $q)
                 <a href="{{ route($q['route']) }}"
                    class="soft-card group flex items-center gap-4 rounded-2xl border border-[#e4ece7] bg-white p-5 transition-colors hover:border-[#176b45]/30 hover:bg-[#fbfdfb]">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e8f4ed] text-[#176b45] transition-colors group-hover:bg-[#176b45] group-hover:text-white">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e8f4ed] text-[#176b45] transition-colors group-hover:bg-action-primary group-hover:text-white">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $q['icon'] }}" /></svg>
                     </span>
                     <span class="flex-1 text-sm font-semibold text-[#173b29]">{{ $q['label'] }}</span>

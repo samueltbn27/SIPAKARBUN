@@ -10,7 +10,7 @@
             <div class="flex items-center gap-2 text-xs text-[#8c9890] mb-2"><span>Pengaturan</span><span>/</span><span class="text-[#176b45]">Pengguna</span></div>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115a39] transition">
+            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover transition">
                 <span class="text-lg leading-none">+</span> Buat Akun
             </a>
             @if($pendingCount > 0)
@@ -35,7 +35,7 @@
                 <option value="active" @selected(request('status') === 'active')>Aktif</option>
                 <option value="pending" @selected(request('status') === 'pending')>Menunggu Persetujuan</option>
             </select>
-            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-[#176b45] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115a39] transition">
+            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-action-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-action-primary-hover transition">
                 Filter
             </button>
         </form>
@@ -88,7 +88,7 @@
                                 @if($user->kelompok_tani_id !== null)
                                     @if($user->hasAvailablePoktan())
                                         <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-[#e8f4ed] px-2 py-0.5 text-[11px] font-semibold text-[#176b45]">
-                                            <span class="w-1 h-1 rounded-full bg-[#176b45]"></span> Terverifikasi Disbun
+                                            <span class="w-1 h-1 rounded-full bg-action-primary"></span> Terverifikasi Disbun
                                         </span>
                                     @else
                                         <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fdeaea] px-2 py-0.5 text-[11px] font-semibold text-[#c53030]">
@@ -103,7 +103,7 @@
                         <td class="px-6 py-4">
                             @if($user->is_active)
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-[#e8f4ed] px-2.5 py-0.5 text-xs font-semibold text-[#176b45]">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#176b45]"></span> Aktif
+                                    <span class="w-1.5 h-1.5 rounded-full bg-action-primary"></span> Aktif
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-[#fff4df] px-2.5 py-0.5 text-xs font-semibold text-[#b8860b]">
@@ -118,7 +118,7 @@
                                     {{-- Approve --}}
                                     <form method="POST" action="{{ route('knowledge.pengguna.approve', $user) }}" data-confirm-title="Setujui akun?" data-confirm-message="Akun {{ $user->name }}@if($user->kelompok_tani_nama !== null) (Poktan {{ $user->kelompok_tani_nama }} — {{ $user->kelompok_tani_kode }})@endif akan dapat digunakan untuk login." data-confirm-action="Setujui">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center gap-1 rounded-lg bg-[#176b45] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#115a39] transition">
+                                        <button type="submit" class="inline-flex items-center gap-1 rounded-lg bg-action-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-action-primary-hover transition">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                             Setujui
                                         </button>
@@ -135,7 +135,7 @@
                                     {{-- Toggle active/inactive --}}
                                     <form method="POST" action="{{ route('knowledge.pengguna.toggle', $user) }}" data-confirm-title="Ubah status akun?" data-confirm-message="{{ $user->id === auth()->id() ? 'Anda tidak akan bisa login setelah akun dinonaktifkan.' : 'Status akun ' . $user->name . ' akan diubah.' }}" data-confirm-action="Lanjutkan">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center rounded-lg border border-[#e4ece7] bg-white px-3 py-1.5 text-xs font-medium text-[#8b9790] hover:bg-[#f3f8f4] transition" @disabled($user->id === auth()->id() && $user->is_active)>
+                                        <button type="submit" class="inline-flex items-center rounded-lg border border-[#e4ece7] bg-white px-3 py-1.5 text-xs font-medium text-[#8b9790] hover:bg-action-secondary-hover transition" @disabled($user->id === auth()->id() && $user->is_active)>
                                             Nonaktifkan
                                         </button>
                                     </form>

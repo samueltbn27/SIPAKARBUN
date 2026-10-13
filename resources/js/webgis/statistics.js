@@ -1,9 +1,8 @@
-import { STATUS_ORDER, getStatusConfig } from './statuses';
+import { STATUS_ORDER, getStatusConfig } from './statuses.js';
 
 export const SUMMARY_RULES = {
-    activeExcludes: ['selesai'],
+    active: STATUS_ORDER.filter((status) => getStatusConfig(status).isActiveHandling),
     completed: 'selesai',
-    overdue: 'melewati_batas_waktu',
 };
 
 function displayLabel(value) {
@@ -26,9 +25,10 @@ function groupByLabel(cases, getLabel) {
 export function calculateSummary(cases) {
     return {
         total: cases.length,
-        active: cases.filter((caseData) => !SUMMARY_RULES.activeExcludes.includes(caseData.status)).length,
+        review: cases.filter((caseData) => caseData.status === 'menunggu_review').length,
+        active: cases.filter((caseData) => SUMMARY_RULES.active.includes(caseData.status)).length,
         completed: cases.filter((caseData) => caseData.status === SUMMARY_RULES.completed).length,
-        overdue: cases.filter((caseData) => caseData.status === SUMMARY_RULES.overdue).length,
+        overdue: cases.filter((caseData) => SUMMARY_RULES.active.includes(caseData.status) && caseData.is_overdue === true).length,
     };
 }
 

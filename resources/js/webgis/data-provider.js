@@ -94,7 +94,7 @@ function normalizeStatusHistory(history) {
             return null;
         }
 
-        return { status, note, changed_at: changedAt };
+        return { status, ...(source.label ? { label: source.label } : {}), note, changed_at: changedAt };
     }).filter(Boolean);
 }
 
@@ -133,9 +133,11 @@ export function normalizeCase(rawCase) {
     }, null);
 
     return {
+        monitoring_id: source.monitoring_id ?? (source.kasus_id ?? source.case_id ?? null),
         case_id: source.case_id ?? source.kasus_id ?? null,
-        case_code: source.case_code ?? source.kasus_code ?? null,
+        case_code: source.case_code ?? source.kasus_code ?? source.permohonan_code ?? null,
         request_id: source.request_id ?? source.permohonan_id ?? request.id ?? null,
+        request_code: source.permohonan_code ?? null,
         // Only the case coordinate fields are authoritative. There is no
         // fallback to the Poktan reference location.
         latitude: normalizeCoordinate(source.latitude_kasus ?? source.latitude ?? location.latitude, -90, 90),
@@ -159,6 +161,12 @@ export function normalizeCase(rawCase) {
         is_overdue: source.is_overdue === true,
         effective_deadline_at: source.effective_deadline_at ?? null,
         overdue_since: source.overdue_since ?? null,
+        rejection_reason: source.rejection_reason ?? null,
+        legacy_note: source.legacy_note ?? null,
+        legacy_reason: source.legacy_reason ?? null,
+        completion_evidence_missing: source.completion_evidence_missing === true,
+        history_incomplete: source.history_incomplete === true,
+        history_note: source.history_note ?? null,
         latest_progress: source.latest_progress && typeof source.latest_progress === 'object'
             ? {
                 note: source.latest_progress.note ?? source.latest_progress.catatan ?? null,
@@ -211,13 +219,36 @@ export class ApiCaseProvider {
             throw new Error('ApiCaseProvider requires a fetch implementation or HTTP client.');
         }
 
+        const records = [];
+        const visited = new Set();
+        const initial = new URL(this.endpoint, globalThis.window?.location?.origin ?? 'http://localhost');
+        let endpoint = this.endpoint;
+        do {
+            const pageUrl = new URL(endpoint, initial);
+            if (pageUrl.origin !== initial.origin || pageUrl.pathname !== initial.pathname || visited.has(pageUrl.href)) {
+                throw new Error('Case API pagination link is invalid or repeated.');
+            }
+            visited.add(pageUrl.href);
+            const payload = await this.getPage(endpoint);
+            const rawCases = Array.isArray(payload) ? payload : payload?.data;
+            if (!Array.isArray(rawCases)) {
+                throw new TypeError('Case API response must contain an array in data.');
+            }
+            records.push(...rawCases);
+            endpoint = payload?.links?.next ?? null;
+        } while (endpoint);
+
+        return normalizeCases(records);
+    }
+
+    async getPage(endpoint) {
         let payload;
 
         if (typeof this.fetchImpl === 'function') {
             let response;
 
             try {
-                response = await this.fetchImpl(this.endpoint, {
+                response = await this.fetchImpl(endpoint, {
                     credentials: 'same-origin',
                     headers: {
                         Accept: 'application/json',
@@ -239,7 +270,7 @@ export class ApiCaseProvider {
             }
         } else {
             try {
-                const response = await this.httpClient.get(this.endpoint, {
+                const response = await this.httpClient.get(endpoint, {
                     headers: {
                         Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
@@ -253,13 +284,7 @@ export class ApiCaseProvider {
             }
         }
 
-        const rawCases = Array.isArray(payload) ? payload : payload?.data;
-
-        if (!Array.isArray(rawCases)) {
-            throw new TypeError('Case API response must contain an array in data.');
-        }
-
-        return normalizeCases(rawCases);
+        return payload;
     }
 }
 
@@ -278,7 +303,7 @@ function getRuntimeHttpClient() {
 }
 
 export const activeCaseProvider = new ApiCaseProvider({
-    endpoint: '/api/kasus?per_page=100',
+    endpoint: '/api/monitoring/kasus?per_page=100',
     httpClient: getRuntimeHttpClient(),
 });
 

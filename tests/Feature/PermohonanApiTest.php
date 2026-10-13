@@ -116,6 +116,9 @@ class PermohonanApiTest extends TestCase
         $response = $this->postJson('/api/permohonan', $this->payloadDasar($diagnosis))->assertCreated();
 
         $response->assertJsonPath('data.status', PermohonanPenanganan::STATUS_DIAJUKAN)
+            ->assertJsonPath('data.monitoring_status', 'menunggu_review')
+            ->assertJsonPath('data.monitoring_status_label', 'Menunggu Review')
+            ->assertJsonPath('data.is_overdue', false)
             ->assertJsonPath('data.kelompok_tani.nama', 'Poktan Kopi Sejahtera')
             ->assertJsonPath('data.created_by', $user->id);
 
